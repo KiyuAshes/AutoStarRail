@@ -1,0 +1,442 @@
+#include <AutoStarRail/AsrConfig.h>
+
+ASR_DISABLE_WARNING_BEGIN
+ASR_IGNORE_UNUSED_PARAMETER
+
+#include <boost/process/async.hpp>
+
+ASR_DISABLE_WARNING_END
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4068)
+#endif
+#include <cstddef>
+#include <gzip/decompress.hpp>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+#include "AdbCaptureImpl.h"
+#include <AutoStarRail/AsrConfig.h>
+#include <AutoStarRail/ExportInterface/AsrLogger.h>
+#include <AutoStarRail/ExportInterface/IAsrImage.h>
+#include <AutoStarRail/Utils/QueryInterfaceImpl.hpp>
+#include <AutoStarRail/Utils/Utils.hpp>
+#include <AutoStarRail/Utils/IAsrBaseAdapterUtils.h>
+#include <AutoStarRail/Utils/fmt.h>
+#include <boost/process/async_pipe.hpp>
+#include <boost/process/detail/child_decl.hpp>
+#include <boost/process/pipe.hpp>
+#include <boost/process.hpp>
+#include <boost/asio.hpp>
+#include <boost/pfr.hpp>
+#include "ErrorLensImpl.h"
+#include <array>
+#include <system_error>
+#include <tuple>
+#include <sstream>
+#include <cstring>
+
+ASR_NS_BEGIN
+
+// reference from
+// https://developer.android.com/reference/android/graphics/PixelFormat
+// https://android.googlesource.com/platform/frameworks/base/+/android-4.3_r2.3/cmds/screencap/screencap.cpp
+// https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android-s-beta-4/cmds/screencap/screencap.cpp
+// NOTE: kN32_SkColorType selects the native 32-bit ARGB format. On little
+// endian processors, pixels containing 8-bit ARGB components pack into 32-bit
+//  kBGRA_8888_SkColorType. On big endian processors, pixels pack into 32-bit
+//  kRGBA_8888_SkColorType.
+// In this plugin, we assume kN32_SkColorType is RGBA_8888.
+enum class AdbCaptureFormat : uint32_t
+{
+    RGBA_8888 = 1,
+    RGBX_8888 = 2,
+    RGB_888 = 3,
+    RGB_565 = 4
+};
+
+constexpr std::size_t ADB_CAPTURE_HEADER_SIZE = 16;
+
+struct AdbCaptureHeader
+{
+    uint32_t h;
+    uint32_t w;
+    uint32_t f;
+};
+
+AdbCapture::AdbCapture(
+    const std::filesystem::path& adb_path,
+    std::string_view             adb_device_serial)
+    : capture_png_command_{ASR::fmt::format(
+        "{} -s {} exec-out screencap -p",
+        adb_path.string(),
+        adb_device_serial)},
+      capture_gzip_raw_command_{ASR::fmt::format(
+          R"({} -s {} exec-out "screencap | gzip -1")",
+          adb_path.string(),
+          adb_device_serial)},
+      get_screen_size_command_{ASR::fmt::format(
+          R"({} -s {} shell dumpsys window displays | grep -o -E cur=+[^\\ ]+ | grep -o -E [0-9]+)",
+          adb_path.string(),
+          adb_device_serial)}
+//   get_nc_address_command_{ASR::fmt::format(
+//       R"({} -s {} shell " cat /proc/net/arp | grep : ")",
+//       adb_path.string(),
+//       adb_device_serial)}
+//   capture_raw_by_nc_command_{ASR::fmt::format(
+//       R"({} -s {} exec-out "screencap | nc -w 3 {} {}")",
+//       adb_path.string(),
+//       adb_device_serial,
+//       nc_address_,
+//       nc_port_)},
+{
+}
+
+ASR_NS_ANONYMOUS_DETAILS_BEGIN
+
+std::size_t ComputeScreenshotSize(
+    const std::int32_t width,
+    const std::int32_t height) noexcept
+{
+    // header + data (assume 32bit color)
+    return ADB_CAPTURE_HEADER_SIZE
+           + static_cast<std::size_t>(width * height * 4);
+}
+
+template <class Buffer>
+struct CommandExecutorContext : public ASR::Utils::NonCopyableAndNonMovable
+{
+private:
+    void OnProcessExited(int exit_code, const std::error_code& error_code)
+    {
+        timer.cancel();
+
+        if (exit_code || error_code)
+        {
+            constexpr const auto& string_template =
+                R"(Executing command: "{}".\nExit code: {}.\nError code: {}. Message: "{}".)";
+            const auto error_code_message = error_code.message();
+            const auto error_message = ASR::fmt::format(
+                string_template,
+                this->command,
+                exit_code,
+                error_code.value(),
+                error_code_message);
+            AsrLogErrorU8(error_message.c_str());
+        }
+        else
+        {
+            constexpr const auto& string_template =
+                R"(Executing command: "{}" successfully.)";
+            const auto error_message =
+                ASR::fmt::format(string_template, this->command);
+            AsrLogInfoU8(error_message.c_str());
+        }
+    }
+
+    boost::asio::awaitable<void> WaitProcessTimeout()
+    {
+        while (true)
+        {
+            const auto [error_code] = co_await timer.async_wait(
+                boost::asio::as_tuple(boost::asio::use_awaitable));
+            if (error_code != boost::asio::error::operation_aborted) [[likely]]
+            {
+                break;
+            }
+            else if (error_code == boost::system::errc::success)
+            {
+                process.terminate();
+                process_out.close();
+            }
+            else
+            {
+                const auto error_message = ASR::fmt::format(
+                    R"(Unexpected error when waiting timeout.\n Error code: {}. Message: "{}".)",
+                    error_code.value(),
+                    error_code.message());
+                AsrLogErrorU8(error_message.c_str());
+            }
+        }
+    }
+
+public:
+    template <class T>
+    CommandExecutorContext(
+        std::string_view    command,
+        const std::uint32_t timeout,
+        T&&                 buffer)
+        requires(!std::is_lvalue_reference_v<T>)
+        : buffer{std::forward<T>(buffer)},
+          process{
+              command.data(),
+              boost::process::std_out > process_out,
+              ioc,
+              boost::process::on_exit(
+                  [this](int exit_code, const std::error_code& error_code)
+                  { this->OnProcessExited(exit_code, error_code); })},
+          timer{ioc, std::chrono::seconds(timeout)}, timeout{timeout},
+          command{command}
+    {
+        // 超时
+        boost::asio::co_spawn(
+            ioc,
+            [this]() { return this->WaitProcessTimeout(); }(),
+            boost::asio::detached);
+        // 读取输出
+        boost::asio::co_spawn(
+            ioc,
+            [this]() -> boost::asio::awaitable<void>
+            {
+                const auto [error_code, read_length] =
+                    co_await boost::asio::async_read(
+                        process_out,
+                        boost::asio::dynamic_buffer(this->buffer),
+                        boost::asio::as_tuple(boost::asio::use_awaitable));
+                if (!error_code) [[unlikely]]
+                {
+                    const auto error_message = ASR::fmt::format(
+                        "Unexpected error when reading stdout for command: {}.\n Error code: {}. Message: {}",
+                        this->command.data(),
+                        error_code.value(),
+                        error_code.message());
+                    ASR_LOG_ERROR(error_message.c_str());
+                }
+            }(),
+            [](std::exception_ptr p_ex)
+            {
+                try
+                {
+                    if (p_ex)
+                    {
+                        std::rethrow_exception(p_ex);
+                    }
+                }
+                catch (const std::runtime_error& ex)
+                {
+                    AsrLogErrorU8(ex.what());
+                }
+            });
+    }
+    Buffer                     buffer;
+    boost::asio::io_context    ioc{};
+    boost::process::async_pipe process_out{ioc};
+    boost::process::child      process;
+    boost::asio::steady_timer  timer;
+    std::uint32_t              timeout;
+    std::string                command;
+};
+
+AdbCaptureHeader ResolveHeader(const char* p_header)
+{
+    AdbCaptureHeader header;
+    std::memcpy(&header, p_header, sizeof(AdbCaptureHeader));
+    return header;
+}
+
+auto ComputeDataSizeFromHeader(const AdbCaptureHeader header)
+    -> ASR::Utils::Expected<std::size_t>
+{
+    switch (static_cast<AdbCaptureFormat>(header.f))
+    {
+    case AdbCaptureFormat::RGBA_8888:
+    case AdbCaptureFormat::RGBX_8888:
+    case AdbCaptureFormat::RGB_888:
+        return header.w * header.h * 4;
+    case AdbCaptureFormat::RGB_565:
+    default:
+        const auto error_message =
+            ASR::fmt::format("Unsupported color format: {}", header.f);
+        ASR_LOG_ERROR(error_message.c_str());
+        return tl::make_unexpected(UNSUPPORTED_COLOR_FORMAT);
+    }
+}
+
+ASR::Utils::Expected<AsrImageFormat> Convert(const AdbCaptureFormat format)
+{
+    switch (format)
+    {
+        using enum AdbCaptureFormat;
+    case RGBA_8888:
+        [[likely]] return ASR_IMAGE_FORMAT_RGBA_8888;
+    case RGBX_8888:
+        return ASR_IMAGE_FORMAT_RGBX_8888;
+    case RGB_888:
+        return ASR_IMAGE_FORMAT_RGB_888;
+    default:
+        return tl::make_unexpected(UNSUPPORTED_COLOR_FORMAT);
+    }
+}
+
+ASR_NS_ANONYMOUS_DETAILS_END
+
+template <class T>
+auto MakeCommandExecutorContext(
+    std::string_view    command,
+    const std::uint32_t timeout)
+{
+    T tmp_buffer{};
+    return Details::CommandExecutorContext<T>{
+        command,
+        timeout,
+        std::move(tmp_buffer)};
+}
+
+ASR::Utils::Expected<AdbCapture::Size> AdbCapture::GetDeviceSize() const
+{
+    auto context =
+        MakeCommandExecutorContext<std::string>(get_screen_size_command_, 10);
+    Size result{};
+    context.ioc.run();
+    std::stringstream output_string_stream{context.buffer};
+    int               size_1{0};
+    int               size_2{0};
+    output_string_stream >> size_1 >> size_2;
+
+    if (size_1 == 0 || size_2 == 0)
+    {
+        const auto error_message = ASR::fmt::format(
+            "Unexpected error when getting screen size. Received output: {}",
+            context.buffer);
+        ASR_LOG_ERROR(error_message.c_str());
+        // todo return tl::make_unexpected();
+    }
+
+    result.width = (std::max)(size_1, size_2);
+    result.height = (std::min)(size_1, size_2);
+    return result;
+}
+
+AsrResult AdbCapture::CaptureRawWithGZip()
+{
+    AsrResult result{ASR_S_OK};
+    // Initialize buffer.
+    auto adb_output_buffer = ASR::Utils::MakeContainerOfSize<std::vector<char>>(
+        Details::ComputeScreenshotSize(
+            adb_device_screen_size_.width,
+            adb_device_screen_size_.height));
+    // Run adb and receive screen capture.
+    Details::CommandExecutorContext<decltype(adb_output_buffer)> context{
+        capture_gzip_raw_command_,
+        10,
+        std::move(adb_output_buffer)};
+    // Initialize the objects that need to be used later.
+    auto decompressed_data = ASR::Utils::MakeContainerOfSize<std::vector<char>>(
+        Details::ComputeScreenshotSize(
+            adb_device_screen_size_.width,
+            adb_device_screen_size_.height));
+    gzip::Decompressor decompressor{};
+    // wait for the process to exit.
+    context.ioc.run();
+
+    decompressor.decompress(
+        decompressed_data,
+        context.buffer.data(),
+        context.buffer.size());
+
+    const auto header = Details::ResolveHeader(decompressed_data.data());
+    Details::ComputeDataSizeFromHeader(header)
+        .and_then(
+            [&decompressed_data, &header](const std::size_t expected_data_size)
+                -> ASR::Utils::Expected<std::size_t>
+            {
+                if (expected_data_size > decompressed_data.size()) [[unlikely]]
+                {
+                    const auto error_message = ASR::fmt::format(
+                        "Received unexpected data size.\n Expected data size: {}.\n Received data size: {}.\n Data format: {}.",
+                        expected_data_size,
+                        decompressed_data.size(),
+                        header.f);
+                    ASR_LOG_ERROR(error_message.c_str());
+                    return tl::make_unexpected(CAPTURE_DATA_TOO_LESS);
+                }
+                return expected_data_size;
+            })
+        .and_then(
+            [&header](auto) {
+                return Details::Convert(
+                    static_cast<AdbCaptureFormat>(header.f));
+            })
+        .and_then(
+            [&decompressed_data](
+                const AsrImageFormat color_format) -> ASR::Utils::Expected<void>
+            {
+                AsrImageDesc desc{
+                    .p_data = std::next(
+                        decompressed_data.data(),
+                        ADB_CAPTURE_HEADER_SIZE),
+                    .data_size =
+                        decompressed_data.size() - ADB_CAPTURE_HEADER_SIZE,
+                    .data_format = color_format};
+
+                AsrPtr<IAsrImage> p_image{};
+                const auto        create_image_result =
+                    ::CreateIAsrImage(&desc, p_image.Put());
+                if (IsOk(create_image_result)) [[likely]]
+                {
+                    return {};
+                }
+                return tl::make_unexpected(create_image_result);
+            })
+        .or_else([&result](const auto error_code) { result = error_code; });
+    return result;
+}
+
+AsrResult AdbCapture::CaptureRaw() { return ASR_E_NO_IMPLEMENTATION; }
+
+AsrResult AdbCapture::CapturePng() { return ASR_E_NO_IMPLEMENTATION; }
+
+AsrResult AdbCapture::CaptureRawByNc() { return ASR_E_NO_IMPLEMENTATION; }
+
+auto AdbCapture::AutoDetectType() -> ASR::Utils::Expected<void>
+{
+    if (current_capture_method)
+    {
+        return {};
+    }
+    ASR_LOG_INFO("Detecting fastest adb capture way.");
+    AsrResult result{ASR_S_OK};
+    if (result = CaptureRawWithGZip(); IsOk(result)) [[likely]]
+    {
+        current_capture_method = &AdbCapture::CaptureRawWithGZip;
+    }
+    if (IsOk(result))
+    {
+        return {};
+    }
+    else
+    {
+        return tl::make_unexpected(result);
+    }
+}
+
+int64_t AdbCapture::AddRef() { return ref_counter_.AddRef(); }
+
+int64_t AdbCapture::Release() { return ref_counter_.Release(this); }
+
+AsrResult AdbCapture::QueryInterface(const AsrGuid& iid, void** pp_object)
+{
+    return ASR::Utils::QueryInterface<IAsrCapture>(this, iid, pp_object);
+}
+
+AsrResult AdbCapture::Capture(IAsrImage** pp_out_image)
+{
+    (void)pp_out_image;
+    AsrResult result{ASR_S_OK};
+    if (boost::pfr::eq(adb_device_screen_size_, Size{0, 0})) [[unlikely]]
+    {
+        GetDeviceSize()
+            .or_else([&result](const auto error_code) { result = error_code; })
+            .map([&ref_size = this->adb_device_screen_size_](Size size)
+                 { ref_size = size; });
+        if (!IsOk(result)) [[unlikely]]
+        {
+            return result;
+        }
+    }
+    return ASR_E_NO_IMPLEMENTATION;
+}
+
+ASR_NS_END
