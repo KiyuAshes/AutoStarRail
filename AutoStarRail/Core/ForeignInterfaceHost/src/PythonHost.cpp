@@ -249,66 +249,77 @@ class PyInterpreter
         {
             return;
         }
+
         Py_Initialize();
         if (!Py_IsInitialized())
         {
             InitException::Raise();
         }
+
+        // create folder path string
+        const auto w_plugin_folder = std::wstring{L"\""}
+                                     + std::filesystem::current_path().wstring()
+                                     + std::wstring{L"\""};
+        // {anonymous variable 0} = "CURRENT PATH"
+        auto py_plugin_folder_path =
+            PythonResult{Details::PyUnicodeFromWString(w_plugin_folder)}
+                .CheckAndGet();
+        // {anonymous variable 1} = 0
+        auto py_zero =
+            PythonResult{PyObjectPtr::Attach(PyLong_FromLong(0))}.CheckAndGet();
+        // {anonymous variable 2} = ({anonymous variable 0}, {anonymous variable
+        // 1})
+        auto py_2_element_tuple =
+            PythonResult{PyObjectPtr::Attach(PyTuple_New(2))}
+                .then(
+                    [&py_zero, &py_plugin_folder_path](auto py_2_element_tuple)
+                    {
+                        int set_tuple_result{0};
+                        set_tuple_result = PyTuple_SetItem(
+                            py_2_element_tuple,
+                            0,
+                            py_zero.Get());
+                        if (set_tuple_result == -1)
+                        {
+                            PythonResult::RaiseIfError();
+                        }
+                        set_tuple_result = PyTuple_SetItem(
+                            py_2_element_tuple,
+                            1,
+                            py_plugin_folder_path.Get());
+                        if (set_tuple_result == -1)
+                        {
+                            PythonResult::RaiseIfError();
+                        }
+                        return PyObjectPtr{py_2_element_tuple};
+                    })
+                .CheckAndGet();
         // import sys
         auto py_str_sys = Details::PyUnicodeFromWString(L"sys");
         sys_module_ = PyObjectPtr::Attach(PyImport_Import(py_str_sys.Get()));
         PythonResult{sys_module_}
-            // {anonymous variable} = sys.path
             .then(
-                [](auto sys_module) {
+                // {anonymous variable 3} = sys.path
+                [](auto py_sys_module) {
                     return PyObjectPtr::Attach(
-                        PyObject_GetAttrString(sys_module, "path"));
+                        PyObject_GetAttrString(py_sys_module, "path"));
                 })
-            // TODO: review the code below! It has bug.
             .then(
-                [](auto sys_path)
+                // {anonymous variable 4} = sys.path.insert
+                [](auto py_sys_path) {
+                    return PyObjectPtr::Attach(
+                        PyObject_GetAttrString(py_sys_path, "path"));
+                })
+            .then(
+                // {anonymous variable 4}({anonymous variable 2})
+                [&py_2_element_tuple](auto py_sys_path_insert)
                 {
-                    const auto plugin_folder =
-                        std::wstring{L"sys.path.insert(0,r\""}
-                        + std::filesystem::current_path().wstring()
-                        + std::wstring{L"\")"};
-                    const auto py_import_path =
-                        Details::PyUnicodeFromWString(plugin_folder);
-                    const auto py_zero =
-                        PyObjectPtr::Attach(PyLong_FromLong(0));
-
-                    PythonResult{PyObjectPtr::Attach(PyTuple_New(2))}
-                        .then(
-                            [value_py_import_path = py_import_path,
-                             value_py_zero = py_zero](auto arguments)
-                            {
-                                int set_tuple_result{0};
-                                set_tuple_result = PyTuple_SetItem(
-                                    arguments,
-                                    0,
-                                    value_py_zero.Get());
-                                if (set_tuple_result == -1)
-                                {
-                                    throw ASR::Core::PythonException{""};
-                                }
-                                set_tuple_result = PyTuple_SetItem(
-                                    arguments,
-                                    1,
-                                    value_py_import_path.Get());
-                                if (set_tuple_result == -1)
-                                {
-                                    // TODO: throw exception
-                                }
-                            })
-                        .then(
-                            [value_sys_path = sys_path](auto arguments)
-                            {
-                                return PyObjectPtr::Attach(PyObject_Call(
-                                    value_sys_path,
-                                    arguments,
-                                    nullptr));
-                            });
-                });
+                    return PyObjectPtr::Attach(PyObject_Call(
+                        py_sys_path_insert,
+                        py_2_element_tuple.Get(),
+                        nullptr));
+                })
+            .Check();
     }
 };
 
