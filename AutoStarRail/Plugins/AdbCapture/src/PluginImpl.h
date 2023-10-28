@@ -37,10 +37,6 @@ public:
     int64_t   Release() override;
     AsrResult QueryInterface(const AsrGuid& guid, void** pp_out_object)
         override;
-    // IAsrInspectable
-    AsrResult GetIids(IAsrIidVector** pp_out_iids) override;
-    AsrResult GetRuntimeClassName(
-        IAsrReadOnlyString** pp_out_class_name) override;
     // IAsrPlugin
     AsrResult EnumFeature(const size_t index, AsrPluginFeature* p_out_feature)
         override;

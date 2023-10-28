@@ -40,3 +40,8 @@ void Asr::Core::ForeignInterfaceHost::TemporaryPluginObjectStorage::
     mutex_.unlock();
 }
 
+ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
+
+ASR_DEFINE_VARIABLE(g_plugin_object){};
+
+ASR_CORE_FOREIGNINTERFACEHOST_NS_END

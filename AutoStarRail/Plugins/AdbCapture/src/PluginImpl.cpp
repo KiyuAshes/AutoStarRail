@@ -57,17 +57,4 @@ AsrResult AdbCapturePlugin::CreateFeatureInterface(
     }
 }
 
-AsrResult AdbCapturePlugin::GetIids(IAsrIidVector** pp_out_iids)
-{
-    return ASR::Utils::GetIids<
-        ASR::Utils::IAsrCaptureFactoryInheritanceInfo,
-        AdbCapturePlugin>(pp_out_iids);
-}
-
-AsrResult AdbCapturePlugin::GetRuntimeClassName(
-    IAsrReadOnlyString** pp_out_class_name)
-{
-    ASR_UTILS_GET_RUNTIME_CLASS_NAME_IMPL(Asr::AdbCapturePlugin, pp_out_class_name);
-}
-
 ASR_NS_END

@@ -7,7 +7,6 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <Python.h>
-#include <boost/filesystem.hpp>
 #include <stdexcept>
 #include <string_view>
 #include <tuple>
@@ -38,9 +37,22 @@ PyObjectPtr::PyObjectPtr(const PyObjectPtr& other) : ptr_(other.ptr_)
     Py_XINCREF(ptr_);
 }
 
+PyObjectPtr& PyObjectPtr::operator=(const PyObjectPtr& other)
+{
+    ptr_ = other.ptr_;
+    Py_XINCREF(ptr_);
+    return *this;
+}
+
 PyObjectPtr::PyObjectPtr(PyObjectPtr&& other) noexcept
     : ptr_(std::exchange(other.ptr_, nullptr))
 {
+}
+
+PyObjectPtr& PyObjectPtr::operator=(PyObjectPtr&& other) noexcept
+{
+    ptr_ = std::exchange(other.ptr_, nullptr);
+    return *this;
 }
 
 PyObjectPtr::~PyObjectPtr() { Py_XDECREF(ptr_); }
