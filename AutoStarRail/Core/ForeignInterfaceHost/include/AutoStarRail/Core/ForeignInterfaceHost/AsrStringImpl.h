@@ -63,9 +63,9 @@ namespace Details
         {
             if (new_size > size_)
             {
-                up_data_ = std::make_unique<T[]>(new_size + 1);
-                up_data_[new_size] = 0;
-                size_ = new_size;
+                const auto size_with_null_character = new_size + 1;
+                up_data_ = std::make_unique<T[]>(size_with_null_character);
+                size_ = size_with_null_character;
             }
             return up_data_.get();
         }

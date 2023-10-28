@@ -1,10 +1,12 @@
 #include "AutoStarRail/AsrConfig.h"
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
-#include "AutoStarRail/Utils/QueryInterface.hpp"
-#include "AutoStarRail/Utils/CommonUtils.hpp"
+#include <AutoStarRail/Utils/QueryInterface.hpp>
+#include <AutoStarRail/Utils/CommonUtils.hpp>
+#include <magic_enum_format.hpp>
 #include <unicode/unistr.h>
 #include <unicode/uversion.h>
+#include <unicode/ustring.h>
 #include <new>
 #include <functional>
 #include <cwchar>
@@ -176,53 +178,61 @@ AsrResult AsrStringCppImpl::GetUtf16(
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
-template <class T>
-auto SetW(
-    const T* p_wstring,
-    size_t   length,
-    auto&    cached_utf32_string,
-    auto     validate_u32_cache) -> U_NAMESPACE_QUALIFIER UnicodeString
+#define ANONYMOUS_DETAILS_MAX_SIZE 4096
+
+/**
+ * @brief 返回带L'\0'字符的空终止字符串长度
+ * @param p_wstring
+ * @return
+ */
+template <class = std::enable_if<sizeof(wchar_t) == 4, size_t>>
+auto GetStringSize(const wchar_t* p_wstring) -> size_t
 {
-    const auto                          int_length = static_cast<int>(length);
-    U_NAMESPACE_QUALIFIER UnicodeString result;
-
-    if constexpr (sizeof(wchar_t) == sizeof(char16_t))
+    for (size_t i = 0; i < ANONYMOUS_DETAILS_MAX_SIZE; ++i)
     {
-        result = {p_wstring, int_length};
-    }
-    else if constexpr (sizeof(wchar_t) == sizeof(char32_t))
-    {
-        result = U_NAMESPACE_QUALIFIER UnicodeString::fromUTF32(
-            (reinterpret_cast<const UChar32*>(p_wstring)),
-            int_length);
-
-        const auto p_cached_u32string =
-            cached_utf32_string.DiscardAndGetNullTerminateBufferPointer(length);
-        std::memcpy(p_cached_u32string, p_wstring, length * sizeof(UChar32));
-        validate_u32_cache();
+        if (p_wstring[i] == L'\0')
+        {
+            return i + 1;
+        }
     }
 
-    return result;
+    ASR_CORE_LOG_ERROR(
+        "Input string size is larger than expected. Expected max size is " ASR_STR(
+            ANONYMOUS_DETAILS_MAX_SIZE) ".");
+
+    const wchar_t char_at_i = p_wstring[ANONYMOUS_DETAILS_MAX_SIZE];
+    const auto    char_at_i_value =
+        static_cast<uint16_t>(static_cast<uint32_t>(char_at_i));
+
+    // 前导代理
+    if (0xD800 <= char_at_i_value && char_at_i_value <= 0xDBFF)
+    {
+        return ANONYMOUS_DETAILS_MAX_SIZE;
+    }
+    // 后尾代理
+    if (0xDC00 <= char_at_i_value && char_at_i_value <= 0xDFFF)
+    {
+        return ANONYMOUS_DETAILS_MAX_SIZE - 1;
+    }
+    return ANONYMOUS_DETAILS_MAX_SIZE;
 }
 
-ASR_NS_ANONYMOUS_DETAILS_END
-
-AsrResult AsrStringCppImpl::SetSwigW(const wchar_t* p_string)
+template <class C, class T>
+auto SetSwigW(const C* p_wstring, T& u16_buffer)
+    -> U_NAMESPACE_QUALIFIER UnicodeString
 {
-    InvalidateCache();
-
-    if constexpr (sizeof(wchar_t) == sizeof(char16_t))
+    if constexpr (sizeof(C) == sizeof(char16_t))
     {
-        impl_ = {p_string};
+        return {p_wstring};
     }
-    else if constexpr (sizeof(wchar_t) == sizeof(char32_t))
+    else if constexpr (sizeof(C) == sizeof(char32_t))
     {
-        const auto string_size = std::wcslen(p_string);
+        const auto string_size = GetStringSize(p_wstring);
         const auto p_shadow_string =
-            u16_buffer_.DiscardAndGetNullTerminateBufferPointer(string_size);
+            u16_buffer.DiscardAndGetNullTerminateBufferPointer(string_size);
         std::transform(
-            p_string,
-            p_string + string_size,
+            p_wstring,
+            p_wstring + string_size,
             p_shadow_string,
             [](const wchar_t c)
             {
@@ -231,9 +241,20 @@ AsrResult AsrStringCppImpl::SetSwigW(const wchar_t* p_string)
                 std::memcpy(&u16_char, &c, sizeof(u16_char));
                 return u16_char;
             });
-        const auto int_length = static_cast<int>(u16_buffer_.GetSize());
-        impl_ = {p_shadow_string, int_length, int_length};
+        const auto size = u16_buffer.GetSize();
+        const auto int_size = static_cast<int32_t>(size);
+        const auto int_length = u_strlen(p_shadow_string);
+        return {p_shadow_string, int_length, int_size};
     }
+}
+
+ASR_NS_ANONYMOUS_DETAILS_END
+
+AsrResult AsrStringCppImpl::SetSwigW(const wchar_t* p_string)
+{
+    InvalidateCache();
+
+    impl_ = Details::SetSwigW(p_string, u16_buffer_);
 
     return ASR_S_OK;
 }
@@ -242,12 +263,38 @@ AsrResult AsrStringCppImpl::SetW(const wchar_t* p_string, size_t length)
 {
     InvalidateCache();
 
-    // TODO: use u_strFromWCS to reimplement this function. See https://unicode-org.github.io/icu-docs/apidoc/released/icu4c/ustring_8h.html#a2f3c94a3177b0681070e78f428da7cd0
-    impl_ = Details::SetW(
+    const auto i32_length = static_cast<int32_t>(length);
+    UErrorCode str_from_wcs_result{};
+    int32_t    expected_capacity{0};
+
+    str_from_wcs_result = U_ZERO_ERROR;
+    ::u_strFromWCS(
+        nullptr,
+        0,
+        &expected_capacity,
         p_string,
-        length,
-        cached_utf32_string_,
-        [this]() { ValidateCache<Encode::U32>(); });
+        i32_length,
+        &str_from_wcs_result);
+    const auto p_buffer =
+        u16_buffer_.DiscardAndGetNullTerminateBufferPointer(expected_capacity);
+    const auto i32_buffer_size = static_cast<int32_t>(u16_buffer_.GetSize());
+    str_from_wcs_result = U_ZERO_ERROR;
+    ::u_strFromWCS(
+        p_buffer,
+        i32_buffer_size,
+        &expected_capacity,
+        p_string,
+        i32_length,
+        &str_from_wcs_result);
+    if (str_from_wcs_result != U_ZERO_ERROR)
+    {
+        ASR_CORE_LOG_ERROR(
+            "Error happened when calling u_strFromWCS. Error code = {}",
+            str_from_wcs_result);
+        return ASR_E_INVALID_STRING;
+    }
+
+    impl_ = {p_buffer, i32_buffer_size, i32_buffer_size};
 
     return ASR_S_OK;
 }
@@ -405,28 +452,21 @@ AsrResult CreateIAsrReadOnlyStringFromUtf8(
     const char*          p_utf8_string,
     IAsrReadOnlyString** pp_out_readonly_string)
 {
-    try
-    {
-        IAsrString* p_string = nullptr;
-        auto        result = CreateIAsrStringFromUtf8(p_utf8_string, &p_string);
-        *pp_out_readonly_string = p_string;
-        return result;
-    }
-    catch (const std::bad_alloc&)
-    {
-        return ASR_E_OUT_OF_MEMORY;
-    }
+    IAsrString* p_string = nullptr;
+    auto        result = CreateIAsrStringFromUtf8(p_utf8_string, &p_string);
+    *pp_out_readonly_string = p_string;
+    return result;
 }
 
 AsrResult CreateIAsrStringFromWChar(
     const wchar_t* p_wstring,
-    size_t         size,
+    size_t         length,
     IAsrString**   pp_out_string)
 {
     try
     {
         auto p_string = std::make_unique<AsrStringCppImpl>();
-        p_string->SetW(p_wstring, size);
+        p_string->SetW(p_wstring, length);
         p_string->AddRef();
         *pp_out_string = p_string.release();
         return ASR_S_OK;
@@ -439,18 +479,11 @@ AsrResult CreateIAsrStringFromWChar(
 
 AsrResult CreateIAsrReadOnlyStringFromWChar(
     const wchar_t*       p_wstring,
-    size_t               size,
+    size_t               length,
     IAsrReadOnlyString** pp_out_readonly_string)
 {
-    try
-    {
-        IAsrString* p_string = nullptr;
-        auto result = CreateIAsrStringFromWChar(p_wstring, size, &p_string);
-        *pp_out_readonly_string = p_string;
-        return result;
-    }
-    catch (std::bad_alloc&)
-    {
-        return ASR_E_OUT_OF_MEMORY;
-    }
+    IAsrString* p_string = nullptr;
+    auto result = CreateIAsrStringFromWChar(p_wstring, length, &p_string);
+    *pp_out_readonly_string = p_string;
+    return result;
 }

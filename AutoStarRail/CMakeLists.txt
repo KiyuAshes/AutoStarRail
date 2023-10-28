@@ -17,7 +17,7 @@ add_library(ASR_EX_PRIVATE_LIBS ALIAS AsrUtils)
 if(${ASR_BUILD_TEST})
     include(GoogleTest)
     asr_add_additional_test(AdditionalTest)
-    target_link_libraries(AdditionalTest PRIVATE AsrUtils Boost::url)
+    target_link_libraries(AdditionalTest PUBLIC AsrUtils Boost::url)
 endif()
 
 add_subdirectory(Core)

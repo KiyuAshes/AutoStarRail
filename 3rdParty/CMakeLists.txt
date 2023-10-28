@@ -285,7 +285,7 @@ if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         FetchContent_MakeAvailable(icu_msvc_2019_binary_arm64)
         set(ICU_ROOT ${icu_msvc_2019_binary_arm64_SOURCE_DIR})
         set(ICU_DIR ${icu_msvc_2019_binary_arm64_SOURCE_DIR})
-        list(APPEND ASR_BUNDLIED_ICU_LIBRARIES
+        list(APPEND ASR_BUNDLED_ICU_LIBRARIES
             ${icu_msvc_2019_binary_arm64_SOURCE_DIR}/binARM64/icudt${ASR_ICU_VERSION}.dll
             ${icu_msvc_2019_binary_arm64_SOURCE_DIR}/binARM64/icuin${ASR_ICU_VERSION}.dll
             ${icu_msvc_2019_binary_arm64_SOURCE_DIR}/binARM64/icuuc${ASR_ICU_VERSION}.dll)
@@ -302,7 +302,7 @@ if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
             FetchContent_MakeAvailable(icu_msvc_2019_binary_win64)
             set(ICU_ROOT ${icu_msvc_2019_binary_win64_SOURCE_DIR})
             set(ICU_DIR ${icu_msvc_2019_binary_win64_SOURCE_DIR})
-            list(APPEND ASR_BUNDLIED_ICU_LIBRARIES
+            list(APPEND ASR_BUNDLED_ICU_LIBRARIES
                 ${icu_msvc_2019_binary_win64_SOURCE_DIR}/bin64/icudt${ASR_ICU_VERSION}.dll
                 ${icu_msvc_2019_binary_win64_SOURCE_DIR}/bin64/icuin${ASR_ICU_VERSION}.dll
                 ${icu_msvc_2019_binary_win64_SOURCE_DIR}/bin64/icuuc${ASR_ICU_VERSION}.dll)
@@ -318,19 +318,18 @@ if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
             FetchContent_MakeAvailable(icu_msvc_2019_binary_win32)
             set(ICU_ROOT ${icu_msvc_2019_binary_win32_SOURCE_DIR})
             set(ICU_DIR ${icu_msvc_2019_binary_win32_SOURCE_DIR})
-            list(APPEND ASR_BUNDLIED_ICU_LIBRARIES
+            list(APPEND ASR_BUNDLED_ICU_LIBRARIES
                 ${icu_msvc_2019_binary_win32_SOURCE_DIR}/bin/icudt${ASR_ICU_VERSION}.dll
                 ${icu_msvc_2019_binary_win32_SOURCE_DIR}/bin/icuin${ASR_ICU_VERSION}.dll
                 ${icu_msvc_2019_binary_win32_SOURCE_DIR}/bin/icuuc${ASR_ICU_VERSION}.dll)
         endif()
     endif()
 
-    find_package(ICU COMPONENTS data i18n uc REQUIRED)
-
-    asr_add_auto_copy_dll_path(ASR_BUNDLIED_ICU_LIBRARIES)
+    asr_add_auto_copy_dll_path(ASR_BUNDLED_ICU_LIBRARIES)
 endif()
 
 find_package(ICU COMPONENTS data i18n uc REQUIRED)
+target_link_libraries(Asr3rdParty INTERFACE ICU::data ICU::i18n ICU::uc)
 
 function(_download_and_config_boost)
     message(STATUS "Downloading and configuring boost 1.82.")
