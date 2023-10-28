@@ -32,10 +32,10 @@ ASR_NS_ANONYMOUS_DETAILS_END
 
 void AsrLogError(IAsrReadOnlyString* p_string)
 {
-    Asr::AsrPtr<IAsrReadOnlyString> p_string_hodler{p_string};
+    Asr::AsrPtr<IAsrReadOnlyString> p_string_holder{p_string, ASR::take_ownership};
     const char*                     p_u8_string{};
 
-    p_string_hodler->GetUtf8(&p_u8_string);
+    p_string_holder->GetUtf8(&p_u8_string);
     AsrLogErrorU8(p_u8_string);
 }
 
@@ -60,10 +60,10 @@ void AsrLogErrorU8WithSourceLocation(
 
 void AsrLogWarning(IAsrReadOnlyString* p_string)
 {
-    Asr::AsrPtr<IAsrReadOnlyString> p_string_hodler{p_string};
+    ASR::AsrPtr<IAsrReadOnlyString> p_string_holder{p_string, ASR::take_ownership};
     const char*                     p_u8_string{};
 
-    p_string_hodler->GetUtf8(&p_u8_string);
+    p_string_holder->GetUtf8(&p_u8_string);
     AsrLogWarningU8(p_u8_string);
 }
 
@@ -88,10 +88,10 @@ void AsrLogWarningU8WithSourceLocation(
 
 void AsrLogInfo(IAsrReadOnlyString* p_string)
 {
-    Asr::AsrPtr<IAsrReadOnlyString> p_string_hodler{p_string};
+    Asr::AsrPtr<IAsrReadOnlyString> p_string_holder{p_string, ASR::take_ownership};
     const char*                     p_u8_string{};
 
-    p_string_hodler->GetUtf8(&p_u8_string);
+    p_string_holder->GetUtf8(&p_u8_string);
     AsrLogInfoU8(p_u8_string);
 }
 
@@ -114,21 +114,21 @@ void AsrLogInfoU8WithSourceLocation(
 
 // ----------------------------------------------------------------
 
-void AsrLogError(AsrString asr_string)
+void AsrLogError(AsrReadOnlyString asr_string)
 {
     Asr::AsrPtr<IAsrReadOnlyString> p_string{};
     asr_string.GetImpl(p_string.Put());
     AsrLogError(p_string.Get());
 }
 
-void AsrLogWarning(AsrString asr_string)
+void AsrLogWarning(AsrReadOnlyString asr_string)
 {
     Asr::AsrPtr<IAsrReadOnlyString> p_string{};
     asr_string.GetImpl(p_string.Put());
     AsrLogWarning(p_string.Get());
 }
 
-void AsrLogInfo(AsrString asr_string)
+void AsrLogInfo(AsrReadOnlyString asr_string)
 {
     Asr::AsrPtr<IAsrReadOnlyString> p_string{};
     asr_string.GetImpl(p_string.Put());

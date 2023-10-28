@@ -36,6 +36,12 @@ ASR_INTERFACE IAsrCaptureManager : public IAsrBase
     ASR_METHOD EnumCaptureInterface(
         const size_t  index,
         IAsrCapture** pp_out_interface) = 0;
+    ASR_METHOD RunCapturePerformanceTest() = 0;
+    ASR_METHOD EnumCapturePerformanceTestResult(
+        const size_t         index,
+        AsrResult*           p_out_error_code,
+        int32_t*             p_out_time_spent_in_ms,
+        IAsrReadOnlyString** pp_out_error_explanation) = 0;
 };
 
 ASR_INTERFACE IAsrSwigCaptureManager : public IAsrSwigBase
@@ -44,10 +50,11 @@ ASR_INTERFACE IAsrSwigCaptureManager : public IAsrSwigBase
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetCaptureManager)
-    std::shared_ptr<IAsrSwigCaptureManager> value;
+    IAsrSwigCaptureManager* value;
 ASR_RET_TYPE_DECLARE_END
 
-ASR_API AsrRetCaptureManager CreateAsrCaptureManager(AsrString json_config);
+ASR_API AsrRetCaptureManager
+CreateAsrCaptureManager(AsrReadOnlyString json_config);
 
 ASR_C_API AsrResult CreateIAsrCaptureManager(
     IAsrReadOnlyString*  p_json_config,

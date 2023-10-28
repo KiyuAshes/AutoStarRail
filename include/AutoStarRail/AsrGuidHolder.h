@@ -74,6 +74,42 @@ auto AsrIidOf() -> const struct _asr_GUID&;
         }                                                                      \
     }
 
+#define ASR_TO_NAMESPACE_QUALIFIER(ns) ns## ::
+
+#define ASR_DEFINE_CLASS_GUID_HOLDER_IN_NAMESPACE(                             \
+    ns,                                                                        \
+    type,                                                                      \
+    l,                                                                         \
+    w1,                                                                        \
+    w2,                                                                        \
+    b1,                                                                        \
+    b2,                                                                        \
+    b3,                                                                        \
+    b4,                                                                        \
+    b5,                                                                        \
+    b6,                                                                        \
+    b7,                                                                        \
+    b8)                                                                        \
+    extern "C++"                                                               \
+    {                                                                          \
+        template <>                                                            \
+        struct AsrIidHolder<ns::type>                                          \
+        {                                                                      \
+            static constexpr AsrGuid iid =                                     \
+                {l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}};                 \
+        };                                                                     \
+        template <>                                                            \
+        constexpr const AsrGuid& AsrIidOf<ns::type>()                          \
+        {                                                                      \
+            return AsrIidHolder<ns::type>::iid;                                \
+        }                                                                      \
+        template <>                                                            \
+        constexpr const AsrGuid& AsrIidOf<ns::type*>()                         \
+        {                                                                      \
+            return AsrIidHolder<ns::type>::iid;                                \
+        }                                                                      \
+    }
+
 #define ASR_UUID_OF(type) AsrIidOf<decltype(type)>()
 
 #endif // ASR_GUIDHOLDER_H

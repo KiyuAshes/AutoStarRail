@@ -19,7 +19,9 @@ TEST(BoostImplementationCheck, UrlExceptionTest)
 
 TEST(BoostImplementationCheck, UrlPartlyResolvedTest)
 {
-    boost::url test{"192.168.1.1:12345"};
+    EXPECT_THROW(boost::url{"192.168.1.1:12345"}, boost::system::system_error);
+
+    boost::url test{"adb://192.168.1.1:12345"};
     EXPECT_EQ(test.host_ipv4_address().to_string(), "192.168.1.1");
     EXPECT_EQ(test.port_number(), 12345);
 }

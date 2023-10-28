@@ -45,9 +45,9 @@
 #define ASR_USING_BASE_CTOR(base) using base::base
 
 #ifdef _MSC_VER
-#define ASR_DISABLE_WARNING_BEGIN ASR_PRAGMA(push)
+#define ASR_DISABLE_WARNING_BEGIN ASR_PRAGMA(warning(push))
 
-#define ASR_IGNORE_UNUSED_PARAMETER ASR_PRAGMA(warning(disable : C4100))
+#define ASR_IGNORE_UNUSED_PARAMETER ASR_PRAGMA(warning(disable : 4100))
 
 #elif defined(__GNUC__)
 #define ASR_DISABLE_WARNING_BEGIN ASR_PRAGMA(GCC diagnostic push)
@@ -64,7 +64,7 @@
 #endif
 
 #ifdef _MSC_VER
-#define ASR_DISABLE_WARNING_END ASR_PRAGMA(pop)
+#define ASR_DISABLE_WARNING_END ASR_PRAGMA(warning(pop))
 
 #elif defined(__GNUC__)
 #define ASR_DISABLE_WARNING_END ASR_PRAGMA(GCC diagnostic pop)

@@ -41,7 +41,7 @@
 
 ASR_CORE_IMPL_NS_BEGIN
 
-const ORTCHAR_T* ToOrtChar(AsrString string);
+const ORTCHAR_T* ToOrtChar(AsrReadOnlyString string);
 
 const ORTCHAR_T* ToOrtChar(IAsrReadOnlyString* p_string);
 
@@ -52,7 +52,7 @@ protected:
     Ort::SessionOptions Session_options_{};
     Ort::AllocatorWithDefaultOptions allocator_{};
 
-    static Ort::MemoryInfo default_cpu_memory_info;
+    static Ort::MemoryInfo& GetDefaultCpuMemoryInfo();
 
 public:
     AsrOrt(const char* model_name);

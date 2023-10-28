@@ -28,8 +28,9 @@ void GlobalLocaleSingleton::SetInstance(
 
 ASR_DEFINE_VARIABLE(g_locale) = InitializeGlobalLocaleSingleton();
 
-const AsrPtr<IAsrReadOnlyString> g_fallback_locale_name{new ::AsrStringCppImpl{
-    U_NAMESPACE_QUALIFIER UnicodeString::fromUTF8("en")}};
+const AsrPtr<IAsrReadOnlyString> g_fallback_locale_name{
+    new ::AsrStringCppImpl{U_NAMESPACE_QUALIFIER UnicodeString::fromUTF8("en")},
+    take_ownership};
 
 auto GetFallbackLocale() -> AsrPtr<IAsrReadOnlyString>
 {
@@ -42,7 +43,7 @@ ASR_CORE_I18N_NS_END
 
 AsrResult AsrSetDefaultLocale(IAsrReadOnlyString* locale_name)
 {
-    ASR::AsrPtr holder{locale_name};
+    ASR::AsrPtr holder{locale_name, ASR::take_ownership};
     ASR::Core::i18n::g_locale.SetInstance(holder);
     return ASR_S_OK;
 }
@@ -55,18 +56,18 @@ AsrResult AsrGetDefaultLocale(IAsrReadOnlyString** pp_out_locale_name)
     return ASR_S_OK;
 }
 
-AsrResult AsrSetDefaultLocale(AsrString locale_name)
+AsrResult AsrSetDefaultLocale(AsrReadOnlyString locale_name)
 {
     ASR::AsrPtr<IAsrReadOnlyString> p_locale_name{};
     locale_name.GetImpl(p_locale_name.Put());
     return ::AsrSetDefaultLocale(p_locale_name.Get());
 }
 
-AsrRetString AsrGetDefaultLocale()
+AsrRetReadOnlyString AsrGetDefaultLocale()
 {
-    AsrRetString                    result{};
+    AsrRetReadOnlyString            result{};
     ASR::AsrPtr<IAsrReadOnlyString> p_locale_name{};
     result.error_code = ::AsrGetDefaultLocale(p_locale_name.Put());
-    result.value = AsrString{p_locale_name};
+    result.value = AsrReadOnlyString{p_locale_name};
     return result;
 }

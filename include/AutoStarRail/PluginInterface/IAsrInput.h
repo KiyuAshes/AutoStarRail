@@ -1,9 +1,7 @@
 #ifndef ASR_IINPUT_H
 #define ASR_IINPUT_H
 
-#include "AutoStarRail/AsrString.hpp"
-#include "AutoStarRail/PluginInterface/IAsrInput.h"
-#include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/IAsrInspectable.h>
 
 typedef enum ASR_CLICK_TYPE
 {
@@ -33,7 +31,7 @@ ASR_DEFINE_GUID(
     0x3e,
     0xbe,
     0x8c);
-ASR_INTERFACE IAsrInput : public IAsrBase
+ASR_INTERFACE IAsrInput : public IAsrInspectable
 {
     /**
      * @brief If the implementation is a mouse, then the function assumes that

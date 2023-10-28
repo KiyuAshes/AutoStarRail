@@ -56,16 +56,15 @@ ASR_DEFINE_GUID(
     0xe7,
     0x69,
     0xef)
-SWIG_ENABLE_SHARED_PTR(IAsrSwigSettings)
 ASR_INTERFACE IAsrSwigSettings : public IAsrSwigBase
 {
-    virtual AsrRetString GetString(const AsrString key) = 0;
-    virtual AsrRetBool   GetBool(const AsrString key) = 0;
-    virtual AsrRetInt    GetInt(const AsrString key) = 0;
-    virtual AsrRetFloat  GetFloat(const AsrString key) = 0;
+    virtual AsrRetReadOnlyString GetString(const AsrReadOnlyString key) = 0;
+    virtual AsrRetBool           GetBool(const AsrReadOnlyString key) = 0;
+    virtual AsrRetInt            GetInt(const AsrReadOnlyString key) = 0;
+    virtual AsrRetFloat          GetFloat(const AsrReadOnlyString key) = 0;
 };
 
-ASR_API std::shared_ptr<IAsrSwigSettings> GetIAsrSwigSettings();
+extern "C++" ASR_API IAsrSwigSettings* GetIAsrSwigSettings();
 
 SWIG_IGNORE(GetIAsrSettings)
 ASR_C_API AsrResult GetIAsrSettings(IAsrSettings** pp_settings);

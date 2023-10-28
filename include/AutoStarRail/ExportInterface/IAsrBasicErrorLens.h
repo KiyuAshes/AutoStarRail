@@ -19,6 +19,9 @@ ASR_DEFINE_GUID(
     0xea,
     0xdd);
 SWIG_IGNORE(IAsrBasicErrorLens)
+/**
+ * A basic error lens implementation for developers.
+ */
 ASR_INTERFACE IAsrBasicErrorLens : public IAsrErrorLens
 {
     ASR_METHOD RegisterExplanation(
@@ -42,7 +45,6 @@ ASR_DEFINE_GUID(
     0xe4,
     0x1f,
     0x9b);
-SWIG_ENABLE_SHARED_PTR(IAsrSwigBasicErrorLens)
 SWIG_ENABLE_DIRECTOR(IAsrSwigBasicErrorLens)
 ASR_INTERFACE IAsrSwigBasicErrorLens : public IAsrSwigErrorLens
 {
@@ -53,7 +55,7 @@ ASR_INTERFACE IAsrSwigBasicErrorLens : public IAsrSwigErrorLens
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetBasicErrorLens)
-    std::shared_ptr<IAsrSwigErrorLens> value;
+    IAsrSwigErrorLens* value;
 ASR_RET_TYPE_DECLARE_END
 
 SWIG_IGNORE(CreateIAsrBasicErrorLens)

@@ -1,10 +1,13 @@
 #include "AutoStarRail/IAsrBase.h"
-#include "AutoStarRail/PluginInterface/IAsrPlugin.h"
-#include "AutoStarRail/Utils/QueryInterfaceImpl.hpp"
+#include <AutoStarRail/PluginInterface/IAsrPlugin.h>
+#include <AutoStarRail/ExportInterface/AsrLogger.h>
+#include <AutoStarRail/Utils/QueryInterface.hpp>
+#include <AutoStarRail/Utils/StringUtils.h>
+#include <AutoStarRail/Utils/GetIids.hpp>
 #define ASR_BUILD_SHARED
 
 #include "PluginImpl.h"
-#include <array>
+#include <stdexcept>
 
 ASR_NS_BEGIN
 
@@ -19,7 +22,9 @@ AsrResult AdbCapturePlugin::QueryInterface(
     return ASR::Utils::QueryInterface<IAsrPlugin>(this, iid, pp_out_object);
 }
 
-AsrResult AdbCapturePlugin::EnumFeature(const size_t index, AsrPluginFeature* p_out_feature)
+AsrResult AdbCapturePlugin::EnumFeature(
+    const size_t      index,
+    AsrPluginFeature* p_out_feature)
 {
     static std::array features{
         ASR_PLUGIN_FEATURE_CAPTURE_FACTORY,
@@ -32,13 +37,14 @@ AsrResult AdbCapturePlugin::EnumFeature(const size_t index, AsrPluginFeature* p_
     }
     catch (const std::out_of_range& ex)
     {
+        ASR_LOG_ERROR(ex.what());
         return ASR_E_OUT_OF_RANGE;
     }
 }
 
-AsrResult AdbCapturePlugin::GetFeatureInterface(
+AsrResult AdbCapturePlugin::CreateFeatureInterface(
     AsrPluginFeature feature,
-    IAsrBase**       pp_out_interface)
+    void**           pp_out_interface)
 {
     // TODO: Create instance for every feature.
     switch (feature)
@@ -49,6 +55,19 @@ AsrResult AdbCapturePlugin::GetFeatureInterface(
         *pp_out_interface = nullptr;
         return ASR_E_OUT_OF_RANGE;
     }
+}
+
+AsrResult AdbCapturePlugin::GetIids(IAsrIidVector** pp_out_iids)
+{
+    return ASR::Utils::GetIids<
+        ASR::Utils::IAsrCaptureFactoryInheritanceInfo,
+        AdbCapturePlugin>(pp_out_iids);
+}
+
+AsrResult AdbCapturePlugin::GetRuntimeClassName(
+    IAsrReadOnlyString** pp_out_class_name)
+{
+    ASR_UTILS_GET_RUNTIME_CLASS_NAME_IMPL(Asr::AdbCapturePlugin, pp_out_class_name);
 }
 
 ASR_NS_END

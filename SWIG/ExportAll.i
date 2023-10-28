@@ -16,6 +16,7 @@
 %include <typemaps.i>
 %include <cpointer.i>
 %include <std_string.i>
+%include <std_vector.i>
 %include <wchar.i>
 %include <std_wstring.i>
 %include <std_shared_ptr.i>
@@ -27,10 +28,10 @@
 %typemap(javadirectorin) char16_t* "$jniinput"
 %typemap(javadirectorout) char16_t* "$javacall"
 
-%typemap(jni) void AsrString::GetUtf16 "jstring"
-%typemap(jtype) void AsrString::GetUtf16 "String"
-%typemap(jstype) void AsrString::GetUtf16 "String"
-%typemap(javaout) void AsrString::GetUtf16 {
+%typemap(jni) void AsrReadOnlyString::GetUtf16 "jstring"
+%typemap(jtype) void AsrReadOnlyString::GetUtf16 "String"
+%typemap(jstype) void AsrReadOnlyString::GetUtf16 "String"
+%typemap(javaout) void AsrReadOnlyString::GetUtf16 {
     return $jnicall;
 }
 
@@ -74,6 +75,7 @@
 
 %include <AutoStarRail/AsrExport.h>
 %include <AutoStarRail/IAsrBase.h>
+%include <AutoStarRail/IAsrInspectable.h>
 %include <AutoStarRail/AsrString.hpp>
 
 %include <AutoStarRail/PluginInterface/IAsrErrorLens.h>

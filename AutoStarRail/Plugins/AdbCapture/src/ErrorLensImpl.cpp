@@ -1,6 +1,6 @@
 #include "ErrorLensImpl.h"
 #include <AutoStarRail/Utils/StringUtils.h>
-#include <AutoStarRail/Utils/QueryInterfaceImpl.hpp>
+#include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/fmt.h>
 #include <boost/container_hash/hash.hpp>
 
@@ -46,13 +46,13 @@ AsrResult AdbCaptureErrorLens::QueryInterface(
     return ASR::Utils::QueryInterface<IAsrErrorLens>(this, iid, pp_out_object);
 }
 
-AsrResult AdbCaptureErrorLens::TranslateError(
+AsrResult AdbCaptureErrorLens::GetErrorMessage(
     IAsrReadOnlyString*  locale_name,
     AsrResult            error_code,
     IAsrReadOnlyString** out_string)
 {
-    AsrPtr locale_name_ptr{locale_name};
-    if (const auto locale_it = map_.find(locale_name); locale_it != map_.end())
+    AsrPtr locale_name_ptr{locale_name, ASR::take_ownership};
+    if (const auto locale_it = map_.find(locale_name_ptr); locale_it != map_.end())
     {
         const auto& error_code_map = locale_it->second;
         if (const auto it = error_code_map.find(error_code);

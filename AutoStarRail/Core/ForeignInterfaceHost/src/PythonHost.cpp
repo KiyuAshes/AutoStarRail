@@ -1,20 +1,21 @@
-#include "AutoStarRail/IAsrBase.h"
-#include <cstdint>
 #ifdef ASR_EXPORT_PYTHON
 
 #include "PythonHost.h"
-#include <AutoStarRail/Utils/Utils.hpp>
-#include <AutoStarRail/Core/Logger/Logger.h>
+#include "TemporaryPluginObjectStorage.h"
+#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Core/Exceptions/PythonException.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
+#include <AutoStarRail/Core/Logger/Logger.h>
 #include <Python.h>
-#include <utility>
-#include <string_view>
+#include <boost/filesystem.hpp>
 #include <stdexcept>
+#include <string_view>
 #include <tuple>
+#include <utility>
 
 static_assert(
     std::is_same_v<_object*, PyObject*>,
-    "Type PyObject is not type _object. Consider to check if Python.h change "
+    "Type PyObject is not type _object. Consider to check if \"Python.h\" change "
     "the type declaration.");
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
@@ -70,7 +71,7 @@ PyObject* PyObjectPtr::Get() const noexcept { return ptr_; }
 
 PyObjectPtr::operator bool() const noexcept
 {
-    return Get() == PyObjectPtr() ? false : true;
+    return !(Get() == PyObjectPtr());
 }
 
 PyObject* PyObjectPtr::Detach() noexcept
@@ -85,6 +86,20 @@ PyObjectPtr PyUnicodeFromWString(const std::wstring_view std_wstring_view)
     return PyObjectPtr::Attach(PyUnicode_FromWideChar(
         std_wstring_view.data(),
         std_wstring_view.size()));
+}
+
+template <class T>
+bool IsSubDirectory(T path, T root)
+{
+    while (path != T{})
+    {
+        if (path == root)
+        {
+            return true;
+        }
+        path = path.parent_path();
+    }
+    return false;
 }
 
 ASR_NS_ANONYMOUS_DETAILS_END
@@ -160,6 +175,18 @@ public:
         return *this;
     }
 
+    auto CheckAndGet() -> PyObjectPtr
+    {
+        CheckPointer();
+        return ptr_;
+    }
+
+    /**
+     * @brief If internal pointer is null, it indicates that an error occurred
+     * in the last operation。 Then this function will THROW an exception.
+     */
+    void Check() { CheckPointer(); };
+
     static void RaiseIfError()
     {
         PyObject*   p_type{nullptr};
@@ -174,12 +201,11 @@ public:
             goto on_error_not_found;
         }
         p_py_error_msg = PyUnicode_AsUTF8AndSize(p_value, &error_text_size);
-        if (p_py_error_msg)
+        if (p_py_error_msg == nullptr)
         {
             goto on_error_not_found;
         }
-        ASR_CORE_LOG_ERROR(p_py_error_msg);
-        return;
+        throw PythonException{p_py_error_msg};
 
     on_error_not_found:
         ASR_CORE_LOG_WARN("Error happened when calling python code,"
@@ -216,14 +242,17 @@ class PyInterpreter
         {
             InitException::Raise();
         }
+        // import sys
         auto py_str_sys = Details::PyUnicodeFromWString(L"sys");
         sys_module_ = PyObjectPtr::Attach(PyImport_Import(py_str_sys.Get()));
-        PythonResult(sys_module_)
+        PythonResult{sys_module_}
+            // {anonymous variable} = sys.path
             .then(
                 [](auto sys_module) {
                     return PyObjectPtr::Attach(
                         PyObject_GetAttrString(sys_module, "path"));
                 })
+            // TODO: review the code below! It has bug.
             .then(
                 [](auto sys_path)
                 {
@@ -236,7 +265,7 @@ class PyInterpreter
                     const auto py_zero =
                         PyObjectPtr::Attach(PyLong_FromLong(0));
 
-                    PythonResult(PyObjectPtr::Attach(PyTuple_New(2)))
+                    PythonResult{PyObjectPtr::Attach(PyTuple_New(2))}
                         .then(
                             [value_py_import_path = py_import_path,
                              value_py_zero = py_zero](auto arguments)
@@ -256,6 +285,7 @@ class PyInterpreter
                                     value_py_import_path.Get());
                                 if (set_tuple_result == -1)
                                 {
+                                    // TODO: throw exception
                                 }
                             })
                         .then(
@@ -285,8 +315,160 @@ public:
         return ASR_E_NO_IMPLEMENTATION;
     }
     auto LoadPlugin(const std::filesystem::path& path)
-        -> ASR::Utils::Expected<CommonPluginPtr> override;
+        -> ASR::Utils::Expected<AsrPtr<IAsrPlugin>> override;
+
+    static auto ImportPluginModule(
+        const std::filesystem::path& py_plugin_initializer)
+        -> ASR::Utils::Expected<PyObjectPtr>;
+    static auto ResolveClassName(const std::filesystem::path& relative_path)
+        -> ASR::Utils::Expected<std::wstring>;
+    auto GetPluginInitializer(PyObject& py_module) -> PyObjectPtr;
 };
+
+auto PythonRuntime::LoadPlugin(const std::filesystem::path& path)
+    -> ASR::Utils::Expected<AsrPtr<IAsrPlugin>>
+{
+    AsrPtr<IAsrPlugin> result{};
+
+    const auto expected_py_module = ImportPluginModule(path);
+    if (!expected_py_module)
+    {
+        return tl::make_unexpected(expected_py_module.error());
+    }
+    const auto& py_module = expected_py_module.value();
+    p_plugin_module = py_module;
+
+    try
+    {
+        const auto py_plugin_initializer =
+            GetPluginInitializer(*py_module.Get());
+        PythonResult{PyObjectPtr::Attach(PyTuple_New(0))}
+            .then(
+                [&result, &py_plugin_initializer](auto py_null_tuple)
+                {
+                    auto owner = g_plugin_object.GetOwnership();
+                    auto lambda_result = PyObjectPtr::Attach(PyObject_Call(
+                        py_plugin_initializer.Get(),
+                        py_null_tuple,
+                        nullptr));
+                    if (lambda_result)
+                    {
+                        result = owner.GetObject();
+                    }
+                    return lambda_result;
+                })
+            .Check();
+
+        // Initialize successfully. Store the module to member variable.
+        p_plugin_module = py_module;
+        return result;
+    }
+    catch (const PythonException& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        return tl::make_unexpected(ASR_E_PYTHON_ERROR);
+    }
+}
+
+auto PythonRuntime::ResolveClassName(const std::filesystem::path& relative_path)
+    -> ASR::Utils::Expected<std::wstring>
+{
+    std::wstring result{};
+
+    if (relative_path.begin() == relative_path.end())
+    {
+        return tl::make_unexpected(ASR_E_INVALID_PATH);
+    }
+
+    const auto prev_end_relative_path = std::prev(relative_path.end());
+    for (auto it = relative_path.begin(); it != prev_end_relative_path; ++it)
+    {
+        const auto part_string = it->wstring();
+        if (part_string
+            == std::wstring{std::filesystem::path::preferred_separator})
+        {
+            return tl::make_unexpected(ASR_E_INVALID_PATH);
+        }
+        result += part_string;
+        result += L'.';
+    }
+    result += prev_end_relative_path->wstring();
+    return result;
+}
+
+auto PythonRuntime::ImportPluginModule(
+    const std::filesystem::path& py_plugin_initializer)
+    -> ASR::Utils::Expected<PyObjectPtr>
+{
+    const auto current_path = std::filesystem::current_path();
+    if (!Details::IsSubDirectory(
+            py_plugin_initializer,
+            std::filesystem::current_path()))
+    {
+        ASR_CORE_LOG_ERROR(
+            "The given path is not  is not a subdirectory of the current working directory.");
+
+        const auto& w_path_string = py_plugin_initializer.wstring();
+        const auto& w_current_path_string = current_path.wstring();
+        // Use IAsrReadOnlySting to convert wchar string to utf8 string.
+        AsrPtr<IAsrReadOnlyString> p_path_string{};
+        AsrPtr<IAsrReadOnlyString> p_current_path_string{};
+        CreateIAsrReadOnlyStringFromWChar(
+            w_path_string.c_str(),
+            w_path_string.size(),
+            p_path_string.Put());
+        CreateIAsrReadOnlyStringFromWChar(
+            w_current_path_string.c_str(),
+            w_current_path_string.size(),
+            p_current_path_string.Put());
+        ASR_CORE_LOG_ERROR(
+            "NOTE: The given path is \"{}\".\nThe current path is \"{}\".",
+            p_path_string,
+            p_current_path_string);
+        return tl::make_unexpected(ASR_E_INVALID_PATH);
+    }
+
+    const auto relative_path = std::filesystem::relative(py_plugin_initializer);
+    const auto package_path = ResolveClassName(relative_path);
+    if (!package_path)
+    {
+        return tl::make_unexpected(package_path.error());
+    }
+
+    try
+    {
+        return PythonResult{Details::PyUnicodeFromWString(package_path.value())}
+            .then(
+                [](auto py_package_path) {
+                    return PyObjectPtr::Attach(
+                        PyImport_Import(py_package_path));
+                })
+            .CheckAndGet();
+    }
+    catch (const PythonException& ex)
+    {
+        ASR_CORE_LOG_ERROR("Import python plugin module failed.");
+
+        AsrPtr<IAsrReadOnlyString> p_package_name{};
+        ::CreateIAsrReadOnlyStringFromWChar(
+            package_path->c_str(),
+            package_path->size(),
+            p_package_name.Put());
+        ASR_CORE_LOG_ERROR(
+            "NOTE: The python plugin module name is \"{}\".",
+            p_package_name);
+        return tl::make_unexpected(ASR_E_PYTHON_ERROR);
+    }
+}
+
+auto PythonRuntime::GetPluginInitializer(PyObject& py_module) -> PyObjectPtr
+{
+    return PythonResult{
+        PyObjectPtr::Attach(PyObject_GetAttrString(
+            &py_module,
+            ASR_CORE_FOREIGNINTERFACEHOST_ASRCOCREATEPLUGIN_NAME))}
+        .CheckAndGet();
+}
 
 ASR_NS_PYTHONHOST_END
 

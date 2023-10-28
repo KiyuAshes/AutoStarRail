@@ -1,13 +1,14 @@
 #include "PluginManager.h"
+#include "AutoStarRail/Utils/StringUtils.h"
 #include <AutoStarRail/AsrConfig.h>
 #include <AutoStarRail/AsrPtr.hpp>
 #include <AutoStarRail/AsrString.hpp>
+#include <AutoStarRail/Core/i18n/AsrResultTranslator.h>
+#include <AutoStarRail/ExportInterface/IAsrCaptureManager.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
-#include <AutoStarRail/ExportInterface/IAsrCaptureManager.h>
-#include <AutoStarRail/Core/i18n/AsrResultTranslator.h>
-#include <AutoStarRail/Utils/QueryInterfaceImpl.hpp>
-#include <AutoStarRail/Utils/Utils.hpp>
+#include <AutoStarRail/Utils/QueryInterface.hpp>
+#include "AutoStarRail/Utils/CommonUtils.hpp"
 #include <utility>
 #include <vector>
 
@@ -18,7 +19,8 @@ class CaptureManager final : public IAsrCaptureManager
 public:
     struct ErrorInfo
     {
-        AsrPtr<IAsrReadOnlyString> p_error_explanation;
+        AsrPtr<IAsrReadOnlyString> p_error_message;
+        int32_t                    time_spent_in_ms;
         AsrResult                  error_code;
     };
 
@@ -27,12 +29,13 @@ private:
     struct [[nodiscard(
         "Do not acquire an instance and discard it.")]] CaptureInstance
     {
-        AsrString        name;
-        ExpectedInstance instance;
+        AsrReadOnlyString name;
+        ExpectedInstance  instance;
     };
 
     ASR::Utils::RefCounter<CaptureManager> ref_counter_;
     std::vector<CaptureInstance>           instances_;
+    std::vector<ErrorInfo>                 performance_results_;
 
 public:
     // IAsrBase
@@ -42,11 +45,17 @@ public:
     // IAsrCaptureManager
     AsrResult EnumCaptureLoadErrorState(
         const size_t         index,
-        AsrResult*           p_error_code,
+        AsrResult*           p_out_error_code,
         IAsrReadOnlyString** pp_out_error_explanation) override;
     AsrResult EnumCaptureInterface(
         const size_t  index,
         IAsrCapture** pp_out_interface) override;
+    AsrResult RunCapturePerformanceTest() override;
+    AsrResult EnumCapturePerformanceTestResult(
+        const size_t         index,
+        AsrResult*           p_out_error_code,
+        int32_t*             p_out_time_spent_in_ms,
+        IAsrReadOnlyString** pp_out_error_explanation) override;
     // impl
     void AddInstance(
         AsrPtr<IAsrReadOnlyString> p_name,
@@ -78,7 +87,7 @@ AsrResult CaptureManager::QueryInterface(
 
 AsrResult CaptureManager::EnumCaptureLoadErrorState(
     const size_t         index,
-    AsrResult*           p_error_code,
+    AsrResult*           p_out_error_code,
     IAsrReadOnlyString** pp_out_error_explanation)
 {
     const auto size = instances_.size();
@@ -89,17 +98,23 @@ AsrResult CaptureManager::EnumCaptureLoadErrorState(
     const auto& instance = instances_[index];
     instance.instance
         .or_else(
-            [p_error_code, pp_out_error_explanation](const auto& error_info)
+            [p_out_error_code, pp_out_error_explanation](const auto& error_info)
             {
-                *p_error_code = error_info.error_code;
-                error_info.p_error_explanation->AddRef();
-                *pp_out_error_explanation =
-                    error_info.p_error_explanation.Get();
+                if (p_out_error_code)
+                {
+                    *p_out_error_code = error_info.error_code;
+                }
+                if (pp_out_error_explanation)
+                {
+                    error_info.p_error_message->AddRef();
+                    *pp_out_error_explanation =
+                        error_info.p_error_message.Get();
+                }
             })
         .map(
-            [p_error_code, pp_out_error_explanation](const auto&)
+            [p_out_error_code, pp_out_error_explanation](const auto&)
             {
-                *p_error_code = ASR_S_OK;
+                *p_out_error_code = ASR_S_OK;
                 const auto null_string = ASR::Details::CreateNullAsrString();
                 null_string->AddRef();
                 *pp_out_error_explanation = null_string.Get();
@@ -111,10 +126,10 @@ AsrResult CaptureManager::EnumCaptureInterface(
     const size_t  index,
     IAsrCapture** pp_out_interface)
 {
-    AsrResult  result{ASR_E_UNDEFINED_RETURN_VALUE};
-    const auto size = instances_.size();
-    if (index >= size)
+    AsrResult result{ASR_E_UNDEFINED_RETURN_VALUE};
+    if (index >= instances_.size())
     {
+        *pp_out_interface = nullptr;
         return ASR_E_OUT_OF_RANGE;
     }
     const auto& instance = instances_[index];
@@ -135,6 +150,47 @@ AsrResult CaptureManager::EnumCaptureInterface(
     return result;
 }
 
+AsrResult CaptureManager::RunCapturePerformanceTest()
+{
+    return ASR_E_NO_IMPLEMENTATION;
+}
+
+AsrResult CaptureManager::EnumCapturePerformanceTestResult(
+    const size_t         index,
+    AsrResult*           p_out_error_code,
+    int32_t*             p_out_time_spent_in_ms,
+    IAsrReadOnlyString** pp_out_error_explanation)
+{
+    ErrorInfo* p_error_info{};
+    try
+    {
+        p_error_info = &performance_results_.at(index);
+    }
+    catch (const std::out_of_range& ex)
+    {
+        ASR_CORE_LOG_ERROR(
+            "Index out of range when calling EnumCapturePerformanceTestResult. The error info size is {}. Input index is {}. Message: \"{}\".",
+            performance_results_.size(),
+            index,
+            ex.what());
+        return ASR_E_OUT_OF_RANGE;
+    }
+    if (p_out_error_code)
+    {
+        *p_out_error_code = p_error_info->error_code;
+    }
+    if (p_out_time_spent_in_ms)
+    {
+        *p_out_time_spent_in_ms = p_error_info->time_spent_in_ms;
+    }
+    if (pp_out_error_explanation)
+    {
+        *pp_out_error_explanation = p_error_info->p_error_message.Get();
+        (*pp_out_error_explanation)->AddRef();
+    }
+    return ASR_S_OK;
+}
+
 void CaptureManager::ReserveInstanceContainer(const std::size_t instance_count)
 {
     instances_.reserve(instance_count);
@@ -144,7 +200,7 @@ void CaptureManager::AddInstance(
     AsrPtr<IAsrReadOnlyString> p_name,
     AsrPtr<IAsrCapture>        p_instance)
 {
-    instances_.emplace_back(AsrString{std::move(p_name)}, p_instance);
+    instances_.emplace_back(AsrReadOnlyString{std::move(p_name)}, p_instance);
 }
 
 void CaptureManager::AddInstance(
@@ -152,13 +208,15 @@ void CaptureManager::AddInstance(
     const CaptureManager::ErrorInfo& error_info)
 {
     instances_.emplace_back(
-        AsrString{std::move(p_name)},
+        AsrReadOnlyString{std::move(p_name)},
         tl::make_unexpected(error_info));
 }
 
 void CaptureManager::AddInstance(const CaptureManager::ErrorInfo& error_info)
 {
-    instances_.emplace_back(AsrString{}, tl::make_unexpected(error_info));
+    instances_.emplace_back(
+        AsrReadOnlyString{},
+        tl::make_unexpected(error_info));
 }
 
 ASR_NS_END
@@ -170,15 +228,34 @@ auto GetName(ASR::AsrPtr<T> p_object)
     -> ASR::Utils::Expected<ASR::AsrPtr<IAsrReadOnlyString>>
 {
     ASR::AsrPtr<IAsrReadOnlyString> result{};
-    if (const auto error_code = p_object->GetName(result.Put());
-        ASR::IsOk(error_code)) [[likely]]
+    const auto error_code = p_object->GetRuntimeClassName(result.Put());
+    if (ASR::IsOk(error_code)) [[likely]]
     {
         return result;
     }
-    else [[unlikely]]
+    return tl::make_unexpected(error_code);
+}
+
+auto LogAndGetErrorMessageWhenGetNameFailed(
+    const AsrResult                        error_code,
+    const ASR::AsrPtr<IAsrCaptureFactory>& p_factory)
+    -> ASR::AsrPtr<IAsrReadOnlyString>
+{
+    ASR::AsrPtr<IAsrReadOnlyString> result{};
+    ASR::AsrPtr<IAsrInspectable>    p_factory_base{};
+    p_factory.As(p_factory_base);
+    if (const auto get_error_message_result = ::AsrGetErrorMessage(
+            p_factory_base.Get(),
+            error_code,
+            result.Put());
+        ASR::IsOk(get_error_message_result)) [[unlikely]]
     {
-        return tl::make_unexpected(error_code);
+        ASR::Core::i18n::GetExplanationWhenTranslateErrorFailed(
+            error_code,
+            get_error_message_result,
+            result.Put());
     }
+    return result;
 }
 
 void OnCreateCaptureInstanceFailed(
@@ -187,21 +264,21 @@ void OnCreateCaptureInstanceFailed(
     const ASR::AsrPtr<ASR::CaptureManager>& p_capture_manager)
 {
     std::string                     error_message;
-    ASR::AsrPtr<IAsrBase>           p_capture_base{};
-    ASR::AsrPtr<IAsrReadOnlyString> p_error_explanation{};
-    if (const auto get_error_explanation_result = ::GetErrorExplanation(
+    ASR::AsrPtr<IAsrInspectable>    p_capture_base{};
+    ASR::AsrPtr<IAsrReadOnlyString> p_error_message{};
+    if (const auto get_error_message_result = ::AsrGetErrorMessage(
             p_capture_base.Get(),
             in_error_info.error_code,
-            p_error_explanation.Put());
-        ASR::IsOk(get_error_explanation_result))
+            p_error_message.Put());
+        ASR::IsOk(get_error_message_result))
     {
         const char* p_u8_explanation{nullptr};
-        p_error_explanation->GetUtf8(&p_u8_explanation);
+        p_error_message->GetUtf8(&p_u8_explanation);
         error_message = ASR::fmt::format(
             R"(Error happened when creating capture instance. Error code: {}.\nError explanation: "{}".)",
             in_error_info.error_code,
             p_u8_explanation);
-        in_error_info.p_error_explanation = p_error_explanation;
+        in_error_info.p_error_message = p_error_message;
     }
     else
     {
@@ -219,11 +296,18 @@ AsrResult CreateIAsrCaptureManager(
     IAsrReadOnlyString*  p_json_config,
     IAsrCaptureManager** pp_out_capture_manager)
 {
-    AsrResult                       result{ASR_S_OK};
-    ASR::AsrPtr<IAsrReadOnlyString> p_locale_name{};
-    ASR::AsrPtr p_capture_manager{new ASR::CaptureManager()};
-    ASR::AsrPtr<IAsrCaptureManager> p_result{};
-
+    AsrResult                        result{ASR_S_OK};
+    ASR::AsrPtr<IAsrReadOnlyString>  p_locale_name{};
+    ASR::AsrPtr<ASR::CaptureManager> p_capture_manager{};
+    ASR::AsrPtr<IAsrCaptureManager>  p_result{};
+    try
+    {
+        p_capture_manager = {new ASR::CaptureManager(), ASR::take_ownership};
+    }
+    catch (std::bad_alloc&)
+    {
+        return ASR_E_OUT_OF_MEMORY;
+    }
     ::AsrGetDefaultLocale(p_locale_name.Put());
     p_capture_manager.As(p_result);
     const auto capture_factories =
@@ -241,24 +325,13 @@ AsrResult CreateIAsrCaptureManager(
                 {
                     result = ASR_S_FALSE;
                     error_info.error_code = error_code;
-                    ASR::AsrPtr<IAsrBase>           p_factory_base{};
-                    ASR::AsrPtr<IAsrReadOnlyString> p_error_explanation{};
-                    p_factory.As(p_factory_base);
-                    if (const auto get_error_explanation_result =
-                            ::GetErrorExplanation(
-                                p_factory_base.Get(),
-                                error_code,
-                                p_error_explanation.Put());
-                        ASR::IsOk(get_error_explanation_result)) [[unlikely]]
-                    {
-                        ASR::Core::i18n::GetExplanationWhenTranslateErrorFailed(
+                    error_info.p_error_message =
+                        Details::LogAndGetErrorMessageWhenGetNameFailed(
                             error_code,
-                            get_error_explanation_result,
-                            p_error_explanation.Put());
-                    }
-                    error_info.p_error_explanation = p_error_explanation;
+                            p_factory);
                     p_capture_manager->AddInstance(error_info);
                 })
+            // try to create instance
             .and_then(
                 [&p_capture_name, &p_factory, &p_json_config](
                     const auto& p_capture_factory_name)
@@ -290,6 +363,7 @@ AsrResult CreateIAsrCaptureManager(
                         p_capture_name,
                         p_capture_manager);
                 })
+            // add instance to capture manager
             .map(
                 [&p_capture_manager, &p_capture_name](const auto& p_instance) {
                     p_capture_manager->AddInstance(p_capture_name, p_instance);

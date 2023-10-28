@@ -5,7 +5,7 @@
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/Core/Exceptions/InterfaceNotFoundException.h>
 #include <AutoStarRail/AsrPtr.hpp>
-#include <AutoStarRail/Utils/Utils.hpp>
+#include "AutoStarRail/Utils/CommonUtils.hpp"
 #include <AutoStarRail/IAsrBase.h>
 #include "ForeignInterfaceHost.h"
 #include "ForeignInterfaceHostEnum.h"
@@ -25,7 +25,7 @@ class Plugin
 {
     friend class PluginManager;
 
-    CommonPluginPtr                          p_plugin_{AsrPtr<IAsrPlugin>{}};
+    AsrPtr<IAsrPlugin>                       p_plugin_{};
     std::unique_ptr<PluginDesc>              desc_;
     std::unique_ptr<IForeignLanguageRuntime> up_runtime_;
     ForeignInterfaceLanguage                 language_;

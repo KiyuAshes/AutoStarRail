@@ -6,7 +6,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # fix missing CMAKE_ASM_MASM_COMPILE_OBJECT or CMAKE_ASM_NASM_COMPILE_OBJECT
 # NOTICE: I have modified the CMakeLists.txt in boost context, so that boost can explicitly use MASM on Windows.
-#         Then I MUST enable ASM_NASM after ASM_MASM, therefore CMake will compile asm files in OpenCV using NASM compiler as defualt asm complier.
+#         Then I MUST enable ASM_NASM after ASM_MASM, therefore CMake will compile asm files in OpenCV using NASM compiler as default asm compiler.
 if(CMAKE_ASM_MASM_COMPILER)
     enable_language(ASM_MASM)
 endif()
@@ -32,7 +32,7 @@ endif()
 
 option(ASR_BUILD_TEST "" OFF)
 option(ASR_BUILD_QT5_GUI "" ON)
-option(USE_LLD "Using lld instead of using ld." OFF)
+option(ASR_USE_LLD "Using lld instead of using ld." OFF)
 option(ASR_USE_CCACHE "Using CCACHE" OFF)
 
 option(ASR_USE_BUNDLIED_EIGEN "强制使用下载的Eigen源码构建OpenCV" OFF)
@@ -54,6 +54,10 @@ include(AsrUtils)
 
 include(AsrSetLibPrefix)
 include(AsrSetOutputPath)
+
+if(${EXPORT_PYTHON})
+    find_package(Python3 COMPONENTS Development REQUIRED)
+endif()
 
 include(3rdParty/CMakeLists.txt)
 
@@ -78,7 +82,8 @@ if(MSVC)
     add_compile_options(/Zc:__cplusplus /utf-8)
 endif()
 
-if(${USE_LLD} AND NOT MSVC)
+if(${ASR_USE_LLD} AND NOT MSVC)
+    option(ASR_LLD_EXECUTABLE "lld")
     find_program(
         LLD_FOUND
         lld REQUIRED)

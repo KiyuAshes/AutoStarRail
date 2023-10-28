@@ -45,11 +45,6 @@ asr_add_core_component(i18n)
 add_library(libAsrCore SHARED)
 add_dependencies(libAsrCore AsrCoreObjects)
 
-if(${ASR_BUILD_TEST})
-    add_library(AsrStaticCore STATIC)
-    add_dependencies(AsrStaticCore libAsrCore)
-endif()
-
 add_compile_definitions(ASR_BUILD_SHARED)
 
 # 配置导出库
@@ -84,6 +79,7 @@ endif()
 if(${EXPORT_PYTHON})
     find_package(Python3 COMPONENTS Development REQUIRED)
     asr_add_swig_export_library(Python libAsrCorePythonExport "${ASR_SWIG_FILES}")
+    set_property(TARGET libAsrCorePythonExport PROPERTY SWIG_COMPILE_OPTIONS -threads)
 
     target_include_directories(AsrCoreObjects PUBLIC ${Python3_INCLUDE_DIRS})
     target_link_libraries(AsrCoreObjects PUBLIC ${Python3_LIBRARIES})
@@ -124,6 +120,6 @@ target_compile_definitions(AsrCoreObjects PUBLIC ${ASR_EXPORT_MACRO_LIST})
 target_link_libraries(libAsrCore PUBLIC AsrCoreObjects)
 
 if(${ASR_BUILD_TEST})
-    target_link_libraries(AsrStaticCore PUBLIC AsrCoreObjects)
-    asr_add_core_test(ForeignInterfaceHost ASR_EX_PRIVATE_LIBS)
+    asr_add_core_test(ForeignInterfaceHost)
+    asr_add_core_test(i18n)
 endif()

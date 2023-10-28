@@ -12,11 +12,15 @@ ASR_CORE_I18N_NS_BEGIN
 AsrResult TranslateError(
     IAsrReadOnlyString*  locale_name,
     AsrResult            error_code,
-    IAsrReadOnlyString** out_string)
+    IAsrReadOnlyString** pp_out_string)
 {
-    const char*    p_locale_name{nullptr};
+    if (pp_out_string == nullptr)
+    {
+        return ASR_E_INVALID_POINTER;
+    }
+
+    const char*    p_locale_name{};
     const char8_t* p_u8_locale_name{};
-    std::u8string  u8_return_string{};
 
     auto result = locale_name->GetUtf8(&p_locale_name);
     if (!ASR::IsOk(result))
@@ -30,10 +34,10 @@ AsrResult TranslateError(
         p_u8_locale_name = reinterpret_cast<const char8_t*>(p_locale_name);
     }
 
-    result = g_translator_data.GetErrorExplanation(
+    result = g_translator_data.GetErrorMessage(
         p_u8_locale_name,
         error_code,
-        &u8_return_string);
+        pp_out_string);
 
     if (!ASR::IsOk(result))
     {
@@ -45,22 +49,16 @@ AsrResult TranslateError(
         AsrPtr<IAsrString> p_error_string;
         ::CreateIAsrStringFromUtf8(error_string.c_str(), p_error_string.Put());
         p_error_string->AddRef();
-        *out_string = p_error_string.Get();
+        *pp_out_string = p_error_string.Get();
         return result;
     }
 
-    AsrPtr<IAsrString> p_error_string;
-    ::CreateIAsrStringFromUtf8(
-        reinterpret_cast<const char*>(u8_return_string.c_str()),
-        p_error_string.Put());
-    p_error_string->AddRef();
-    *out_string = p_error_string.Get();
     return result;
 }
 
 I18n<AsrResult> MakeAsrResultTranslatorData()
 {
-    TranslateResources<AsrResult> translate_resource{
+    TranslateResources<AsrResult, AsrReadOnlyStringWrapper> translate_resource{
         {u8"en",
          {{ASR_S_OK, u8"Success"},
           {ASR_E_NO_INTERFACE, u8"No interface"},

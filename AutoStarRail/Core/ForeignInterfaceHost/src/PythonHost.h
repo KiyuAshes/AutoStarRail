@@ -34,7 +34,7 @@ class PyObjectPtr
     {
     };
     _object* ptr_{nullptr};
-    explicit PyObjectPtr(_object* ptr, [[maybe_unused]] AttachOnly) noexcept;
+    explicit PyObjectPtr(_object* ptr, [[maybe_unused]] A ttachOnly) noexcept;
 
 public:
     explicit PyObjectPtr(decltype(nullptr) p = nullptr) noexcept;

@@ -33,7 +33,7 @@ typedef struct _asr_SourceLocation
         AsrLog##type##U8WithSourceLocation(                                    \
             __VA_ARGS__,                                                       \
             &_asr_internal_source_location);                                   \
-    } while (true)
+    } while (false)
 
 #define ASR_LOG_ERROR(...) ASR_LOG_WITH_SOURCE_LOCATION(Error, __VA_ARGS__)
 #define ASR_LOG_WARNING(...) ASR_LOG_WITH_SOURCE_LOCATION(Warning, __VA_ARGS__)
@@ -59,10 +59,10 @@ ASR_C_API void AsrLogInfoU8WithSourceLocation(
 
 #endif // SWIG
 
-ASR_API void AsrLogError(AsrString asr_string);
+ASR_API void AsrLogError(AsrReadOnlyString asr_string);
 
-ASR_API void AsrLogWarning(AsrString asr_string);
+ASR_API void AsrLogWarning(AsrReadOnlyString asr_string);
 
-ASR_API void AsrLogInfo(AsrString asr_string);
+ASR_API void AsrLogInfo(AsrReadOnlyString asr_string);
 
 #endif // ASR_LOGGER_H

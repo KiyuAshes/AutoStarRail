@@ -1,21 +1,32 @@
+#ifndef ASR_CORE_FOREIGNINTERFACEHOST_ASRSTRINGIMPL_H
+#define ASR_CORE_FOREIGNINTERFACEHOST_ASRSTRINGIMPL_H
+
 #include <AutoStarRail/AsrString.hpp>
-#include <AutoStarRail/Utils/Utils.hpp>
+#include <AutoStarRail/Utils/CommonUtils.hpp>
+#include <AutoStarRail/Utils/fmt.h>
 #include <array>
 #include <memory>
-#include <unicode/unistr.h>
 #include <nlohmann/json_fwd.hpp>
-#include <AutoStarRail/Utils/fmt.h>
+#include <unicode/unistr.h>
 
-bool operator==(
-    ASR::AsrPtr<IAsrReadOnlyString> p_lhs,
-    ASR::AsrPtr<IAsrReadOnlyString> p_rhs);
+bool operator==(AsrReadOnlyString lhs, AsrReadOnlyString rhs);
 
 template <>
-struct ASR_FMT_NS::formatter<IAsrReadOnlyString, char>
+struct ASR_FMT_NS::formatter<ASR::AsrPtr<IAsrReadOnlyString>, char>
     : public formatter<std::string, char>
 {
-    auto format(IAsrReadOnlyString* p_string, format_context& ctx) const ->
+    auto format(
+        const ASR::AsrPtr<IAsrReadOnlyString>& p_string,
+        format_context&                        ctx) const ->
         typename std::remove_reference_t<decltype(ctx)>::iterator;
+};
+
+template <>
+struct ASR_FMT_NS::formatter<AsrReadOnlyString, char>
+    : public formatter<std::string, char>
+{
+    auto format(const AsrReadOnlyString& asr_string, format_context& ctx) const
+        -> typename std::remove_reference_t<decltype(ctx)>::iterator;
 };
 
 ASR_NS_BEGIN
@@ -63,19 +74,32 @@ namespace Details
 
         T* end() noexcept { return up_data_.get() + size_; }
 
-        T* cbegin() const noexcept { return up_data_.get(); }
+        [[nodiscard]]
+        T* cbegin() const noexcept
+        {
+            return up_data_.get();
+        }
 
-        T* cend() const noexcept { return up_data_.get() + size_; }
+        [[nodiscard]]
+        T* cend() const noexcept
+        {
+            return up_data_.get() + size_;
+        }
+
+        [[nodiscard]]
+        size_t GetSize() const noexcept
+        {
+            return size_;
+        }
     };
 }
 
 ASR_NS_END
 
-void from_json(const nlohmann::json& from, AsrString& to);
+void from_json(const nlohmann::json& from, AsrReadOnlyString& to);
 
 // {85648BDC-B73A-41F9-AF7A-71C83085C4B0}
 ASR_DEFINE_CLASS_GUID(
-    ASR_IID_STRING_CPP_IMPL,
     AsrStringCppImpl,
     0x85648bdc,
     0xb73a,
@@ -106,19 +130,19 @@ public:
     };
 
 private:
-    ICUString                             impl_{};
-    ASR::Details::DynamicBuffer<char16_t> shadow_impl_{};
+    ASR::Utils::RefCounter<AsrStringCppImpl> ref_counter_{};
+    ICUString                                impl_{};
+    ASR::Details::DynamicBuffer<char16_t>    u16_buffer_{};
     /**
      * @brief Notice: Boost regex assume std::string contains
      * utf-8 encoding string.
      * @see
      * https://www.boost.org/doc/libs/1_82_0/libs/regex/doc/html/boost_regex/ref/non_std_strings/icu/unicode_algo.html
      */
-    std::string                              cached_utf8_string_{};
-    ASR::Details::DynamicBuffer<UChar32>     cached_utf32_string_{};
-    ASR::Utils::RefCounter<AsrStringCppImpl> ref_counter_{};
+    std::string                          cached_utf8_string_{};
+    ASR::Details::DynamicBuffer<UChar32> cached_utf32_string_{};
 
-    std::array<bool, 3> is_cache_expired_{false, false, false};
+    std::array<bool, 3> is_cache_expired_{true, true, true};
 
     template <Encode E>
     bool IsCacheExpired() const noexcept
@@ -129,7 +153,7 @@ private:
     template <Encode E>
     void ValidateCache()
     {
-        is_cache_expired_[static_cast<std::size_t>(E)] = true;
+        is_cache_expired_[static_cast<std::size_t>(E)] = false;
     }
 
     void InvalidateCache();
@@ -175,3 +199,5 @@ public:
     AsrResult GetImpl(ICUString** out_icu_string) noexcept;
     AsrResult GetImpl(const ICUString** out_icu_string) const noexcept;
 };
+
+#endif // ASR_CORE_FOREIGNINTERFACEHOST_ASRSTRINGIMPL_H

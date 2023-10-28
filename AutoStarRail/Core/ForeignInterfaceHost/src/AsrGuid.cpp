@@ -116,7 +116,7 @@ void from_json(const nlohmann::json& input, AsrGuid& output)
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
 
-AsrString AsrGuidToString(const AsrGuid& guid)
+AsrReadOnlyString AsrGuidToString(const AsrGuid& guid)
 {
     constexpr auto template_string =
         "{:08x}-{:04x}-{:04x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}";
@@ -136,5 +136,5 @@ AsrString AsrGuidToString(const AsrGuid& guid)
 
     ASR::AsrPtr<IAsrString> p_result;
     ::CreateIAsrStringFromUtf8(string.c_str(), p_result.Put());
-    return AsrString{p_result};
+    return AsrReadOnlyString{p_result};
 }

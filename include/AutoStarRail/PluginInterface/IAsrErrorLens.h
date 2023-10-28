@@ -1,7 +1,7 @@
 #ifndef ASR_IERRORLENS_H
 #define ASR_IERRORLENS_H
 
-#include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/IAsrInspectable.h>
 #include <AutoStarRail/AsrString.hpp>
 #include <memory>
 
@@ -23,7 +23,7 @@ ASR_DEFINE_GUID(
 SWIG_IGNORE(IAsrErrorLens)
 ASR_INTERFACE IAsrErrorLens : public IAsrBase
 {
-    ASR_METHOD TranslateError(
+    ASR_METHOD GetErrorMessage(
         IAsrReadOnlyString * locale_name,
         AsrResult error_code,
         IAsrReadOnlyString * *out_string) = 0;
@@ -44,21 +44,20 @@ ASR_DEFINE_GUID(
     0x31,
     0x8b,
     0x83);
-SWIG_ENABLE_SHARED_PTR(IAsrSwigErrorLens)
 SWIG_ENABLE_DIRECTOR(IAsrSwigErrorLens)
 ASR_INTERFACE IAsrSwigErrorLens : public IAsrSwigBase
 {
-    virtual AsrRetString TranslateError(
-        const AsrString locale_name,
-        AsrResult       error_code) = 0;
+    virtual AsrRetReadOnlyString GetErrorMessage(
+        const AsrReadOnlyString locale_name,
+        AsrResult               error_code) = 0;
 };
 
-SWIG_IGNORE(GetErrorExplanation)
+SWIG_IGNORE(AsrGetErrorMessage)
 /**
  * @brief Get the error explanation. If return value is not ASR_S_OK,
         then the pp_out_error_explanation points to a string
         that explains why calling this function failed
- * @param p_error_generating_interface
+ * @param p_error_generating_interface_iid
  * @param locale_name
  * @param error_code
  * @param pp_out_error_explanation It is an Error message when this function
@@ -66,22 +65,29 @@ SWIG_IGNORE(GetErrorExplanation)
   failed.
  * @return AsrResult
  */
-ASR_C_API AsrResult GetErrorExplanation(
-    IAsrBase*            p_error_generating_interface,
+ASR_C_API AsrResult AsrGetErrorMessage(
+    IAsrInspectable*     p_error_generator,
+    AsrResult            error_code,
+    IAsrReadOnlyString** pp_out_error_explanation);
+
+SWIG_IGNORE(AsrGetPredefinedErrorMessage)
+ASR_C_API AsrResult AsrGetPredefinedErrorMessage(
     AsrResult            error_code,
     IAsrReadOnlyString** pp_out_error_explanation);
 
 /**
- * @brief See GetErrorExplanation
+ * @brief See AsrGetErrorMessage
  *
- * @param p_error_generating_interface
+ * @param p_error_generating_interface_iid
  * @param locale_name
  * @param error_code
- * @return AsrRetString
+ * @return AsrRetReadOnlyString
  */
-ASR_API AsrRetString GetErrorExplanation(
-    std::shared_ptr<IAsrSwigBase> p_error_generating_interface,
-    AsrResult                     error_code);
+ASR_API AsrRetReadOnlyString AsrGetErrorMessage(
+    IAsrSwigInspectable* p_error_generator,
+    AsrResult            error_code);
+
+ASR_API AsrRetReadOnlyString AsrGetPredefinedErrorMessage(AsrResult error_code);
 
 #ifndef SWIG
 /**
@@ -94,7 +100,7 @@ ASR_C_API AsrResult AsrSetDefaultLocale(IAsrReadOnlyString* locale_name);
 ASR_C_API AsrResult AsrGetDefaultLocale(IAsrReadOnlyString** locale_name);
 #endif // SWIG
 
-ASR_API AsrResult    AsrSetDefaultLocale(AsrString locale_name);
-ASR_API AsrRetString AsrGetDefaultLocale();
+ASR_API AsrResult            AsrSetDefaultLocale(AsrReadOnlyString locale_name);
+ASR_API AsrRetReadOnlyString AsrGetDefaultLocale();
 
 #endif // ASR_IERRORLENS_H

@@ -1,19 +1,18 @@
 #ifndef ASR_CORE_FOREIGNINTERFACEHOST_PLUGINFILEMANAGER_H
 #define ASR_CORE_FOREIGNINTERFACEHOST_PLUGINFILEMANAGER_H
 
-#include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
+#include "Plugin.h"
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
+#include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
-#include <AutoStarRail/Core/Logger/Logger.h>
-#include <AutoStarRail/Utils/fmt.h>
 #include <AutoStarRail/Utils/Expected.h>
-#include "Plugin.h"
+#include <AutoStarRail/Utils/fmt.h>
 #include <boost/filesystem.hpp>
 #include <map>
 #include <memory>
-#include <variant>
 #include <vector>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
@@ -26,33 +25,17 @@ struct PluginLoadError
 
 class ErrorLensManager
 {
-public:
-    using AsrErrorLensCommonPtr = std::
-        variant<ASR::AsrPtr<IAsrErrorLens>, std::shared_ptr<IAsrSwigErrorLens>>;
-    using AsrBaseCommonPtr =
-        std::variant<ASR::AsrPtr<IAsrBase>, std::shared_ptr<IAsrSwigBase>>;
-
 private:
-    std::map<AsrBaseCommonPtr, AsrErrorLensCommonPtr> map_{};
-
-    AsrResult InternalRegister(
-        AsrBaseCommonPtr      p_asr_base,
-        AsrErrorLensCommonPtr p_error_lens);
-    AsrResult InternalUnregister(AsrBaseCommonPtr p_asr_base);
+    std::unordered_map<AsrGuid, AsrPtr<IAsrErrorLens>> map_{};
 
 public:
-    AsrResult Register(
-        ASR::AsrPtr<IAsrBase> p_asr_base,
-        AsrErrorLensCommonPtr p_error_lens);
-    AsrResult Register(
-        std::shared_ptr<IAsrSwigBase> p_asr_base,
-        AsrErrorLensCommonPtr         p_error_lens);
-    AsrResult UnRegister(ASR::AsrPtr<IAsrBase> p_asr_base);
-    AsrResult UnRegister(std::shared_ptr<IAsrSwigBase> p_asr_base);
-    auto      GetExplanation(
-             const AsrBaseCommonPtr&    p_asr_base,
-             IAsrReadOnlyString* locale_name,
-             AsrResult           error_code) const
+    AsrResult Register(IAsrIidVector* p_iids, IAsrErrorLens* p_error_lens);
+    AsrResult Register(IAsrIidVector* p_iids, IAsrSwigErrorLens* p_error_lens);
+
+    auto GetErrorMessage(
+        IAsrIidVector*      p_iids,
+        IAsrReadOnlyString* locale_name,
+        AsrResult           error_code) const
         -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>;
 };
 
@@ -117,7 +100,7 @@ private:
     ErrorLensManager                          error_lens_manager_;
 
     AsrResult AddInterface(ASR::AsrPtr<IAsrTask> p_task);
-    AsrResult AddInterface(std::shared_ptr<IAsrSwigTask> sp_task);
+    AsrResult AddInterface(IAsrSwigTask* p_task);
 
     static std::unique_ptr<PluginDesc> GetPluginDesc(
         const boost::filesystem::path& metadata_path);
@@ -129,18 +112,17 @@ public:
 
     /**
      * @brief Get the Error Explanation from AsrResult.
-            Notice: This function will not hold ownership of locale_name.
      *
-     * @param retry_result
+     * @param iids
      * @param locale_name
      * @param error_code
      * @param pp_out_error_message
      * @return AsrResult
      */
-    AsrResult GetErrorExplanation(
-        ErrorLensManager::AsrBaseCommonPtr retry_result,
-        AsrResult                          error_code,
-        IAsrReadOnlyString**               pp_out_error_message) const;
+    AsrResult GetErrorMessage(
+        IAsrIidVector*       p_iids,
+        AsrResult            error_code,
+        IAsrReadOnlyString** pp_out_error_message);
     auto GetAllCaptureFactory() -> std::vector<AsrPtr<IAsrCaptureFactory>>;
 };
 

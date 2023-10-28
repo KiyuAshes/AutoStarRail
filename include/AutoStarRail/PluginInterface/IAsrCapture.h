@@ -1,7 +1,7 @@
 #ifndef ASR_ICAPTURE_H
 #define ASR_ICAPTURE_H
 
-#include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/IAsrInspectable.h>
 #include <AutoStarRail/AsrString.hpp>
 #include <memory>
 #include <cstddef>
@@ -23,9 +23,9 @@ ASR_DEFINE_GUID(
     0xf0,
     0x42,
     0x8e,
-    0x95);
+    0x95)
 SWIG_IGNORE(IAsrCapture)
-ASR_INTERFACE IAsrCapture : public IAsrBase
+ASR_INTERFACE IAsrCapture : public IAsrInspectable
 {
     ASR_METHOD Capture(IAsrImage * *pp_out_image) = 0;
 };
@@ -44,9 +44,9 @@ ASR_DEFINE_GUID(
     0xe0,
     0x22,
     0x7c,
-    0xf9);
+    0xf9)
 SWIG_IGNORE(IAsrCaptureFactory)
-ASR_INTERFACE IAsrCaptureFactory : public IAsrBase
+ASR_INTERFACE IAsrCaptureFactory : public IAsrInspectable
 {
     /**
      * @brief Create an instance
@@ -58,28 +58,57 @@ ASR_INTERFACE IAsrCaptureFactory : public IAsrBase
     ASR_METHOD CreateInstance(
         IAsrReadOnlyString * p_json_config,
         IAsrCapture * *pp_object) = 0;
-    ASR_METHOD GetName(IAsrReadOnlyString * *pp_out_name) = 0;
 };
 
 ASR_INTERFACE IAsrSwigCaptureFactory;
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetCaptureFactory)
-    std::shared_ptr<IAsrSwigCaptureFactory> value;
+    IAsrSwigCaptureFactory* value;
 ASR_RET_TYPE_DECLARE_END
 
 ASR_INTERFACE IAsrSwigCapture;
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetCapture)
-    std::shared_ptr<IAsrSwigCapture> value;
+    IAsrSwigCapture* value;
 ASR_RET_TYPE_DECLARE_END
 
+// {D8DA99C7-98A6-4AA3-A7F4-0FAE0919D286}
+ASR_DEFINE_GUID(
+    ASR_IID_SWIG_CAPTURE_FACTORY,
+    IAsrSwigCaptureFactory,
+    0xd8da99c7,
+    0x98a6,
+    0x4aa3,
+    0xa7,
+    0xf4,
+    0xf,
+    0xae,
+    0x9,
+    0x19,
+    0xd2,
+    0x86)
 ASR_INTERFACE IAsrSwigCaptureFactory
 {
-    virtual AsrRetCapture CreateInstance(AsrString json_config) = 0;
+    virtual AsrRetCapture CreateInstance(AsrReadOnlyString json_config) = 0;
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetImage)
-    std::shared_ptr<IAsrImage> value;
+    IAsrImage* value;
 ASR_RET_TYPE_DECLARE_END
 
+// {FC326FB1-9669-4D41-8003-27709071DA10}
+ASR_DEFINE_GUID(
+    ASR_IID_SWIG_CAPTURE,
+    IAsrSwigCapture,
+    0xfc326fb1,
+    0x9669,
+    0x4d41,
+    0x80,
+    0x3,
+    0x27,
+    0x70,
+    0x90,
+    0x71,
+    0xda,
+    0x10);
 ASR_INTERFACE IAsrSwigCapture : public IAsrSwigBase
 {
     virtual AsrRetImage Capture() = 0;

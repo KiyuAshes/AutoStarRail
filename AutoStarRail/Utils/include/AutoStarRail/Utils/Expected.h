@@ -14,7 +14,7 @@
 ASR_UTILS_NS_BEGIN
 
 using VariantString =
-    std::variant<AsrString, std::string, const char*, std::string_view>;
+    std::variant<AsrReadOnlyString, std::string, const char*, std::string_view>;
 
 namespace Details
 {
@@ -46,64 +46,6 @@ using ExpectedWithExplanation = tl::expected<T, ErrorAndExplanation>;
 template <class T>
 using Expected = tl::expected<T, AsrResult>;
 
-template <class T, class OnOk>
-AsrResult Match(const ::tl::expected<T, AsrResult>& expected, OnOk&& on_ok)
-{
-    if (expected)
-    {
-        if constexpr (std::is_same_v<
-                          std::
-                              invoke_result_t<OnOk, decltype(expected.value())>,
-                          void>)
-        {
-            on_ok(expected.value());
-            return ASR_S_OK;
-        }
-        else
-        {
-            return on_ok(expected.value());
-        }
-    }
-
-    return expected.error();
-}
-
-template <class T, class OnOk, class OnError>
-AsrResult Match(
-    const ExpectedWithExplanation<T>& expected,
-    OnOk&&                            on_ok,
-    OnError&&                         on_error)
-{
-    if (expected)
-    {
-        if constexpr (std::is_same_v<
-                          std::
-                              invoke_result_t<OnOk, decltype(expected.value())>,
-                          void>)
-        {
-            on_ok(expected.value());
-            return ASR_S_OK;
-        }
-        else
-        {
-            return on_ok(expected.value());
-        }
-    }
-
-    if constexpr (std::is_same_v<
-                      std::invoke_result_t<OnError, decltype(expected.error())>,
-                      void>)
-    {
-        auto& error = expected.error();
-        on_error(error);
-        return error.error_code;
-    }
-    else
-    {
-        return on_error(expected.error());
-    }
-}
-
 ASR_UTILS_NS_END
 
 template <>
@@ -113,5 +55,7 @@ struct ASR_FMT_NS::formatter<ASR::Utils::VariantString, char>
     auto format(const ASR::Utils::VariantString& string, format_context& ctx)
         const -> typename std::remove_reference_t<decltype(ctx)>::iterator;
 };
+
+using ASRE = ASR::Utils::ErrorAndExplanation;
 
 #endif // ASR_UTILS_EXPECTED_H

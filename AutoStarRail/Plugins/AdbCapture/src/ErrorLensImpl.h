@@ -2,7 +2,7 @@
 #define ASR_PLUGINS_ERRORLENSIMPL_H
 
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
-#include <AutoStarRail/Utils/Utils.hpp>
+#include "AutoStarRail/Utils/CommonUtils.hpp"
 #include <AutoStarRail/Utils/Expected.h>
 #include <unordered_map>
 #include <string>
@@ -40,7 +40,7 @@ public:
     int64_t   Release() override;
     AsrResult QueryInterface(const AsrGuid& iid, void** pp_out_object) override;
     // IAsrErrorLens
-    AsrResult TranslateError(
+    AsrResult GetErrorMessage(
         IAsrReadOnlyString*  locale_name,
         AsrResult            error_code,
         IAsrReadOnlyString** out_string) override;

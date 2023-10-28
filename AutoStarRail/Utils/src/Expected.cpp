@@ -35,7 +35,7 @@ auto ASR_FMT_NS::formatter<ASR::Utils::VariantString, char>::format(
             // match std::string_view and std::string
             [](const std::string_view string_in_variant)
             { return string_in_variant.data(); },
-            [](const AsrString string_in_variant)
+            [](const AsrReadOnlyString string_in_variant)
             { return string_in_variant.GetUtf8(); }},
         string);
     return ASR_FMT_NS::format_to(ctx.out(), "{}", p_string_data);

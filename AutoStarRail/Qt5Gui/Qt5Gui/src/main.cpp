@@ -3,7 +3,7 @@
 #include <QDebug>
 #include <QDirIterator>
 #include <AutoStarRail/AsrConfig.h>
-#include <AutoStarRail/Utils/Utils.hpp>
+#include "AutoStarRail/Utils/CommonUtils.hpp"
 #include "GlobalVariables.h"
 
 #ifdef ASR_WIN32

@@ -18,6 +18,17 @@
 #define ASR_CORE_LOG_CRITICAL(...)                                             \
     SPDLOG_LOGGER_CRITICAL(ASR::Core::g_logger, x)
 
+#define ASR_CORE_LOG_WARN_USING_EXTRA_FUNCTION_NAME(function_name, ...)        \
+    ASR::Core::g_logger(                                                       \
+        ::spdlog::source_loc{__FILE__, __LINE__, function_name},               \
+        ::spdlog::level::warn,                                                 \
+        __VA_ARGS__)
+#define ASR_CORE_LOG_ERROR_USING_EXTRA_FUNCTION_NAME(function_name, ...)       \
+    ASR::Core::g_logger(                                                       \
+        ::spdlog::source_loc{__FILE__, __LINE__, function_name},               \
+        ::spdlog::level::err,                                                  \
+        __VA_ARGS__)
+
 #ifdef _MSC_VER
 #define ASR_FUNCTION __FUNCSIG__
 #else
@@ -29,7 +40,8 @@
         _asr_reserved_logger_tracer_,                                          \
         __LINE__)                                                              \
     {                                                                          \
-        __FILE__, __LINE__, ASR_FUNCTION                                       \
+        static_cast<const char*>(__FILE__), __LINE__,                          \
+            static_cast<const char*>(ASR_FUNCTION)                             \
     }
 
 #define ASR_CORE_LOG_EXCEPTION(ex) ASR_CORE_LOG_ERROR(ex.what())

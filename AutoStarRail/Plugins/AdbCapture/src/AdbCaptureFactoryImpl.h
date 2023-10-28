@@ -2,7 +2,23 @@
 #define ASR_PLUGINS_ADBCAPTUREFACTORYIMPL_H
 
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
-#include <AutoStarRail/Utils/Utils.hpp>
+#include <AutoStarRail/Utils/CommonUtils.hpp>
+
+// {23290FC8-CD40-4C4E-9F58-20EC404F1F3C}
+ASR_DEFINE_CLASS_IN_NAMESPACE(
+    Asr,
+    AdbCaptureFactoryImpl,
+    0x23290fc8,
+    0xcd40,
+    0x4c4e,
+    0x9f,
+    0x58,
+    0x20,
+    0xec,
+    0x40,
+    0x4f,
+    0x1f,
+    0x3c)
 
 ASR_NS_BEGIN
 
@@ -12,17 +28,23 @@ private:
     ASR::Utils::RefCounter<AdbCaptureFactoryImpl> ref_counter_{};
 
 public:
+    // IAsrBase
     int64_t    AddRef() override;
     int64_t    Release() override;
     ASR_METHOD QueryInterface(const AsrGuid& iid, void** pp_object) override;
+    // IAsrInspectable
+    ASR_IMPL GetIids(IAsrIidVector** pp_out_iids) override;
+    ASR_IMPL GetRuntimeClassName(
+        IAsrReadOnlyString** pp_out_class_name) override;
+    // IAsrCaptureFactory
     /**
      * @brief Require url property
-     * 
-     * @param p_json_config 
-     * @param pp_object 
-     * @return ASR_METHOD 
+     *
+     * @param p_json_config
+     * @param pp_object
+     * @return ASR_METHOD
      */
-    ASR_METHOD CreateInstance(
+    ASR_IMPL CreateInstance(
         IAsrReadOnlyString* p_json_config,
         IAsrCapture**       pp_object) override;
 };

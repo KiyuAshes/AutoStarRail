@@ -15,7 +15,7 @@ ASR_CORE_I18N_NS_BEGIN
 AsrResult TranslateError(
     IAsrReadOnlyString*  locale_name,
     AsrResult            error_code,
-    IAsrReadOnlyString** out_string);
+    IAsrReadOnlyString** pp_out_string);
 
 extern const I18n<AsrResult> g_translator_data;
 

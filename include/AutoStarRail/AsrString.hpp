@@ -99,39 +99,78 @@ ASR_NS_END
 
 #ifndef SWIG
 #define ASR_STRING_ENABLE_WHEN_CPP
-#endif
+#endif // SWIG
 
 /**
  * @brief
  * ! 此类通过宏定义控制对SWIG公开的函数，
  *
  */
-class AsrString
+class AsrReadOnlyString
 {
-    ASR::AsrPtr<IAsrReadOnlyString> p_impl_{
+     ASR::AsrPtr<IAsrReadOnlyString> p_impl_{
         ASR::Details::CreateNullAsrString()};
 
 public:
-    AsrString() = default;
-
-    SWIG_IGNORE(AsrString(ASR::AsrPtr<IAsrString> p_impl))
-    explicit AsrString(ASR::AsrPtr<IAsrString> p_impl) : p_impl_{p_impl} {}
-    SWIG_IGNORE(AsrString(IAsrReadOnlyString* p_impl))
-    explicit AsrString(IAsrReadOnlyString* p_impl) : p_impl_{p_impl} {}
-    SWIG_IGNORE(AsrString(ASR::AsrPtr<IAsrReadOnlyString> p_impl))
-    explicit AsrString(ASR::AsrPtr<IAsrReadOnlyString> p_impl) : p_impl_{p_impl}
+    AsrReadOnlyString() = default;
+#ifndef SWIG
+    explicit AsrReadOnlyString(ASR::AsrPtr<IAsrString> p_impl)
+        : p_impl_{std::move(p_impl)}
     {
     }
 
-    /**
-     * @brief
-     * 从其它语言运行时获得UTF-8字符串
-        Get时也使用UTF-8字符串
-        当前使用这一策略的语言：Python
-     *
-     */
+    explicit(false) AsrReadOnlyString(IAsrReadOnlyString* p_impl)
+        : p_impl_{p_impl, ASR::take_ownership_t{}}
+    {
+    }
+
+    explicit AsrReadOnlyString(ASR::AsrPtr<IAsrReadOnlyString> p_impl)
+        : p_impl_{std::move(p_impl)}
+    {
+    }
+
+    AsrReadOnlyString& operator=(ASR::AsrPtr<IAsrReadOnlyString> p_impl)
+    {
+        p_impl_ = std::move(p_impl);
+        return *this;
+    }
+
+    AsrReadOnlyString& operator=(IAsrReadOnlyString* p_impl)
+    {
+        p_impl_ = {p_impl, ASR::take_ownership_t{}};
+        return *this;
+    }
+
+    explicit operator IAsrReadOnlyString*() const noexcept
+    {
+        if (p_impl_)
+        {
+            p_impl_->AddRef();
+        }
+        return p_impl_.Get();
+    }
+
+    const int32_t* cbegin() const { return p_impl_->CBegin(); };
+
+    const int32_t* cend() const { return p_impl_->CEnd(); };
+
+    void GetImpl(IAsrReadOnlyString** pp_out_readonly_string) const
+    {
+        const auto result = p_impl_.Get();
+        *pp_out_readonly_string = result;
+        result->AddRef();
+    };
+#endif // SWIG
+
+/**
+ * @brief
+ * 从其它语言运行时获得UTF-8字符串
+    Get时也使用UTF-8字符串
+    当前使用这一策略的语言：Python
+ *
+ */
 #if defined(ASR_STRING_ENABLE_WHEN_CPP) || defined(SWIGPYTHON)
-    AsrString(const char* p_utf8_string)
+    AsrReadOnlyString(const char* p_utf8_string)
         : p_impl_{ASR::Details::CreateAsrString()}
     {
         static_cast<IAsrString*>(p_impl_.Get())->SetUtf8(p_utf8_string);
@@ -145,15 +184,15 @@ public:
     }
 #endif // defined(ASR_STRING_ENABLE_WHEN_CPP) || defined(SWIGPYTHON)
 
-    /**
-     * @brief
-     * 从其它语言运行时获得UTF-16的字符串，但是外层使用wchar_t包装。
-        Get时在Win32环境下返回UTF-16，在Linux环境下返回UTF-32。
-        当前使用这一策略的语言：C#
-     *
-     */
+/**
+ * @brief
+ * 从其它语言运行时获得UTF-16的字符串，但是外层使用wchar_t包装。
+    Get时在Win32环境下返回UTF-16，在Linux环境下返回UTF-32。
+    当前使用这一策略的语言：C#
+ *
+ */
 #if defined(ASR_STRING_ENABLE_WHEN_CPP) || defined(SWIGCSHARP)
-    AsrString(const wchar_t* p_wstring)
+    AsrReadOnlyString(const wchar_t* p_wstring)
         : p_impl_{ASR::Details::CreateAsrString()}
     {
         static_cast<IAsrString*>(p_impl_.Get())->SetSwigW(p_wstring);
@@ -168,12 +207,12 @@ public:
 
 #endif // defined(ASR_STRING_ENABLE_WHEN_CPP) || defined(SWIGCSHARP)
 
-    /**
-     * @brief 由于SWIG对于Java支持可能存在缺陷，这一功能由本项目实现
-     *
-     */
+/**
+ * @brief 由于SWIG对于Java支持可能存在缺陷，这一功能由本项目实现
+ *
+ */
 #if defined(ASR_STRING_ENABLE_WHEN_CPP) || defined(SWIGJAVA)
-    AsrString(const char16_t* p_u16string, size_t length)
+    AsrReadOnlyString(const char16_t* p_u16string, size_t length)
         : p_impl_{ASR::Details::CreateAsrString()}
     {
         static_cast<IAsrString*>(p_impl_.Get())->SetUtf16(p_u16string, length);
@@ -184,18 +223,6 @@ public:
         p_impl_->GetUtf16(out_string, out_string_size);
     }
 #endif
-
-    SWIG_IGNORE(cbegin)
-    const int32_t* cbegin() const { return p_impl_->CBegin(); };
-    SWIG_IGNORE(cend)
-    const int32_t* cend() const { return p_impl_->CEnd(); };
-    SWIG_IGNORE(GetImpl)
-    void GetImpl(IAsrReadOnlyString** pp_out_readonly_string) const
-    {
-        const auto result = p_impl_.Get();
-        *pp_out_readonly_string = result;
-        result->AddRef();
-    };
 };
 
 #ifndef SWIG
@@ -225,16 +252,19 @@ ASR_C_API AsrResult CreateIAsrStringFromWChar(
     size_t         size,
     IAsrString**   pp_out_string);
 
+/**
+ * @See CreateIAsrStringFromWChar
+ */
 ASR_C_API AsrResult CreateIAsrReadOnlyStringFromWChar(
     const wchar_t*       p_wstring,
     size_t               size,
     IAsrReadOnlyString** pp_out_readonly_string);
 #endif // SWIG
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetString)
-    AsrString value;
+ASR_RET_TYPE_DECLARE_BEGIN(AsrRetReadOnlyString)
+    AsrReadOnlyString value;
 ASR_RET_TYPE_DECLARE_END
 
-ASR_API AsrString AsrGuidToString(const AsrGuid& guid);
+ASR_API AsrReadOnlyString AsrGuidToString(const AsrGuid& guid);
 
 #endif // ASR_STRING_HPP

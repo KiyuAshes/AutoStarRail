@@ -5,6 +5,16 @@
 #include <AutoStarRail/AsrGuidHolder.h>
 #include <string.h>
 #include <stdint.h>
+#include <new>
+
+#define ASR_RET_TYPE_DECLARE_BEGIN(type_name)                                  \
+    struct type_name                                                           \
+    {                                                                          \
+        AsrResult error_code{ASR_E_UNDEFINED_RETURN_VALUE};
+
+#define ASR_RET_TYPE_DECLARE_END                                               \
+    }                                                                          \
+    ;
 
 // clang-format off
 #ifdef SWIG
@@ -33,10 +43,11 @@
     static const AsrGuid name =                                                \
         {l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}};                         \
     ASR_DEFINE_GUID_HOLDER(type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8);
-#define ASR_DEFINE_CLASS_GUID(name, type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
-    static const AsrGuid name =                                                      \
-        {l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}};                               \
+#define ASR_DEFINE_CLASS_GUID(type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
     ASR_DEFINE_CLASS_GUID_HOLDER(type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8);
+#define ASR_DEFINE_CLASS_IN_NAMESPACE(ns, type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+    namespace ns { class type; }\
+    ASR_DEFINE_CLASS_GUID_HOLDER_IN_NAMESPACE(ns ,type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8);
 #endif
 // clang-format on
 
@@ -62,7 +73,12 @@
 #define ASR_E_FILE_NOT_FOUND ASR_E_RESERVED - 13
 #define ASR_E_MAYBE_OVERFLOW ASR_E_RESERVED - 14
 #define ASR_E_OUT_OF_MEMORY ASR_E_RESERVED - 15
-#define ASR_E_CAN_NOT_GET_UTF8_STRING ASR_E_RESERVED - 16
+#define ASR_E_INVALID_PATH ASR_E_RESERVED - 16
+#define ASR_E_INVALID_POINTER ASR_E_RESERVED - 17
+#define ASR_E_SWIG_INTERNAL_ERROR ASR_E_RESERVED - 18
+#define ASR_E_PYTHON_ERROR ASR_E_RESERVED - 19
+#define ASR_E_JAVA_ERROR ASR_E_RESERVED - 20
+#define ASR_E_CSHARP_ERROR ASR_E_RESERVED - 21
 
 #ifdef _MSC_VER
 #define ASR_STD_CALL __stdcall
@@ -73,9 +89,14 @@
 #define ASR_INTERFACE struct
 
 #define ASR_METHOD virtual AsrResult
+#define ASR_IMPL AsrResult
 
 using AsrResult = int32_t;
 
+/**
+ * @brief NOTE: Be careful about the lifetime of this structure.\n
+ *       If you want to keep it, you MUST make a copy of it.
+ */
 typedef struct _asr_GUID
 {
 #ifdef SWIG
@@ -90,7 +111,7 @@ private:
 typedef struct _asr_RetGuid
 {
     AsrResult error_code;
-    AsrGuid   guid;
+    AsrGuid   value;
 } AsrRetGuid;
 
 typedef char AsrBool;
@@ -160,6 +181,35 @@ CreateIAsrReadOnlyStringVector(AsrGuid** p_in_guid_array, const size_t size);
 
 #endif // SWIG
 
+class AsrSwigBaseWrapper
+{
+    void* p_object_{nullptr};
+
+public:
+    AsrSwigBaseWrapper() = default;
+#ifndef SWIG
+    explicit AsrSwigBaseWrapper(void* p_object) noexcept : p_object_{p_object}
+    {
+    }
+#endif // SWIG
+    explicit AsrSwigBaseWrapper(ASR_INTERFACE IAsrSwigBase* p_base) noexcept
+        : p_object_{p_base}
+    {
+    }
+    ASR_INTERFACE IAsrSwigBase* Get() const noexcept
+    {
+        return static_cast<IAsrSwigBase*>(p_object_);
+    }
+#ifndef SWIG
+    void* GetVoid() const noexcept { return p_object_; }
+    operator void*() const noexcept { return p_object_; }
+#endif // SWIG
+};
+
+ASR_RET_TYPE_DECLARE_BEGIN(AsrRetSwigBase)
+    AsrSwigBaseWrapper value;
+ASR_RET_TYPE_DECLARE_END
+
 // {FAF64DEB-0C0A-48CC-BA10-FCDE420350A2}
 ASR_DEFINE_GUID(
     ASR_IID_SWIG_BASE,
@@ -176,9 +226,12 @@ ASR_DEFINE_GUID(
     0x50,
     0xa2)
 SWIG_ENABLE_DIRECTOR(IAsrSwigBase)
-SWIG_ENABLE_SHARED_PTR(IAsrSwigBase)
 ASR_INTERFACE IAsrSwigBase
 {
+    virtual int64_t AddRef() = 0;
+    virtual int64_t Release() = 0;
+    // TODO: Remove this code until all code can be compiled.
+    ASR_METHOD IsCastAvailable(const AsrGuid& iid) = 0;
     /**
      * @brief Implementation should only return ASR_S_OK or ASR_E_NO_INTERFACE.
      * NOTICE: If returned value is not equal to ASR_S_OK, then the interface is
@@ -187,18 +240,14 @@ ASR_INTERFACE IAsrSwigBase
      * @param iid
      * @return AsrResult
      */
-    ASR_METHOD IsCastAvailable(const AsrGuid& iid) = 0;
-    virtual ~IAsrSwigBase() = default;
+    virtual AsrRetSwigBase QueryInterface(const AsrGuid& iid) = 0;
+#ifdef SWIG
+    /*
+     * @brief Avoid SWIG warning.
+     */
+    virtual ~IAsrSwigBase() {}
+#endif // SWIG
 };
-
-#define ASR_RET_TYPE_DECLARE_BEGIN(type_name)                                  \
-    struct type_name                                                           \
-    {                                                                          \
-        AsrResult error_code{ASR_E_UNDEFINED_RETURN_VALUE};
-
-#define ASR_RET_TYPE_DECLARE_END                                               \
-    }                                                                          \
-    ;
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetBool)
     bool value;
@@ -206,6 +255,10 @@ ASR_RET_TYPE_DECLARE_END
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetInt)
     int64_t value;
+ASR_RET_TYPE_DECLARE_END
+
+ASR_RET_TYPE_DECLARE_BEGIN(AsrRetUInt)
+    uint64_t value;
 ASR_RET_TYPE_DECLARE_END
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetFloat)

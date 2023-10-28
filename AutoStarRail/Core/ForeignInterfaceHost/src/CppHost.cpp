@@ -2,7 +2,7 @@
 #include "AutoStarRail/AsrPtr.hpp"
 #include "AutoStarRail/IAsrBase.h"
 #include "AutoStarRail/PluginInterface/IAsrPlugin.h"
-#include <AutoStarRail/Utils/Utils.hpp>
+#include "AutoStarRail/Utils/CommonUtils.hpp"
 #include "tl/expected.hpp"
 #include <boost/dll/shared_library.hpp>
 
@@ -13,7 +13,7 @@ ASR_NS_CPPHOST_BEGIN
 class CppRuntime final : public IForeignLanguageRuntime
 {
     ASR::Utils::RefCounter<CppRuntime> ref_counter_{};
-    boost::dll::shared_library                      plugin_lib_{};
+    boost::dll::shared_library         plugin_lib_{};
 
 public:
     int64_t   AddRef() override { return ref_counter_.AddRef(); }
@@ -23,7 +23,7 @@ public:
         return ASR_E_NO_IMPLEMENTATION;
     }
     auto LoadPlugin(const std::filesystem::path& path)
-        -> ASR::Utils::Expected<CommonPluginPtr> override
+        -> ASR::Utils::Expected<AsrPtr<IAsrPlugin>> override
     {
         plugin_lib_.load(path.c_str());
         // Get function pointer without heap allocation.
@@ -34,19 +34,16 @@ public:
         const auto         error_code = p_init_function(p_plugin.Put());
         if (ASR::IsOk(error_code))
         {
-            return CommonPluginPtr{std::move(p_plugin)};
+            return p_plugin;
         }
-        else
-        {
-            return tl::make_unexpected(error_code);
-        }
+        return tl::make_unexpected(error_code);
     }
 };
 
 auto CreateForeignLanguageRuntime(const ForeignLanguageRuntimeFactoryDescBase&)
     -> ASR::Utils::Expected<AsrPtr<IForeignLanguageRuntime>>
 {
-    return new CppRuntime{};
+    return AsrPtr<IForeignLanguageRuntime>{new CppRuntime(), take_ownership};
 }
 
 ASR_NS_CPPHOST_END

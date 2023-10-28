@@ -1,8 +1,8 @@
 #include "AutoStarRail/AsrConfig.h"
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
-#include "AutoStarRail/Utils/QueryInterfaceImpl.hpp"
-#include <AutoStarRail/Utils/Utils.hpp>
+#include "AutoStarRail/Utils/QueryInterface.hpp"
+#include "AutoStarRail/Utils/CommonUtils.hpp"
 #include <unicode/unistr.h>
 #include <unicode/uversion.h>
 #include <new>
@@ -12,39 +12,17 @@
 #include <cstring>
 #include <nlohmann/json.hpp>
 
-bool operator==(
-    ASR::AsrPtr<IAsrReadOnlyString> p_lhs,
-    ASR::AsrPtr<IAsrReadOnlyString> p_rhs)
+bool operator==(AsrReadOnlyString lhs, AsrReadOnlyString rhs)
 {
-    const char* p_lhs_str{};
-    const char* p_rhs_str{};
-    AsrResult   get_lhs_str_result;
-    AsrResult   get_rhs_str_result;
-    bool        result;
+    const char* p_lhs_str = lhs.GetUtf8();
+    const char* p_rhs_str = rhs.GetUtf8();
 
-    get_lhs_str_result = p_lhs->GetUtf8(&p_lhs_str);
-    get_rhs_str_result = p_rhs->GetUtf8(&p_rhs_str);
-    if (ASR::IsOk(get_lhs_str_result) && ASR::IsOk(get_rhs_str_result))
-        [[likely]]
-    {
-        result = std::strcmp(p_lhs_str, p_rhs_str) == 0;
-    }
-    else [[unlikely]]
-    {
-        ASR_CORE_LOG_ERROR(
-            "Failed to get utf8 string from IAsrReadOnlyString. Variables:\n\tp_lhs = {}, get_lhs_str_result = {}\n\tp_rhs = {}, get_rhs_str_result = {}",
-            static_cast<void*>(p_lhs.Get()),
-            get_lhs_str_result,
-            static_cast<void*>(p_rhs.Get()),
-            get_rhs_str_result);
-        result = ASR_E_CAN_NOT_GET_UTF8_STRING;
-    }
-    return result;
+    return std::strcmp(p_lhs_str, p_rhs_str) == 0;
 }
 
-auto(ASR_FMT_NS::formatter<IAsrReadOnlyString, char>::format)(
-    IAsrReadOnlyString* p_string,
-    format_context&     ctx) const ->
+auto(ASR_FMT_NS::formatter<ASR::AsrPtr<IAsrReadOnlyString>, char>::format)(
+    const ASR::AsrPtr<IAsrReadOnlyString>& p_string,
+    format_context&                        ctx) const ->
     typename std::remove_reference_t<decltype(ctx)>::iterator
 {
     const char* p_string_data{nullptr};
@@ -53,20 +31,19 @@ auto(ASR_FMT_NS::formatter<IAsrReadOnlyString, char>::format)(
     {
         return ASR_FMT_NS::format_to(ctx.out(), "{}", p_string_data);
     }
-    else
-    {
-        return ASR_FMT_NS::format_to(
-            ctx.out(),
-            "(An error occurred when getting string, with error code = {})",
-            result);
-    }
+    return ASR_FMT_NS::format_to(
+        ctx.out(),
+        "(An error occurred when getting string, with error code = {})",
+        result);
 }
 
-ASR_UTILS_NS_BEGIN
-
-ASR_UTILS_DEFINE_QUERYINTERFACEIMPL(IAsrString, AsrStringCppImpl);
-
-ASR_UTILS_NS_END
+auto(ASR_FMT_NS::formatter<AsrReadOnlyString, char>::format)(
+    const AsrReadOnlyString& asr_string,
+    format_context&          ctx) const ->
+    typename std::remove_reference_t<decltype(ctx)>::iterator
+{
+    return format_to(ctx.out(), "{}", asr_string.GetUtf8());
+}
 
 ASR_NS_BEGIN
 
@@ -77,7 +54,8 @@ std::size_t BkdrHash(const char16_t* p_begin, const char16_t* p_end)
     std::size_t           hash = 0;
     while (p_begin != p_end)
     {
-        hash = hash * seed + *p_begin++;
+        hash = hash * seed + *p_begin;
+        std::advance(p_begin, 1);
     }
     return hash;
 }
@@ -88,9 +66,10 @@ std::size_t AsrStringHash::operator()(
     const char16_t* p_u16{nullptr};
     size_t          string_size{0};
     const auto      result = str->GetUtf16(&p_u16, &string_size);
+    const auto      string_size_int64 = static_cast<int64_t>(string_size);
     if (ASR::IsOk(result)) [[likely]]
     {
-        return BkdrHash(p_u16, p_u16 + string_size);
+        return BkdrHash(p_u16, std::next(p_u16, string_size_int64));
     }
     else [[unlikely]]
     {
@@ -102,7 +81,7 @@ ASR_NS_END
 
 void AsrStringCppImpl::InvalidateCache()
 {
-    is_cache_expired_ = {false, false, false};
+    is_cache_expired_ = {true, true, true};
 }
 
 void AsrStringCppImpl::UpdateUtf32Cache()
@@ -198,37 +177,6 @@ AsrResult AsrStringCppImpl::GetUtf16(
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
 template <class T>
-auto SetSwigW(const T* p_wstring, auto& shadow_impl)
-    -> U_NAMESPACE_QUALIFIER UnicodeString
-{
-    U_NAMESPACE_QUALIFIER UnicodeString result;
-    if constexpr (sizeof(wchar_t) == sizeof(char16_t))
-    {
-        result = {p_wstring};
-    }
-    else if constexpr (sizeof(wchar_t) == sizeof(char32_t))
-    {
-        const auto string_size = std::wcslen(p_wstring);
-        const auto p_shadow_string =
-            shadow_impl.DiscardAndGetNullTerminateBufferPointer(string_size);
-        std::transform(
-            p_wstring,
-            p_wstring + string_size,
-            p_shadow_string,
-            [](const wchar_t c)
-            {
-                char16_t u16_char;
-                // Can be replaced to std::bit_cast
-                std::memcpy(&u16_char, &c, sizeof(u16_char));
-                return u16_char;
-            });
-        const auto int_length = static_cast<int>(string_size);
-        result = {p_shadow_string, int_length, int_length};
-    }
-    return result;
-}
-
-template <class T>
 auto SetW(
     const T* p_wstring,
     size_t   length,
@@ -263,7 +211,29 @@ AsrResult AsrStringCppImpl::SetSwigW(const wchar_t* p_string)
 {
     InvalidateCache();
 
-    impl_ = Details::SetSwigW(p_string, shadow_impl_);
+    if constexpr (sizeof(wchar_t) == sizeof(char16_t))
+    {
+        impl_ = {p_string};
+    }
+    else if constexpr (sizeof(wchar_t) == sizeof(char32_t))
+    {
+        const auto string_size = std::wcslen(p_string);
+        const auto p_shadow_string =
+            u16_buffer_.DiscardAndGetNullTerminateBufferPointer(string_size);
+        std::transform(
+            p_string,
+            p_string + string_size,
+            p_shadow_string,
+            [](const wchar_t c)
+            {
+                char16_t u16_char{};
+                // Can be replaced to std::bit_cast
+                std::memcpy(&u16_char, &c, sizeof(u16_char));
+                return u16_char;
+            });
+        const auto int_length = static_cast<int>(u16_buffer_.GetSize());
+        impl_ = {p_shadow_string, int_length, int_length};
+    }
 
     return ASR_S_OK;
 }
@@ -272,6 +242,7 @@ AsrResult AsrStringCppImpl::SetW(const wchar_t* p_string, size_t length)
 {
     InvalidateCache();
 
+    // TODO: use u_strFromWCS to reimplement this function. See https://unicode-org.github.io/icu-docs/apidoc/released/icu4c/ustring_8h.html#a2f3c94a3177b0681070e78f428da7cd0
     impl_ = Details::SetW(
         p_string,
         length,
@@ -317,7 +288,7 @@ AsrResult AsrStringCppImpl::GetImpl(
     return ASR_S_OK;
 };
 
-void from_json(const nlohmann::json& from, AsrString& to)
+void from_json(const nlohmann::json& from, AsrReadOnlyString& to)
 {
     to = {from.get_ref<const std::string&>().data()};
 }
@@ -381,12 +352,12 @@ namespace Details
 
     AsrPtr<IAsrReadOnlyString> CreateNullAsrString()
     {
-        return AsrPtr<IAsrReadOnlyString>(&null_asr_string_impl_);
+        return {&null_asr_string_impl_, take_ownership};
     }
 
     AsrPtr<IAsrString> CreateAsrString()
     {
-        return AsrPtr<IAsrString>(new AsrStringCppImpl());
+        return {new AsrStringCppImpl(), take_ownership};
     }
 }
 
@@ -463,7 +434,7 @@ AsrResult CreateIAsrStringFromWChar(
     catch (std::bad_alloc&)
     {
         return ASR_E_OUT_OF_MEMORY;
-    };
+    }
 }
 
 AsrResult CreateIAsrReadOnlyStringFromWChar(

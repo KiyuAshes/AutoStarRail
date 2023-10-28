@@ -1,10 +1,13 @@
-#include <AutoStarRail/Utils/IAsrBaseAdapterUtils.h>
-#include <AutoStarRail/Core/GlobalSettingManager/Config.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
-#include <AutoStarRail/ExportInterface/IAsrSettings.h>
-#include <AutoStarRail/Utils/Utils.hpp>
+#include <AutoStarRail/Core/GlobalSettingsManager/Config.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
+#include <AutoStarRail/ExportInterface/IAsrSettings.h>
+#include <AutoStarRail/Utils/QueryInterface.hpp>
+#include "AutoStarRail/Utils/CommonUtils.hpp"
 #include <nlohmann/json.hpp>
+
+// TODO: support plugin set configuration. See
+// https://code.visualstudio.com/api/references/contribution-points#contributes.configuration
 
 ASR_CORE_GLOBALSETTINGSMANAGER_NS_BEGIN
 
@@ -81,9 +84,9 @@ public:
         return ASR_E_NO_INTERFACE;
     }
 
-    AsrRetString GetString(const char* key) const
+    AsrRetReadOnlyString GetString(const char* key) const
     {
-        return Details::GetJsonValueOnDefaultErrorHandle<AsrRetString>(
+        return Details::GetJsonValueOnDefaultErrorHandle<AsrRetReadOnlyString>(
             config_,
             key);
     }
@@ -110,41 +113,7 @@ public:
     }
 };
 
-class GlobalSettingsSwigAdapter final : public IAsrSwigSettings
-{
-    GlobalSettingsImpl& impl_;
-
-public:
-    GlobalSettingsSwigAdapter() : impl_{GlobalSettingsImpl::GetInstance()} {}
-    ~GlobalSettingsSwigAdapter() override = default;
-
-    AsrResult IsCastAvailable(const AsrGuid& iid) override
-    {
-        return impl_.IsCastAvailable(iid);
-    }
-
-    AsrRetString GetString(const AsrString key) override
-    {
-        return impl_.GetString(key.GetUtf8());
-    }
-
-    AsrRetBool GetBool(const AsrString key) override
-    {
-        return impl_.GetBool(key.GetUtf8());
-    }
-
-    AsrRetInt GetInt(const AsrString key) override
-    {
-        return impl_.GetInt(key.GetUtf8());
-    }
-
-    AsrRetFloat GetFloat(const AsrString key) override
-    {
-        return impl_.GetFloat(key.GetUtf8());
-    }
-};
-
-class GlobalSettingsAdapter final : public IAsrSettings
+class GlobalSettingsAdapter final : public IAsrSettings, public IAsrSwigSettings
 {
     GlobalSettingsImpl& impl_;
 
@@ -152,23 +121,22 @@ public:
     GlobalSettingsAdapter() : impl_{GlobalSettingsImpl::GetInstance()} {}
     ~GlobalSettingsAdapter() = default;
 
+    // IAsrBase && IAsrSwigBase
     int64_t AddRef() override { return 1; }
 
     int64_t Release() override { return 1; }
 
     AsrResult QueryInterface(const AsrGuid& iid, void** ppv) override
     {
-        return ASR::Utils::AsrInterfaceConverter(this, iid, ppv)
-            .TryConvert<IAsrBase>()
-            .TryConvert<IAsrSettings>()
-            .GetResult();
+        return ASR::Utils::QueryInterface<IAsrSettings>(this, iid, ppv);
     }
 
+    // IAsrSettings
     AsrResult GetString(
         IAsrReadOnlyString*  key,
         IAsrReadOnlyString** pp_out_string) override
     {
-        const auto asr_string = AsrString{key};
+        const auto asr_string = AsrReadOnlyString{key};
         const auto value = impl_.GetString(asr_string.GetUtf8());
         if (value.error_code == ASR_S_OK)
         {
@@ -183,7 +151,7 @@ public:
 
     AsrResult GetBool(IAsrReadOnlyString* key, bool* p_out_bool) override
     {
-        const auto asr_string = AsrString{key};
+        const auto asr_string = AsrReadOnlyString{key};
         const auto value = impl_.GetBool(asr_string.GetUtf8());
         if (value.error_code == ASR_S_OK)
         {
@@ -198,7 +166,7 @@ public:
 
     AsrResult GetInt(IAsrReadOnlyString* key, int64_t* p_out_int) override
     {
-        const auto asr_string = AsrString{key};
+        const auto asr_string = AsrReadOnlyString{key};
         const auto value = impl_.GetInt(asr_string.GetUtf8());
         if (value.error_code == ASR_S_OK)
         {
@@ -213,7 +181,7 @@ public:
 
     AsrResult GetFloat(IAsrReadOnlyString* key, float* p_out_float) override
     {
-        const auto asr_string = AsrString{key};
+        const auto asr_string = AsrReadOnlyString{key};
         const auto value = impl_.GetFloat(asr_string.GetUtf8());
         if (value.error_code == ASR_S_OK)
         {
@@ -225,22 +193,58 @@ public:
         }
         return value.error_code;
     }
+
+    // IAsrSwigBase
+    AsrRetSwigBase QueryInterface(const AsrGuid& iid) override
+    {
+        void*      pointer{nullptr};
+        const auto error_code =
+            ASR::Utils::QueryInterface<IAsrSwigSettings>(this, iid, &pointer);
+        return {error_code, AsrSwigBaseWrapper{pointer}};
+    }
+
+    // IAsrSwigSettings
+    AsrResult IsCastAvailable(const AsrGuid& iid) override
+    {
+        return impl_.IsCastAvailable(iid);
+    }
+
+    AsrRetReadOnlyString GetString(const AsrReadOnlyString key) override
+    {
+        return impl_.GetString(key.GetUtf8());
+    }
+
+    AsrRetBool GetBool(const AsrReadOnlyString key) override
+    {
+        return impl_.GetBool(key.GetUtf8());
+    }
+
+    AsrRetInt GetInt(const AsrReadOnlyString key) override
+    {
+        return impl_.GetInt(key.GetUtf8());
+    }
+
+    AsrRetFloat GetFloat(const AsrReadOnlyString key) override
+    {
+        return impl_.GetFloat(key.GetUtf8());
+    }
 };
 
 GlobalSettingsAdapter g_settings_adapter{};
 
 ASR_CORE_GLOBALSETTINGSMANAGER_NS_END
 
-std::shared_ptr<IAsrSwigSettings> GetIAsrSwigSettings()
+IAsrSwigSettings* GetIAsrSwigSettings()
 {
-    auto result = std::make_shared<
-        ASR::Core::GlobalSettingsManager::GlobalSettingsSwigAdapter>();
-    return result;
+    return static_cast<IAsrSwigSettings*>(
+        ASR::Core::GlobalSettingsManager::g_settings_adapter
+            .QueryInterface(AsrIidOf<IAsrSwigSettings>())
+            .value.GetVoid());
 }
 
 AsrResult GetIAsrSettings(IAsrSettings** pp_settings)
 {
-    *pp_settings =
-        std::addressof(ASR::Core::GlobalSettingsManager::g_settings_adapter);
-    return ASR_S_OK;
+    return ASR::Core::GlobalSettingsManager::g_settings_adapter.QueryInterface(
+        AsrIidOf<IAsrSettings>(),
+        reinterpret_cast<void**>(pp_settings));
 }

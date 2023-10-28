@@ -17,38 +17,45 @@ ASR_DISABLE_WARNING_END
 #pragma warning(pop)
 #endif
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+#include <sdkddkver.h>
+#endif // WIN32
+
 #include "AdbCaptureImpl.h"
-#include <AutoStarRail/AsrConfig.h>
+#include "ErrorLensImpl.h"
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
 #include <AutoStarRail/ExportInterface/IAsrImage.h>
-#include <AutoStarRail/Utils/QueryInterfaceImpl.hpp>
-#include <AutoStarRail/Utils/Utils.hpp>
-#include <AutoStarRail/Utils/IAsrBaseAdapterUtils.h>
+#include <AutoStarRail/Utils/CommonUtils.hpp>
+#include <AutoStarRail/Utils/StringUtils.h>
+#include <AutoStarRail/Utils/GetIids.hpp>
+#include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/fmt.h>
-#include <boost/process/async_pipe.hpp>
-#include <boost/process/detail/child_decl.hpp>
-#include <boost/process/pipe.hpp>
-#include <boost/process.hpp>
+#include <array>
 #include <boost/asio.hpp>
 #include <boost/pfr.hpp>
-#include "ErrorLensImpl.h"
-#include <array>
-#include <system_error>
-#include <tuple>
-#include <sstream>
+#include <boost/process.hpp>
+#include <boost/process/async_pipe.hpp>
+#include <boost/process/detail/child_decl.hpp>
 #include <cstring>
+#include <sstream>
+#include <system_error>
 
 ASR_NS_BEGIN
 
-// reference from
-// https://developer.android.com/reference/android/graphics/PixelFormat
-// https://android.googlesource.com/platform/frameworks/base/+/android-4.3_r2.3/cmds/screencap/screencap.cpp
-// https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android-s-beta-4/cmds/screencap/screencap.cpp
-// NOTE: kN32_SkColorType selects the native 32-bit ARGB format. On little
-// endian processors, pixels containing 8-bit ARGB components pack into 32-bit
-//  kBGRA_8888_SkColorType. On big endian processors, pixels pack into 32-bit
-//  kRGBA_8888_SkColorType.
-// In this plugin, we assume kN32_SkColorType is RGBA_8888.
+/**
+ * @brief reference from
+ *  <a
+ * href="https://developer.android.com/reference/android/graphics/PixelFormat">PixelFormat</a>
+ *  <a
+ * href="https://android.googlesource.com/platform/frameworks/base/+/android-4.3_r2.3/cmds/screencap/screencap.cpp">screencap.cpp
+ * in Android 4.23</a> <a
+ * href="https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android-s-beta-4/cmds/screencap/screencap.cpp">screencap.cpp
+ * in Android S Beta 4</a> \n NOTE: kN32_SkColorType selects the native 32-bit
+ * ARGB format.\n On little endian processors, pixels containing 8-bit ARGB
+ * components pack into 32-bit kBGRA_8888_SkColorType.\n On big endian
+ * processors, pixels pack into 32-bit kRGBA_8888_SkColorType.\n In this plugin,
+ * we assume kN32_SkColorType is RGBA_8888.
+ */
 enum class AdbCaptureFormat : uint32_t
 {
     RGBA_8888 = 1,
@@ -95,6 +102,8 @@ AdbCapture::AdbCapture(
 }
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
+
+constexpr uint32_t PROCESS_TIMEOUT_IN_S = 10;
 
 std::size_t ComputeScreenshotSize(
     const std::int32_t width,
@@ -150,6 +159,12 @@ private:
             {
                 process.terminate();
                 process_out.close();
+                const auto error_message = ASR::fmt::format(
+                    R"(Process timeout ({}s has been waiting).\n Error code: {}. Message: "{}".)",
+                    timeout,
+                    error_code.value(),
+                    error_code.message());
+                AsrLogErrorU8(error_message.c_str());
             }
             else
             {
@@ -242,10 +257,12 @@ auto ComputeDataSizeFromHeader(const AdbCaptureHeader header)
     switch (static_cast<AdbCaptureFormat>(header.f))
     {
     case AdbCaptureFormat::RGBA_8888:
+        [[fallthrough]];
     case AdbCaptureFormat::RGBX_8888:
+        [[fallthrough]];
     case AdbCaptureFormat::RGB_888:
         return header.w * header.h * 4;
-    case AdbCaptureFormat::RGB_565:
+    // RGB_565 and so on.
     default:
         const auto error_message =
             ASR::fmt::format("Unsupported color format: {}", header.f);
@@ -272,6 +289,13 @@ ASR::Utils::Expected<AsrImageFormat> Convert(const AdbCaptureFormat format)
 
 ASR_NS_ANONYMOUS_DETAILS_END
 
+/**
+ *
+ * @tparam T buffer type
+ * @param command
+ * @param timeout timeout in seconds.
+ * @return a CommandExecutorContext object.
+ */
 template <class T>
 auto MakeCommandExecutorContext(
     std::string_view    command,
@@ -286,8 +310,9 @@ auto MakeCommandExecutorContext(
 
 ASR::Utils::Expected<AdbCapture::Size> AdbCapture::GetDeviceSize() const
 {
-    auto context =
-        MakeCommandExecutorContext<std::string>(get_screen_size_command_, 10);
+    auto context = MakeCommandExecutorContext<std::string>(
+        get_screen_size_command_,
+        Details::PROCESS_TIMEOUT_IN_S);
     Size result{};
     context.ioc.run();
     std::stringstream output_string_stream{context.buffer};
@@ -320,7 +345,7 @@ AsrResult AdbCapture::CaptureRawWithGZip()
     // Run adb and receive screen capture.
     Details::CommandExecutorContext<decltype(adb_output_buffer)> context{
         capture_gzip_raw_command_,
-        10,
+        Details::PROCESS_TIMEOUT_IN_S,
         std::move(adb_output_buffer)};
     // Initialize the objects that need to be used later.
     auto decompressed_data = ASR::Utils::MakeContainerOfSize<std::vector<char>>(
@@ -390,26 +415,26 @@ AsrResult AdbCapture::CapturePng() { return ASR_E_NO_IMPLEMENTATION; }
 
 AsrResult AdbCapture::CaptureRawByNc() { return ASR_E_NO_IMPLEMENTATION; }
 
-auto AdbCapture::AutoDetectType() -> ASR::Utils::Expected<void>
+auto AdbCapture::AutoDetectType()
+    -> ASR::Utils::Expected<AsrResult (AdbCapture::*)()>
 {
-    if (current_capture_method)
+    if (current_capture_method != nullptr)
     {
         return {};
     }
     ASR_LOG_INFO("Detecting fastest adb capture way.");
     AsrResult result{ASR_S_OK};
+    // TODO: Check more capture methods.
     if (result = CaptureRawWithGZip(); IsOk(result)) [[likely]]
     {
         current_capture_method = &AdbCapture::CaptureRawWithGZip;
     }
     if (IsOk(result))
     {
-        return {};
+        return &AdbCapture::CaptureRawWithGZip;
     }
-    else
-    {
-        return tl::make_unexpected(result);
-    }
+
+    return tl::make_unexpected(result);
 }
 
 int64_t AdbCapture::AddRef() { return ref_counter_.AddRef(); }
@@ -419,6 +444,19 @@ int64_t AdbCapture::Release() { return ref_counter_.Release(this); }
 AsrResult AdbCapture::QueryInterface(const AsrGuid& iid, void** pp_object)
 {
     return ASR::Utils::QueryInterface<IAsrCapture>(this, iid, pp_object);
+}
+
+AsrResult AdbCapture::GetIids(IAsrIidVector** pp_out_iid_vector)
+{
+    return ASR::Utils::
+        GetIids<ASR::Utils::IAsrCaptureInheritanceInfo, AdbCapture>(
+            pp_out_iid_vector);
+}
+
+AsrResult AdbCapture::GetRuntimeClassName(
+    IAsrReadOnlyString** pp_out_class_name)
+{
+    ASR_UTILS_GET_RUNTIME_CLASS_NAME_IMPL(Asr::AdbCapture, pp_out_class_name);
 }
 
 AsrResult AdbCapture::Capture(IAsrImage** pp_out_image)
@@ -435,6 +473,14 @@ AsrResult AdbCapture::Capture(IAsrImage** pp_out_image)
         {
             return result;
         }
+    }
+    if (current_capture_method == nullptr) [[unlikely]]
+    {
+        AutoDetectType()
+            .or_else([&result](const auto error_code) { result = error_code; })
+            .map([&this_current_capture_method =
+                      this->current_capture_method](const auto pointer)
+                 { this_current_capture_method = pointer; });
     }
     return ASR_E_NO_IMPLEMENTATION;
 }

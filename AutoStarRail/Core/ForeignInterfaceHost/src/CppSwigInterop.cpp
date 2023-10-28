@@ -1,114 +1,81 @@
-#include "AutoStarRail/AsrPtr.hpp"
-#include "AutoStarRail/IAsrBase.h"
-#include "AutoStarRail/PluginInterface/IAsrPlugin.h"
+#include <AutoStarRail/AsrPtr.hpp>
+#include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
+#include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/PluginInterface/IAsrPlugin.h>
+#include <boost/bimap/bimap.hpp>
+#include <boost/bimap/unordered_set_of.hpp>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
-AsrResult SwigToCpp<IAsrSwigErrorLens>::TranslateError(
-    IAsrReadOnlyString*  locale_name,
-    AsrResult            error_code,
-    IAsrReadOnlyString** pp_out_string)
-{
-    AsrString asr_str_locale_name{locale_name};
-    auto swig_result = sp_impl_->TranslateError(asr_str_locale_name, error_code);
-    auto result = swig_result.error_code;
-    if (ASR::IsOk(result))
-    {
-        swig_result.value.GetImpl(pp_out_string);
+using CppSwigMap = boost::bimaps::bimap<
+    // cpp iid
+    boost::bimaps::unordered_set_of<AsrGuid, std::hash<AsrGuid>>,
+    // swig iid
+    boost::bimaps::unordered_set_of<AsrGuid, std::hash<AsrGuid>>>;
+
+#define ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(name)        \
+    {                                                                          \
+        AsrIidOf<IAsr##name>(), AsrIidOf<IAsrSwig##name>()                     \
     }
-    return result;
+
+/**
+ * @brief The left side is cpp iid, while the right side is swig iid.
+ */
+const CppSwigMap g_cpp_swig_map = []() -> CppSwigMap
+{
+    std::initializer_list<CppSwigMap::value_type> list{
+        ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(Base),
+        ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(Inspectable)
+
+    };
+    return {list.begin(), list.end()};
+}();
+
+auto ConvertCppIidToSwigIid(const AsrGuid& cpp_iid)
+    -> ASR::Utils::Expected<AsrGuid>
+{
+    auto it = g_cpp_swig_map.left.find(cpp_iid);
+    if (it == g_cpp_swig_map.left.end())
+    {
+        return tl::make_unexpected(ASR_E_NO_INTERFACE);
+    }
+    return it->second;
 }
 
-// AsrResult SwigToCpp<IAsrSwigPlugin>::EnumFeature(
-//     const size_t      index,
-//     AsrPluginFeature* p_out_feature)
-// {
-//     auto swig_result = sp_impl_->EnumFeature(index);
-//     auto result = swig_result.error_code;
-//     *p_out_feature = swig_result.value;
-//     return result;
-// }
+// -------------------- implementation of SwigToCpp class --------------------
 
-// AsrResult SwigToCpp<IAsrSwigPlugin>::GetFeatureInterface(
-//     AsrPluginFeature feature,
-//     IAsrBase**       pp_out_object)
-// {
-//     auto swig_result = sp_impl_->GetFeatureInterface(feature);
-//     auto result = swig_result.error_code;
-//     if (ASR::IsOk(result))
-//     {
-//         auto interface = swig_result.value;
-//         switch (feature)
-//         {
-//             using enum AsrPluginFeature;
-//         case Capture:
+AsrResult SwigToCpp<IAsrSwigErrorLens>::GetErrorMessage(
+    IAsrReadOnlyString*  locale_name,
+    AsrResult            error_code,
+    IAsrReadOnlyString** pp_out_string){
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigErrorLens::GetErrorMessage,
+        pp_out_string,
+        locale_name,
+        error_code)}
 
-//         case ErrorLens:
-//             if (interface->IsCastAvailable(AsrIidOf<IAsrSwigErrorLens>()))
-//             {
-//                 *pp_out_object = new SwigToCpp<IAsrSwigErrorLens>(
-//                     std::static_pointer_cast<IAsrSwigErrorLens>(interface));
-//             }
-//             break;
-//         case Task:
-//             if (interface->IsCastAvailable(AsrIidOf<IAsrSwigTask>()))
-//             {
-//                 *pp_out_object = new SwigToCpp<IAsrSwigErrorLens>(
-//                     std::static_pointer_cast<IAsrSwigErrorLens>(interface));
-//             }
-//             break;
-//         default:
-//             return ASR_E_NO_INTERFACE;
-//         }
-//     }
-//     return result;
-// }
+AsrResult SwigToCpp<IAsrSwigPlugin>::EnumFeature(
+    const size_t      index,
+    AsrPluginFeature* p_out_feature)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigPlugin::EnumFeature,
+        p_out_feature,
+        index);
+}
 
-// ---------------------------------------------------------------------------
-
-// AsrResult CppToSwig<IAsrPlugin>::IsCastAvailable(const AsrGuid& iid)
-// {
-//     return IsCastAvailableImpl(
-//         iid,
-//         swig_type_inherit_chain_end_of_t<
-//             IAsrSwigPlugin,
-//             asr_plugin_inherit_chain>{});
-// }
-
-// AsrRetPluginFeature CppToSwig<IAsrPlugin>::EnumFeature(const size_t index)
-// {
-//     AsrRetPluginFeature result;
-//     AsrPluginFeature    feature;
-//     result.error_code = p_impl_->EnumFeature(index, &feature);
-//     if (ASR::IsOk(result.error_code))
-//     {
-//         result.value = feature;
-//     }
-//     return result;
-// }
-
-// AsrRetSwigBase CppToSwig<IAsrPlugin>::GetFeatureInterface(
-//     AsrPluginFeature feature)
-// {
-//     AsrRetSwigBase        result{};
-//     ASR::AsrPtr<IAsrBase> p_result;
-//     result.error_code = p_impl_->GetFeatureInterface(feature, p_result.Put());
-//     if (ASR::IsOk(result.error_code))
-//     {
-//         switch (feature)
-//         {
-//             using enum AsrPluginFeature;
-
-//         case Capture:
-//         case ErrorLens:
-//         case Task:
-//             break;
-//         default:
-//             result.error_code = ASR_E_NO_INTERFACE;
-//         }
-//     }
-//     return result;
-// }
+AsrResult SwigToCpp<IAsrSwigPlugin>::CreateFeatureInterface(
+    AsrPluginFeature feature,
+    void**           pp_out_interface)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigPlugin::CreateFeatureInterface,
+        pp_out_interface,
+        feature);
+}
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

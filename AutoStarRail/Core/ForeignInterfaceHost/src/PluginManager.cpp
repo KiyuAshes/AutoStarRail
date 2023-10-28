@@ -1,54 +1,30 @@
 #include "PluginManager.h"
-#include <AutoStarRail/Utils/StringUtils.h>
+#include "ForeignInterfaceHost.h"
 #include <AutoStarRail/AsrString.hpp>
-#include <AutoStarRail/IAsrBase.h>
-#include <AutoStarRail/PluginInterface/IAsrTask.h>
-#include <AutoStarRail/Utils/Utils.hpp>
-#include <AutoStarRail/Utils/StreamUtils.hpp>
-#include <AutoStarRail/Core/Logger/Logger.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
+#include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Core/i18n/AsrResultTranslator.h>
 #include <AutoStarRail/Core/i18n/GlobalLocale.h>
-#include "AutoStarRail/Utils/Expected.h"
-#include "ForeignInterfaceHost.h"
+#include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
+#include <AutoStarRail/PluginInterface/IAsrTask.h>
+#include <AutoStarRail/Utils/CommonUtils.hpp>
+#include <AutoStarRail/Utils/Expected.h>
+#include <AutoStarRail/Utils/StreamUtils.hpp>
+#include <AutoStarRail/Utils/StringUtils.h>
+
+#include <boost/pfr/core.hpp>
 #include <cstddef>
+#include <fstream>
 #include <functional>
+#include <magic_enum.hpp>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <string_view>
-#include <fstream>
-#include <nlohmann/json.hpp>
-#include <magic_enum.hpp>
+#include <unordered_set>
 #include <utility>
-
-AsrResult GetErrorExplanation(
-    IAsrBase*            p_error_generating_interface,
-    AsrResult            error_code,
-    IAsrReadOnlyString** pp_out_error_explanation)
-{
-    return Asr::Core::ForeignInterfaceHost::g_plugin_manager
-        .GetErrorExplanation(
-            {ASR::AsrPtr{p_error_generating_interface}},
-            error_code,
-            pp_out_error_explanation);
-}
-
-AsrRetString GetErrorExplanation(
-    std::shared_ptr<IAsrSwigBase> p_error_generating_interface,
-    AsrResult                     error_code)
-{
-    AsrRetString                    result;
-    ASR::AsrPtr<IAsrReadOnlyString> p_locale_name{};
-    IAsrReadOnlyString*             p_result{nullptr};
-
-    result.error_code =
-        ASR::Core::ForeignInterfaceHost::g_plugin_manager.GetErrorExplanation(
-            {p_error_generating_interface},
-            error_code,
-            &p_result);
-    result.value = AsrString{p_result};
-    return result;
-}
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
@@ -83,6 +59,10 @@ constexpr auto MakePluginFeatureGetter()
             return *context.p_out_enum_result == ASR_S_OK;
         };
     }
+    else
+    {
+        throw std::runtime_error("Unsupported plugin type");
+    }
 }
 
 template <class T>
@@ -91,9 +71,9 @@ auto GetSupportedFeatures(T& p_plugin, std::string_view plugin_name)
 {
     std::vector<AsrPluginFeature> result{};
     constexpr size_t              max_enum_count =
-        magic_enum::enum_count<AsrPluginFeature>() + 10;
+        magic_enum::enum_count<AsrPluginFeature>() + static_cast<size_t>(10);
 
-    size_t index = 0;
+    size_t index{};
 
     AsrPluginFeature feature{};
     AsrResult        enum_feature_result{ASR_E_UNDEFINED_RETURN_VALUE};
@@ -146,7 +126,7 @@ auto GetSupportedInterface(
         {
             // TODO: Call internal error lens to interpret the error code.
             ASR_CORE_LOG_ERROR(
-                "Get plugin interface for feature {}(value={}) failed: {}",
+                "Get plugin interface for feature {} (value={}) failed: {}",
                 magic_enum::enum_name(feature),
                 feature,
                 get_interface_result);
@@ -154,126 +134,404 @@ auto GetSupportedInterface(
     }
 }
 
-template <class T>
-auto CallErrorLens(
-    T&                  p_error_lens,
-    IAsrReadOnlyString* locale_name,
-    AsrResult error_code) -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>
+/**
+ *
+ * @tparam F
+ * @param error_code
+ * @param p_locale_name
+ * @param callback The function who return struct { AsrResult error_code,
+ * AsrReadOnlyString value; };
+ * @return
+ */
+template <class F>
+auto GetErrorMessageAndAutoFallBack(
+    const AsrResult     error_code,
+    IAsrReadOnlyString* p_locale_name,
+    F&& callback) -> ASR::Utils::Expected<ASR::AsrPtr<IAsrReadOnlyString>>
 {
-    if constexpr (std::is_same_v<AsrPtr<IAsrErrorLens>, T>)
+    constexpr size_t ERROR_CODE_INDEX = 0;
+    constexpr size_t VALUE_INDEX = 1;
+
+    ASR::AsrPtr<IAsrReadOnlyString> result{};
+    auto&&     get_error_message = std::forward<F>(callback);
+    const auto result_1 = get_error_message(error_code, p_locale_name);
+    const auto result_1_error_code =
+        boost::pfr::get<ERROR_CODE_INDEX>(result_1);
+
+    if (ASR::IsOk(result_1_error_code))
     {
-        AsrResult                  call_result{ASR_E_UNDEFINED_RETURN_VALUE};
-        AsrPtr<IAsrReadOnlyString> p_explanation{};
-        call_result = p_error_lens->TranslateError(
-            locale_name,
-            error_code,
-            p_explanation.Put());
-        if (ASR::IsOk(call_result))
+        // use default locale and retry.
+        if (result_1_error_code == ASR_E_OUT_OF_RANGE)
         {
-            return {p_explanation};
+            const auto p_fallback_locale_name =
+                ASR::Core::i18n::GetFallbackLocale();
+            const auto result_2 =
+                get_error_message(error_code, p_fallback_locale_name.Get());
+            if (const auto result_2_error_code =
+                    boost::pfr::get<ERROR_CODE_INDEX>(result_2);
+                !IsOk(result_2_error_code))
+            {
+                return tl::make_unexpected(result_2_error_code);
+            }
+            boost::pfr::get<VALUE_INDEX>(result_2).GetImpl(result.Put());
+            return result;
         }
-        else
-        {
-            return tl::make_unexpected(call_result);
-        }
+        return tl::make_unexpected(result_1_error_code);
     }
-    else if constexpr (std::is_same_v<std::shared_ptr<IAsrSwigErrorLens>, T>)
-    {
-        auto swig_result =
-            p_error_lens->TranslateError(locale_name, error_code);
-        if (ASR::IsOk(swig_result.error_code))
-        {
-            return {swig_result.value};
-        }
-        else
-        {
-            return tl::make_unexpected(swig_result.error_code);
-        }
-    }
-    return tl::make_unexpected(ASR_E_UNDEFINED_RETURN_VALUE);
+
+    boost::pfr::get<VALUE_INDEX>(result_1).GetImpl(result.Put());
+    return result;
 }
 
-ASR_NS_ANONYMOUS_DETAILS_END
-
-AsrResult ErrorLensManager::InternalRegister(
-    AsrBaseCommonPtr      p_asr_base,
-    AsrErrorLensCommonPtr p_error_lens)
-{
-    const auto it = map_.find(p_asr_base);
-    if (it != map_.end())
-    {
-        return ASR_E_DUPLICATE_ELEMENT;
-    }
-    map_[p_asr_base] = std::move(p_error_lens);
-    return ASR_S_OK;
-}
-
-AsrResult ErrorLensManager::InternalUnregister(AsrBaseCommonPtr p_asr_base)
-{
-    const auto it = map_.find(p_asr_base);
-    if (it != map_.end())
-    {
-        map_.erase(it);
-        return ASR_S_OK;
-    }
-    else
-    {
-        return ASR_E_OUT_OF_RANGE;
-    }
-}
-
-AsrResult ErrorLensManager::Register(
-    ASR::AsrPtr<IAsrBase> p_asr_base,
-    AsrErrorLensCommonPtr p_error_lens)
-{
-    return InternalRegister({p_asr_base}, p_error_lens);
-}
-
-AsrResult ErrorLensManager::Register(
-    std::shared_ptr<IAsrSwigBase> p_asr_base,
-    AsrErrorLensCommonPtr         p_error_lens)
-{
-    return InternalRegister({p_asr_base}, p_error_lens);
-}
-
-AsrResult ErrorLensManager::UnRegister(ASR::AsrPtr<IAsrBase> p_asr_base)
-{
-    return InternalUnregister({p_asr_base});
-}
-
-AsrResult ErrorLensManager::UnRegister(std::shared_ptr<IAsrSwigBase> p_asr_base)
-{
-    return InternalUnregister({p_asr_base});
-}
-
-auto ErrorLensManager::GetExplanation(
-    const AsrBaseCommonPtr& p_asr_base,
-    IAsrReadOnlyString*     locale_name,
-    AsrResult               error_code) const
-    -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>
+auto GetPredefinedErrorMessage(
+    const AsrResult     error_code,
+    IAsrReadOnlyString* p_locale_name)
+    -> ASR::Utils::Expected<ASR::AsrPtr<IAsrReadOnlyString>>
 {
     // 不是插件自定义错误时
     if (error_code < ASR_E_RESERVED)
     {
-        AsrPtr<IAsrReadOnlyString> p_error_explanation{};
-        i18n::TranslateError(
-            locale_name,
-            error_code,
-            p_error_explanation.Put());
-        return {p_error_explanation};
+        return ASR::Core::ForeignInterfaceHost::Details::
+            GetErrorMessageAndAutoFallBack(
+                error_code,
+                p_locale_name,
+                [](auto&& internal_error_code, auto&& internal_p_locale_name)
+                {
+                    ASR::AsrPtr<IAsrReadOnlyString> p_result{};
+                    AsrRetReadOnlyString            result{};
+                    result.error_code = ASR::Core::i18n::TranslateError(
+                        internal_p_locale_name,
+                        internal_error_code,
+                        p_result.Put());
+                    result.value = AsrReadOnlyString{p_result};
+                    return result;
+                });
     }
-    if (auto it = map_.find(p_asr_base); it != map_.end())
+    ASR_CORE_LOG_ERROR(
+        "The error code {} ({} >= " ASR_STR(
+            ASR_E_RESERVED) ") which is not a predefined error code.",
+        error_code,
+        error_code);
+    return tl::make_unexpected(ASR_E_OUT_OF_RANGE);
+}
+
+/**
+ * @brief Get the error explanation for the predefined error code.\n
+ *  NOTE: When error happened, this function will automatically log.
+ * @param pointer
+ * @return
+ */
+auto GetIidsFrom(IAsrInspectable* pointer)
+    -> Utils::Expected<AsrPtr<IAsrIidVector>>
+{
+    ASR::AsrPtr<IAsrIidVector> p_iid_vector{};
+    if (const auto get_iid_result =
+            pointer->GetIids(p_iid_vector.Put());
+        !ASR::IsOk(get_iid_result))
     {
-        return std::visit(
-            [locale_name, error_code](auto& p_error_lens) {
-                return Details::CallErrorLens(
-                    p_error_lens,
-                    locale_name,
-                    error_code);
-            },
-            it->second);
+        ASR_CORE_LOG_ERROR(
+            "Call GetIids failed. Pointer = {}. Error code = {}",
+            static_cast<void*>(pointer),
+            get_iid_result);
+        ASR::AsrPtr<IAsrReadOnlyString> p_get_iid_error_explanation{};
+        ASR::Core::ForeignInterfaceHost::Details::GetPredefinedErrorMessage(
+            get_iid_result,
+            ASR::Core::i18n::GetFallbackLocale().Get());
+        ASR_CORE_LOG_ERROR(
+            "NOTE: The explanation for error code {} is \"{}\".",
+            get_iid_result,
+            p_get_iid_error_explanation);
+        return tl::make_unexpected(get_iid_result);
     }
-    return tl::make_unexpected(ASR_E_NO_INTERFACE);
+    return p_iid_vector;
+}
+
+// TODO: 考虑添加boost::stacktrace模块方便debug
+auto GetIidVectorSize(IAsrIidVector* p_iid_vector)
+    -> ASR::Utils::Expected<uint32_t>
+{
+    uint32_t   iid_size{};
+    const auto get_iid_size_result = p_iid_vector->Size(&iid_size);
+    if (!IsOk(get_iid_size_result))
+    {
+        AsrPtr<IAsrReadOnlyString> p_error_message{};
+        ::AsrGetPredefinedErrorMessage(
+            get_iid_size_result,
+            p_error_message.Put());
+        ASR_CORE_LOG_ERROR(
+            "Error happened in class IAsrIidVector. Pointer = {}. Error code = {}. Error message = \"{}\".",
+            static_cast<void*>(p_iid_vector),
+            get_iid_size_result,
+            p_error_message);
+        return tl::make_unexpected(get_iid_size_result);
+    }
+    return iid_size;
+}
+
+auto GetIidFromIidVector(IAsrIidVector* p_iid_vector, uint32_t iid_index)
+    -> ASR::Utils::Expected<AsrGuid>
+{
+    AsrGuid    iid{AsrIidOf<IAsrBase>()};
+    const auto get_iid_result = p_iid_vector->At(iid_index, &iid);
+    if (!IsOk(get_iid_result))
+    {
+        AsrPtr<IAsrReadOnlyString> p_error_message{};
+        ::AsrGetPredefinedErrorMessage(get_iid_result, p_error_message.Put());
+        ASR_CORE_LOG_ERROR(
+            "Error happened in class IAsrIidVector. Pointer = {}. Error code = {}. Error message = \"{}\".",
+            static_cast<void*>(p_iid_vector),
+            get_iid_result,
+            p_error_message);
+        return tl::make_unexpected(get_iid_result);
+    }
+    return iid;
+}
+
+void LogWarnWhenReceiveUnexpectedAsrOutOfRange(
+    IAsrIidVector* p_iid_vector,
+    uint32_t       size,
+    uint32_t       iid_index)
+{
+    ASR_CORE_LOG_WARN(
+        "Received ASR_E_OUT_OF_RANGE when calling IAsrIidVector::At(). Pointer = {}. Size = {}. Index = {}.",
+        static_cast<void*>(p_iid_vector),
+        size,
+        iid_index);
+}
+
+ASR_NS_ANONYMOUS_DETAILS_END
+
+ASR_CORE_FOREIGNINTERFACEHOST_NS_END
+
+AsrResult AsrGetErrorMessage(
+    IAsrInspectable*     p_error_generator,
+    AsrResult            error_code,
+    IAsrReadOnlyString** pp_out_error_explanation)
+{
+    AsrResult result{ASR_E_UNDEFINED_RETURN_VALUE};
+
+    const auto get_iid_result =
+        ASR::Core::ForeignInterfaceHost::Details::GetIidsFrom(
+            p_error_generator);
+    if (get_iid_result)
+    {
+        result =
+            Asr::Core::ForeignInterfaceHost::g_plugin_manager.GetErrorMessage(
+                get_iid_result.value().Get(),
+                error_code,
+                pp_out_error_explanation);
+    }
+    else
+    {
+        result = get_iid_result.error();
+    }
+
+    return result;
+}
+
+AsrResult AsrGetPredefinedErrorMessage(
+    AsrResult            error_code,
+    IAsrReadOnlyString** pp_out_error_explanation)
+{
+    ASR::AsrPtr<IAsrReadOnlyString> p_default_locale_name{};
+    std::ignore = ::AsrGetDefaultLocale(p_default_locale_name.Put());
+    const auto result =
+        ASR::Core::ForeignInterfaceHost::Details::GetPredefinedErrorMessage(
+            error_code,
+            p_default_locale_name.Get());
+    if (result)
+    {
+        auto* const p_result = result.value().Get();
+        p_result->AddRef();
+        *pp_out_error_explanation = p_result;
+        return ASR_S_OK;
+    }
+    return result.error();
+}
+
+AsrRetReadOnlyString AsrGetErrorMessage(
+    IAsrSwigInspectable* p_error_generator,
+    AsrResult            error_code)
+{
+    AsrRetReadOnlyString result{};
+    ASR::Core::ForeignInterfaceHost::SwigToCpp<IAsrSwigInspectable>
+        p_cpp_error_generator{p_error_generator};
+
+    const auto get_iid_result =
+        ASR::Core::ForeignInterfaceHost::Details::GetIidsFrom(
+            &p_cpp_error_generator);
+    if (get_iid_result)
+    {
+        ASR::AsrPtr<IAsrReadOnlyString> p_error_message{};
+        result.error_code =
+            Asr::Core::ForeignInterfaceHost::g_plugin_manager.GetErrorMessage(
+                get_iid_result.value().Get(),
+                error_code,
+                p_error_message.Put());
+        result.value = AsrReadOnlyString{p_error_message};
+    }
+    else
+    {
+        result.error_code = get_iid_result.error();
+    }
+    return result;
+}
+
+AsrRetReadOnlyString AsrGetPredefinedErrorMessage(AsrResult error_code)
+{
+    AsrRetReadOnlyString            result{};
+    ASR::AsrPtr<IAsrReadOnlyString> p_result{};
+    result.error_code =
+        AsrGetPredefinedErrorMessage(error_code, p_result.Put());
+    if (ASR::IsOk(result.error_code))
+    {
+        result.value = p_result;
+    }
+    return result;
+}
+
+ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
+
+// TODO:检查添加的iid是否覆盖了所有预定义的接口，需要包含C++和SWIG版本的
+const std::unordered_set<AsrGuid> g_official_iids{
+    []()
+    {
+        std::unordered_set<AsrGuid> result{{
+            // IAsrBase.h
+            AsrIidOf<IAsrBase>(),
+            AsrIidOf<IAsrSwigBase>(),
+            // IAsrInspectable.h
+            AsrIidOf<IAsrInspectable>(),
+            AsrIidOf<IAsrSwigInspectable>(),
+            AsrIidOf<IAsrIidVector>(),
+            // AsrReadOnlyString.hpp
+            AsrIidOf<IAsrReadOnlyString>(),
+            AsrIidOf<IAsrString>(),
+            // PluginInterface/IAsrCapture.h
+            AsrIidOf<IAsrCapture>(),
+            AsrIidOf<IAsrSwigCapture>(),
+            AsrIidOf<IAsrCaptureFactory>(),
+            AsrIidOf<IAsrSwigCaptureFactory>(),
+            // PluginInterface/IAsrErrorLens.h
+            AsrIidOf<IAsrErrorLens>(),
+            AsrIidOf<IAsrSwigErrorLens>(),
+            // PluginInterface/IAsrInput.h
+            // PluginInterface/IAsrPlugin.h
+            AsrIidOf<IAsrPlugin>(),
+            AsrIidOf<IAsrSwigPlugin>(),
+            // PluginInterface/IAsrTask.h
+            AsrIidOf<IAsrTask>(),
+            AsrIidOf<IAsrSwigTask>()
+            // ExportInterface
+        }};
+        return result;
+    }()};
+
+AsrResult ErrorLensManager::Register(
+    IAsrIidVector* p_iid_vector,
+    IAsrErrorLens* p_error_lens)
+{
+    const auto get_iid_size_result = Details::GetIidVectorSize(p_iid_vector);
+    if (!get_iid_size_result)
+    {
+        return get_iid_size_result.error();
+    }
+    const auto iid_size = get_iid_size_result.value();
+    // try to use all iids to register IAsrErrorLens instance.
+    for (uint32_t i = 0; i < iid_size; ++i)
+    {
+        const auto get_iid_from_iid_vector_result =
+            Details::GetIidFromIidVector(p_iid_vector, i);
+        if (!get_iid_from_iid_vector_result)
+        {
+            if (get_iid_size_result.error() == ASR_E_OUT_OF_RANGE)
+            {
+                Details::LogWarnWhenReceiveUnexpectedAsrOutOfRange(
+                    p_iid_vector,
+                    iid_size,
+                    i);
+                break;
+            }
+            return get_iid_from_iid_vector_result.error();
+        }
+        const auto& iid = get_iid_from_iid_vector_result.value();
+        if (g_official_iids.find(iid) != g_official_iids.end())
+        {
+            if (map_.count(iid) == 1)
+            {
+                ASR_CORE_LOG_WARN(
+                    "Trying to register duplicate IAsrErrorLens instance. Pointer = {}. Iid = {}.",
+                    static_cast<void*>(p_error_lens),
+                    iid);
+            }
+            // register IAsrErrorLens instance.
+            map_[iid] = {p_error_lens, take_ownership};
+        }
+    }
+    return ASR_S_OK;
+}
+
+AsrResult ErrorLensManager::Register(
+    IAsrIidVector*     p_iids,
+    IAsrSwigErrorLens* p_error_lens)
+{
+    AsrPtr<IAsrErrorLens> p_cpp_error_lens{
+        new SwigToCpp<IAsrSwigErrorLens>{p_error_lens},
+        take_ownership};
+    return Register(p_iids, p_cpp_error_lens.Get());
+}
+
+auto ErrorLensManager::GetErrorMessage(
+    IAsrIidVector*      p_iids,
+    IAsrReadOnlyString* locale_name,
+    AsrResult           error_code) const
+    -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>
+{
+    const auto get_iid_result = Details::GetIidVectorSize(p_iids);
+    if (!get_iid_result) [[unlikely]]
+    {
+        return tl::make_unexpected(get_iid_result.error());
+    }
+
+    const auto iid_size = get_iid_result.value();
+    for (uint32_t i = 0; i < iid_size; i++)
+    {
+        const auto get_iid_from_iid_vector_result =
+            Details::GetIidFromIidVector(p_iids, i);
+
+        if (!get_iid_from_iid_vector_result) [[unlikely]]
+        {
+            if (get_iid_result.error() == ASR_E_OUT_OF_RANGE)
+            {
+                Details::LogWarnWhenReceiveUnexpectedAsrOutOfRange(
+                    p_iids,
+                    iid_size,
+                    i);
+            }
+            return tl::make_unexpected(get_iid_from_iid_vector_result.error());
+        }
+
+        const auto& iid = get_iid_from_iid_vector_result.value();
+        if (g_official_iids.contains(iid))
+        {
+            continue;
+        }
+        if (const auto it = map_.find(iid); it != map_.end())
+        {
+            AsrPtr<IAsrReadOnlyString> p_result{};
+            const auto get_error_message_result = it->second->GetErrorMessage(
+                locale_name,
+                error_code,
+                p_result.Put());
+            if (IsOk(get_error_message_result))
+            {
+                return p_result;
+            }
+
+            return tl::make_unexpected(get_error_message_result);
+        }
+    }
+    return tl::make_unexpected(ASR_E_OUT_OF_RANGE);
 }
 
 ASR_DEFINE_VARIABLE(g_plugin_manager){};
@@ -281,6 +539,14 @@ ASR_DEFINE_VARIABLE(g_plugin_manager){};
 AsrResult PluginManager::AddInterface(ASR::AsrPtr<IAsrTask> p_task)
 {
     (void)p_task;
+    // TODO: finish this implementation.
+    return ASR_E_NO_IMPLEMENTATION;
+}
+
+AsrResult PluginManager::AddInterface(IAsrSwigTask* p_task)
+{
+    (void)p_task;
+    // TODO: finish this implementation.
     return ASR_E_NO_IMPLEMENTATION;
 }
 
@@ -310,13 +576,14 @@ AsrResult PluginManager::GetInterface(const Plugin& plugin)
 std::vector<AsrResult> PluginManager::Refresh()
 {
     auto result = ASR::Utils::MakeEmptyContainer<std::vector<AsrResult>>();
-    result.reserve(50);
+    constexpr std::size_t POSSIBLE_COUNT_OF_PLUGINS = 50;
+    result.reserve(POSSIBLE_COUNT_OF_PLUGINS);
 
     for (const auto  current_path = boost::filesystem::path{"./plugins"};
          const auto& it : boost::filesystem::directory_iterator{current_path})
     {
         const auto& it_path = it.path();
-        const auto  extension = it.path().extension();
+        const auto  extension = it_path.extension();
         if (ASR_UTILS_STRINGUTILS_COMPARE_STRING(extension, "json"))
         {
             AsrResult plugin_result{ASR_S_OK};
@@ -325,9 +592,10 @@ std::vector<AsrResult> PluginManager::Refresh()
             {
                 const auto up_plugin_desc = GetPluginDesc(it_path);
 
-                if (const auto& CURRENT_PLATFORM =
-                        ASR_UTILS_STRINGUTILS_DEFINE_U8STR(
-                            ASR_STR(ASR_PLATFORM));
+                if (const auto* const CURRENT_PLATFORM =
+                        static_cast<const char*>(
+                            ASR_UTILS_STRINGUTILS_DEFINE_U8STR(
+                                ASR_STR(ASR_PLATFORM)));
                     up_plugin_desc->supported_system.find_first_of(
                         CURRENT_PLATFORM)
                     != decltype(up_plugin_desc->supported_system)::npos)
@@ -372,57 +640,32 @@ std::vector<AsrResult> PluginManager::Refresh()
     return result;
 }
 
-AsrResult PluginManager::GetErrorExplanation(
-    ErrorLensManager::AsrBaseCommonPtr p_base,
-    AsrResult                          error_code,
-    IAsrReadOnlyString**               pp_out_error_message) const
+AsrResult PluginManager::GetErrorMessage(
+    IAsrIidVector*       p_iids,
+    AsrResult            error_code,
+    IAsrReadOnlyString** pp_out_error_message)
 {
-    AsrResult                  result{ASR_S_OK};
-    AsrPtr<IAsrReadOnlyString> p_locale_name{};
-    const auto                 on_success =
-        [pp_out_error_message](const AsrPtr<IAsrReadOnlyString>& error_message)
+    if (p_iids == nullptr || pp_out_error_message == nullptr)
     {
-        error_message->AddRef();
-        *pp_out_error_message = error_message.Get();
-    };
-    const auto get_error_explanation_with_default_locale =
-        [this, &p_base, &error_code, &on_success, &result]()
-    {
-        const auto p_fallback_locale = i18n::GetFallbackLocale();
-        error_lens_manager_
-            .GetExplanation(p_base, p_fallback_locale.Get(), error_code)
-            .or_else(
-                [&result](const auto retry_result)
-                {
-                    result = retry_result;
-                    ASR_CORE_LOG_ERROR(
-                        "Can not retrieve error message when using default locale. Error code: {}",
-                        retry_result);
-                })
-            .map(on_success);
-    };
-    const auto on_use_fallback_locale =
-        [&result, &get_error_explanation_with_default_locale](
-            const auto first_try_result)
-    {
-        // 发生错误时尝试使用en作为locale
-        if (first_try_result == ASR_E_OUT_OF_RANGE)
-        {
-            get_error_explanation_with_default_locale();
-        }
-        else
-        {
-            result = first_try_result;
-            ASR_CORE_LOG_ERROR(
-                "Can not retrieve error message. Error code: {}",
-                first_try_result);
-        };
-    };
+        return ASR_E_INVALID_POINTER;
+    }
 
-    ::AsrGetDefaultLocale(p_locale_name.Put());
-    error_lens_manager_.GetExplanation(p_base, p_locale_name.Get(), error_code)
-        .or_else(on_use_fallback_locale)
-        .map(on_success);
+    AsrResult result{ASR_E_UNDEFINED_RETURN_VALUE};
+
+    AsrPtr<IAsrReadOnlyString> p_default_locale_name{};
+    ::AsrGetDefaultLocale(p_default_locale_name.Put());
+
+    error_lens_manager_
+        .GetErrorMessage(p_iids, p_default_locale_name.Get(), error_code)
+        .map(
+            [&result, pp_out_error_message](const auto& p_error_message)
+            {
+                p_error_message->AddRef();
+                *pp_out_error_message = p_error_message.Get();
+                result = ASR_S_OK;
+            })
+        .or_else([&result](const auto ec) { result = ec; });
+
     return result;
 }
 

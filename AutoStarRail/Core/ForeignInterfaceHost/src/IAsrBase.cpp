@@ -11,7 +11,7 @@ AsrRetGuid AsrMakeAsrGuid(const char* p_guid_string)
     AsrRetGuid result;
     try
     {
-        result.guid =
+        result.value =
             ASR::Core::ForeignInterfaceHost::MakeAsrGuid(p_guid_string);
         result.error_code = ASR_S_OK;
     }

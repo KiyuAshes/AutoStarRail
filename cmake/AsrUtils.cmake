@@ -57,11 +57,11 @@ function(asr_add_additional_test ADDITIONAL_TEST_DIRECTORY_NAME)
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/Test)
 endfunction()
 
-function(asr_add_core_test TEST_FOLDER PRIVATE_EX_LIBS)
+function(asr_add_core_test TEST_FOLDER)
     aux_source_directory(${TEST_FOLDER}/test TEST_SOURCES)
     set(TEST_NAME "${TEST_FOLDER}Test")
     add_executable(${TEST_NAME} ${TEST_SOURCES})
-    target_link_libraries(${TEST_NAME} PUBLIC GTest::gtest_main GTest::gtest AsrStaticCore ${PRIVATE_EX_LIBS})
+    target_link_libraries(${TEST_NAME} PUBLIC Asr3rdParty GTest::gtest_main GTest::gtest AsrCoreObjects)
 
     get_target_property(INCLUDE_DIRS AsrCoreObjects INCLUDE_DIRECTORIES)
     target_include_directories(${TEST_NAME} PRIVATE ${INCLUDE_DIRS})
@@ -95,5 +95,19 @@ function(asr_check_language_export LANGUAGE EXPORT_LANGUAGES_LIST)
         string(TOLOWER ${LANGUAGE} LOWERCASE_LANGUAGE)
         list(APPEND ${EXPORT_LANGUAGES_LIST} ${LOWERCASE_LANGUAGE})
         set(${EXPORT_LANGUAGES_LIST} ${${EXPORT_LANGUAGES_LIST}} PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(asr_add_auto_copy_dll_path DLL_PATH)
+    add_custom_command(
+        TARGET AsrAutoCopyDll
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${${DLL_PATH}} $<TARGET_FILE_DIR:libAsrCore>)
+
+    if(ASR_BUILD_TEST)
+        add_custom_command(
+            TARGET AsrAutoCopyDll
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${${DLL_PATH}} ${CMAKE_BINARY_DIR}/Test)
     endif()
 endfunction()

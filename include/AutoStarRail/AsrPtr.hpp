@@ -7,6 +7,12 @@
 
 ASR_NS_BEGIN
 
+struct take_ownership_t
+{
+};
+
+constexpr auto take_ownership = take_ownership_t{};
+
 template <class T>
 class AsrPtr
 {
@@ -44,9 +50,9 @@ protected:
     }
 
 public:
-    AsrPtr() : ptr_(nullptr) {}
-    AsrPtr(decltype(nullptr)) : ptr_(nullptr) {}
-    AsrPtr(T* p) : ptr_(p) { InternalAddRef(); }
+    AsrPtr() noexcept : ptr_(nullptr) {}
+    AsrPtr(decltype(nullptr)) noexcept : ptr_(nullptr) {}
+    AsrPtr(T* p, take_ownership_t) : ptr_(p) { InternalAddRef(); }
     AsrPtr(const AsrPtr& other) : ptr_(other.Get()) { InternalAddRef(); }
     template <class U>
     AsrPtr(const AsrPtr<U>& other) : ptr_(other.Get())
@@ -82,16 +88,16 @@ public:
         return *this;
     }
     template <class U>
-    AsrPtr& operator=(AsrPtr&& other) noexcept
+    AsrPtr& operator=(AsrPtr<U>&& other) noexcept
     {
         InternalRelease();
         ptr_ = std::exchange(other.ptr_, nullptr);
         return *this;
     }
-    ~AsrPtr() { InternalRelease(); }
-    T*   operator->() const { return ptr_; }
-    T&   operator*() const { return *ptr_; }
-    bool operator==(const AsrPtr<T>& other) const { return ptr_ == other.ptr_; }
+    ~AsrPtr() noexcept { InternalRelease(); }
+    T*   operator->() const noexcept { return ptr_; }
+    T&   operator*() const noexcept { return *ptr_; }
+    bool operator==(const AsrPtr<T>& other) const noexcept { return ptr_ == other.ptr_; }
     explicit operator bool() const noexcept { return Get() != nullptr; }
     template <class Other>
     Other* As(const AsrGuid& id) const
@@ -111,17 +117,17 @@ public:
         if (ptr_)
         {
             ptr_->QueryInterface(AsrIidOf<Other>(), &result);
-            other = {static_cast<Other*>(result)};
+            other = {static_cast<Other*>(result), take_ownership};
             return ASR_S_OK;
         }
         return ASR_E_NO_INTERFACE;
     }
-    T* Reset() const
+    T* Reset()
     {
         InternalRelease();
         return std::exchange(ptr_, nullptr);
     }
-    T*  Get() const { return ptr_; }
+    T*  Get() const noexcept { return ptr_; }
     T** Put()
     {
         InternalRelease();
@@ -131,9 +137,9 @@ public:
     void**      PutVoid() { return reinterpret_cast<void**>(Put()); }
     friend void swap(AsrPtr& lhs, AsrPtr& rhs) noexcept
     {
-        std::swap(lhs.m_ptr, rhs.m_ptr);
+        std::swap(lhs.ptr_, rhs.ptr_);
     }
-    auto operator<=>(const AsrPtr& other) const { return other.ptr_ <=> ptr_; };
+    auto operator<=>(const AsrPtr& other) const noexcept { return other.ptr_ <=> ptr_; };
     static AsrPtr Attach(T* p)
     {
         AsrPtr result{nullptr};

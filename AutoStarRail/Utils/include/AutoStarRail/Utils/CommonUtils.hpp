@@ -8,6 +8,14 @@
 
 ASR_UTILS_NS_BEGIN
 
+#define ASR_UTILS_IASRBASE_AUTO_IMPL(class_name)                               \
+private:                                                                       \
+    ASR::Utils::RefCounter<class_name> ref_counter_;                           \
+                                                                               \
+public:                                                                        \
+    int64_t AddRef() override { return ref_counter_.AddRef(); }                \
+    int64_t Release() override { return ref_counter_.Release(this); }
+
 struct NonCopyable
 {
     NonCopyable() = default;
@@ -35,11 +43,13 @@ struct NonCopyableAndNonMovable
     NonCopyableAndNonMovable& operator=(NonCopyableAndNonMovable&&) = delete;
 };
 
-template <class T, class... Args>
-T MakeObjectLike(const T&, Args&&... args)
+template <
+    class T,
+    class =
+        std::enable_if_t<std::is_standard_layout_v<T> && std::is_trivial_v<T>>>
+void CopyArray(T* p_from, std::size_t array_length, void* p_to)
 {
-    T result{std::forward<Args>(args)...};
-    return result;
+    ::memcpy(p_to, p_from, array_length * sizeof(T));
 }
 
 template <class OnExitFunc>

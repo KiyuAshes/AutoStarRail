@@ -1,20 +1,16 @@
 #include "AdbCaptureFactoryImpl.h"
 #include "tl/expected.hpp"
-#include <AutoStarRail/Utils/Expected.h>
-#include <AutoStarRail/Utils/Utils.hpp>
 #include <AutoStarRail/AsrConfig.h>
-#include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
-#include <AutoStarRail/Utils/QueryInterfaceImpl.hpp>
+#include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/Utils/Expected.h>
+#include <AutoStarRail/Utils/GetIids.hpp>
+#include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
 #include <AutoStarRail/Utils/fmt.h>
-#include <boost/url/error_types.hpp>
-#include <boost/url/urls.hpp>
 #include <boost/url.hpp>
-#include <exception>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
-#include <string_view>
 
 ASR_NS_BEGIN
 
@@ -78,6 +74,19 @@ AsrResult AdbCaptureFactoryImpl::CreateInstance(
         result = ASR_E_INVALID_JSON;
     }
     return result;
+}
+AsrResult AdbCaptureFactoryImpl::GetIids(IAsrIidVector** pp_out_iids)
+{
+    return ASR::Utils::GetIids<ASR::Utils::IAsrCaptureFactoryInheritanceInfo>(
+        this,
+        pp_out_iids);
+}
+AsrResult AdbCaptureFactoryImpl::GetRuntimeClassName(
+    IAsrReadOnlyString** pp_out_class_name)
+{
+    ASR_UTILS_GET_RUNTIME_CLASS_NAME_IMPL(
+        Asr::AdbCaptureFactoryImpl,
+        pp_out_class_name);
 }
 
 ASR_NS_END

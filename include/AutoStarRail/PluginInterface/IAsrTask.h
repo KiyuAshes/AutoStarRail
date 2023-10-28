@@ -1,8 +1,8 @@
 #ifndef ASR_ITASK_H
 #define ASR_ITASK_H
 
-#include "AutoStarRail/AsrString.hpp"
-#include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/AsrString.hpp>
+#include <AutoStarRail/IAsrInspectable.h>
 
 struct AsrDate
 {
@@ -38,7 +38,7 @@ ASR_DEFINE_GUID(
     0x16,
     0x9f,
     0x8e)
-ASR_INTERFACE IAsrTask : public IAsrBase
+ASR_INTERFACE IAsrTask : public IAsrInspectable
 {
     ASR_METHOD Do(
         IAsrReadOnlyString * p_connection_json,
@@ -73,15 +73,15 @@ ASR_DEFINE_GUID(
     0xd,
     0xda,
     0x46)
-ASR_INTERFACE IAsrSwigTask : public IAsrSwigBase
+ASR_INTERFACE IAsrSwigTask : public IAsrSwigInspectable
 {
     virtual AsrResult Do(
-        AsrString connection_json,
-        AsrString task_settings_json) = 0;
+        AsrReadOnlyString connection_json,
+        AsrReadOnlyString task_settings_json) = 0;
     virtual AsrRetDate     GetNextExecutionTime() = 0;
-    virtual AsrRetString   GetName() = 0;
-    virtual AsrRetString   GetDescription() = 0;
-    virtual AsrRetString   GetLabel() = 0;
+    virtual AsrRetReadOnlyString   GetName() = 0;
+    virtual AsrRetReadOnlyString   GetDescription() = 0;
+    virtual AsrRetReadOnlyString   GetLabel() = 0;
     virtual AsrRetTaskType GetType() = 0;
 };
 
