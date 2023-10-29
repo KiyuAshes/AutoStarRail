@@ -67,6 +67,10 @@ namespace Details
                 up_data_ = std::make_unique<T[]>(size_with_null_character);
                 size_ = size_with_null_character;
             }
+            else
+            {
+                up_data_.get()[new_size] = 0;
+            }
             return up_data_.get();
         }
 
@@ -92,7 +96,7 @@ namespace Details
             return size_;
         }
     };
-}
+} // namespace Details
 
 ASR_NS_END
 
@@ -125,8 +129,8 @@ public:
     enum class Encode
     {
         U8 = 0,
-        // U16 = 1,
-        U32 = 2
+        U32 = 1,
+        WideChar = 2,
     };
 
 private:
@@ -141,6 +145,7 @@ private:
      */
     std::string                          cached_utf8_string_{};
     ASR::Details::DynamicBuffer<UChar32> cached_utf32_string_{};
+    ASR::Details::DynamicBuffer<wchar_t> cached_wchar_string_{};
 
     std::array<bool, 3> is_cache_expired_{true, true, true};
 

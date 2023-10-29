@@ -130,4 +130,29 @@ TEST(ICUTest, u_strFromWCSTest2)
                   static_cast<int32_t>(buffer.GetSize())};
     EXPECT_TRUE(is_same);
     DumpBuffer(p_buffer, buffer.GetSize());
+
+    /**
+     * The buffer contents is (probably) not NUL-terminated.
+     * You can check if it is with (s.length() < s.getCapacity() && buffer[s.length()]==0).
+     * (See getTerminatedBuffer().)
+     */
+    const auto icu_string = U_NAMESPACE_QUALIFIER UnicodeString{
+        p_buffer,
+        size,
+        static_cast<int32_t>(buffer.GetSize())};
+    EXPECT_EQ(icu_string.length(), 11);
+    EXPECT_EQ(icu_string.countChar32(), 9);
+    EXPECT_EQ(icu_string.getCapacity(), 12);
+    EXPECT_TRUE((icu_string.length() < icu_string.getCapacity() && icu_string.getBuffer()[icu_string.length()]==0));
+}
+
+TEST(ICUTest, UnicodeStringToUtf32Test)
+{
+    const auto icu_string = U_NAMESPACE_QUALIFIER UnicodeString::fromUTF8(
+        ASR_UTILS_STRINGUTILS_DEFINE_U8STR(
+            "这里有两个字：\U00024B62\U0002F805"));
+    EXPECT_EQ(icu_string.length(), 11);
+    EXPECT_EQ(icu_string.countChar32(), 9);
+    std::cout << "NOTE: icu_string.getCapacity() = " << icu_string.getCapacity()
+              << '.' << '\n';
 }

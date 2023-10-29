@@ -67,7 +67,7 @@ ASR_INTERFACE IAsrString : public IAsrReadOnlyString
     ASR_METHOD SetUtf16(const char16_t* p_string, size_t length) = 0;
     // * C#
     /**
-     * @brief 接受一串外部为wchar_t的UTF-16编码的字符串
+     * @brief 接受一串字符类型为wchar_t的UTF-16编码的字符串
      *
      * @param p_string
      * @return ASR_METHOD
@@ -75,9 +75,11 @@ ASR_INTERFACE IAsrString : public IAsrReadOnlyString
     ASR_METHOD SetSwigW(const wchar_t* p_string) = 0;
     // * C++
     /**
-     * @brief 在Windows下接收UTF-16字符串，在Linux下接收UTF-32字符串
+     * @brief 在Windows下接收UTF-16字符串，在Linux下接收UTF-32字符串。
      *
      * @param p_string
+     * @param length
+     * Unicode码元的数量。例如：“侮”（U+2F805）是2个码元。建议使用wcslen获取。
      * @return ASR_METHOD
      */
     ASR_METHOD SetW(const wchar_t* p_string, size_t length) = 0;
@@ -222,7 +224,7 @@ public:
     {
         p_impl_->GetUtf16(out_string, out_string_size);
     }
-#endif
+#endif // defined(ASR_STRING_ENABLE_WHEN_CPP) || defined(SWIGJAVA)
 };
 
 #ifndef SWIG
@@ -249,7 +251,7 @@ ASR_C_API AsrResult CreateIAsrReadOnlyStringFromUtf8(
  */
 ASR_C_API AsrResult CreateIAsrStringFromWChar(
     const wchar_t* p_wstring,
-    size_t         size,
+    size_t         length,
     IAsrString**   pp_out_string);
 
 /**
@@ -257,8 +259,9 @@ ASR_C_API AsrResult CreateIAsrStringFromWChar(
  */
 ASR_C_API AsrResult CreateIAsrReadOnlyStringFromWChar(
     const wchar_t*       p_wstring,
-    size_t               size,
+    size_t               length,
     IAsrReadOnlyString** pp_out_readonly_string);
+
 #endif // SWIG
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetReadOnlyString)

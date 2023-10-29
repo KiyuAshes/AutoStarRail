@@ -90,12 +90,18 @@ void AsrStringCppImpl::UpdateUtf32Cache()
 {
     if (IsCacheExpired<Encode::U32>())
     {
-        const auto u32_char_count = impl_.countChar32();
-        const auto p_cached_utf32_string =
+        const auto  u32_char_count = impl_.countChar32();
+        auto* const p_cached_utf32_string =
             cached_utf32_string_.DiscardAndGetNullTerminateBufferPointer(
                 u32_char_count);
         UErrorCode status = U_ZERO_ERROR;
         impl_.toUTF32(p_cached_utf32_string, u32_char_count, status);
+        if (status != U_ZERO_ERROR)
+        {
+            ASR_CORE_LOG_ERROR(
+                "Error happened when calling UnicodeString::toUTF32. Error code: {}",
+                status);
+        }
         ValidateCache<Encode::U32>();
     }
 }
@@ -129,7 +135,7 @@ const UChar32* AsrStringCppImpl::CBegin()
 {
     UpdateUtf32Cache();
     return cached_utf32_string_.cbegin();
-};
+}
 
 const UChar32* AsrStringCppImpl::CEnd()
 {
@@ -146,7 +152,7 @@ AsrResult AsrStringCppImpl::SetUtf8(const char* p_string)
     ValidateCache<Encode::U8>();
 
     return ASR_S_OK;
-};
+}
 
 AsrResult AsrStringCppImpl::GetUtf8(const char** out_string)
 {
@@ -157,12 +163,18 @@ AsrResult AsrStringCppImpl::GetUtf8(const char** out_string)
     }
     *out_string = cached_utf8_string_.c_str();
     return ASR_S_OK;
-};
+}
 
 AsrResult AsrStringCppImpl::SetUtf16(const char16_t* p_string, size_t length)
 {
     InvalidateCache();
     const auto int_length = static_cast<int>(length);
+    /**
+     *  @brief char16_t* constructor.
+     *
+     *  @param text The characters to place in the UnicodeString.
+     *  @param textLength The number of Unicode characters in text to copy.
+     */
     impl_ = {p_string, int_length};
     return ASR_S_OK;
 }
@@ -171,8 +183,10 @@ AsrResult AsrStringCppImpl::GetUtf16(
     const char16_t** out_string,
     size_t*          out_string_size) noexcept
 {
+    const auto capacity = impl_.getCapacity();
     *out_string = impl_.getBuffer();
     *out_string_size = impl_.length();
+    impl_.releaseBuffer(capacity);
     return ASR_S_OK;
 }
 
@@ -181,7 +195,7 @@ ASR_NS_ANONYMOUS_DETAILS_BEGIN
 #define ANONYMOUS_DETAILS_MAX_SIZE 4096
 
 /**
- * @brief 返回带L'\0'字符的空终止字符串长度
+ * @brief 返回不带L'\0'字符的空终止字符串长度
  * @param p_wstring
  * @return
  */
@@ -192,7 +206,7 @@ auto GetStringSize(const wchar_t* p_wstring) -> size_t
     {
         if (p_wstring[i] == L'\0')
         {
-            return i + 1;
+            return i;
         }
     }
 
@@ -200,21 +214,21 @@ auto GetStringSize(const wchar_t* p_wstring) -> size_t
         "Input string size is larger than expected. Expected max size is " ASR_STR(
             ANONYMOUS_DETAILS_MAX_SIZE) ".");
 
-    const wchar_t char_at_i = p_wstring[ANONYMOUS_DETAILS_MAX_SIZE];
+    const wchar_t char_at_i = p_wstring[ANONYMOUS_DETAILS_MAX_SIZE - 1];
     const auto    char_at_i_value =
         static_cast<uint16_t>(static_cast<uint32_t>(char_at_i));
 
     // 前导代理
     if (0xD800 <= char_at_i_value && char_at_i_value <= 0xDBFF)
     {
-        return ANONYMOUS_DETAILS_MAX_SIZE;
+        return ANONYMOUS_DETAILS_MAX_SIZE - 2;
     }
     // 后尾代理
     if (0xDC00 <= char_at_i_value && char_at_i_value <= 0xDFFF)
     {
-        return ANONYMOUS_DETAILS_MAX_SIZE - 1;
+        return ANONYMOUS_DETAILS_MAX_SIZE - 3;
     }
-    return ANONYMOUS_DETAILS_MAX_SIZE;
+    return ANONYMOUS_DETAILS_MAX_SIZE - 1;
 }
 
 template <class C, class T>
@@ -263,6 +277,12 @@ AsrResult AsrStringCppImpl::SetW(const wchar_t* p_string, size_t length)
 {
     InvalidateCache();
 
+    auto* const p_cached_wchar_string =
+        cached_wchar_string_.DiscardAndGetNullTerminateBufferPointer(length);
+    const size_t size = length * sizeof(wchar_t);
+    std::memcpy(p_cached_wchar_string, p_string, size);
+    ValidateCache<Encode::WideChar>();
+
     const auto i32_length = static_cast<int32_t>(length);
     UErrorCode str_from_wcs_result{};
     int32_t    expected_capacity{0};
@@ -275,7 +295,7 @@ AsrResult AsrStringCppImpl::SetW(const wchar_t* p_string, size_t length)
         p_string,
         i32_length,
         &str_from_wcs_result);
-    const auto p_buffer =
+    auto* const p_buffer =
         u16_buffer_.DiscardAndGetNullTerminateBufferPointer(expected_capacity);
     const auto i32_buffer_size = static_cast<int32_t>(u16_buffer_.GetSize());
     str_from_wcs_result = U_ZERO_ERROR;
@@ -289,7 +309,7 @@ AsrResult AsrStringCppImpl::SetW(const wchar_t* p_string, size_t length)
     if (str_from_wcs_result != U_ZERO_ERROR)
     {
         ASR_CORE_LOG_ERROR(
-            "Error happened when calling u_strFromWCS. Error code = {}",
+            "Error happened when calling u_strFromWCS. Error code = {}.",
             str_from_wcs_result);
         return ASR_E_INVALID_STRING;
     }
@@ -301,19 +321,49 @@ AsrResult AsrStringCppImpl::SetW(const wchar_t* p_string, size_t length)
 
 AsrResult AsrStringCppImpl::GetW(const wchar_t** out_wstring)
 {
-    if constexpr (sizeof(wchar_t) == sizeof(char16_t))
+    if (out_wstring == nullptr)
     {
-        *out_wstring =
-            reinterpret_cast<const wchar_t*>(impl_.getTerminatedBuffer());
+        return ASR_E_INVALID_POINTER;
+    }
+    if (!IsCacheExpired<Encode::WideChar>())
+    {
+        *out_wstring = cached_wchar_string_.begin();
         return ASR_S_OK;
     }
-    else if constexpr (sizeof(wchar_t) == sizeof(char32_t))
+    UErrorCode        error_code = U_ZERO_ERROR;
+    int32_t           expected_size{};
+    const auto        impl_capacity = impl_.getCapacity();
+    const auto* const p_impl_buffer = impl_.getBuffer();
+    ::u_strToWCS(
+        nullptr,
+        0,
+        &expected_size,
+        p_impl_buffer,
+        impl_.length(),
+        &error_code);
+    error_code = U_ZERO_ERROR;
+    auto* const p_buffer =
+        cached_wchar_string_.DiscardAndGetNullTerminateBufferPointer(
+            expected_size);
+    const auto int_size = static_cast<int32_t>(cached_wchar_string_.GetSize());
+    ::u_strToWCS(
+        p_buffer,
+        int_size,
+        nullptr,
+        p_impl_buffer,
+        impl_.length(),
+        &error_code);
+    impl_.releaseBuffer(impl_capacity);
+    if (error_code != U_ZERO_ERROR)
     {
-        UpdateUtf32Cache();
-        *out_wstring =
-            reinterpret_cast<const wchar_t*>(cached_utf32_string_.begin());
-        return ASR_S_OK;
+        ASR_CORE_LOG_ERROR(
+            "Error happened when calling u_strToWCS. Error code = {}.",
+            error_code);
+        return ASR_E_INVALID_STRING;
     }
+    ValidateCache<Encode::WideChar>();
+    *out_wstring = p_buffer;
+    return ASR_S_OK;
 }
 
 /**
@@ -326,14 +376,14 @@ AsrResult AsrStringCppImpl::GetImpl(ICUString** out_icu_string) noexcept
     InvalidateCache();
     *out_icu_string = &impl_;
     return ASR_S_OK;
-};
+}
 
 AsrResult AsrStringCppImpl::GetImpl(
     const ICUString** out_icu_string) const noexcept
 {
     *out_icu_string = &impl_;
     return ASR_S_OK;
-};
+}
 
 void from_json(const nlohmann::json& from, AsrReadOnlyString& to)
 {
