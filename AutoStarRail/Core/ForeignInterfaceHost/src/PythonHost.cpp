@@ -338,7 +338,7 @@ public:
         return ASR_E_NO_IMPLEMENTATION;
     }
     auto LoadPlugin(const std::filesystem::path& path)
-        -> ASR::Utils::Expected<AsrPtr<IAsrPlugin>> override;
+        -> ASR::Utils::Expected<CommonPluginPtr> override;
 
     static auto ImportPluginModule(
         const std::filesystem::path& py_plugin_initializer)
@@ -349,7 +349,7 @@ public:
 };
 
 auto PythonRuntime::LoadPlugin(const std::filesystem::path& path)
-    -> ASR::Utils::Expected<AsrPtr<IAsrPlugin>>
+    -> ASR::Utils::Expected<CommonPluginPtr>
 {
     AsrPtr<IAsrPlugin> result{};
 

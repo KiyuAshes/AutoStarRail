@@ -30,86 +30,34 @@ ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
-struct _asr_internal_GetPluginFeatureContext
+auto GetFeaturesFrom(IAsrPlugin* p_plugin)
+    -> ASR::Utils::Expected<std::vector<AsrPluginFeature>>
 {
-    const size_t            index;
-    AsrResult* const        p_out_enum_result;
-    AsrPluginFeature* const p_out_feature;
-};
-
-template <class T>
-constexpr auto MakePluginFeatureGetter()
-{
-    if constexpr (std::is_same_v<AsrPtr<IAsrPlugin>, T>)
-    {
-        return [](T& p_plugin, _asr_internal_GetPluginFeatureContext context)
-        {
-            *context.p_out_enum_result =
-                p_plugin->EnumFeature(context.index, context.p_out_enum_result);
-            return *context.p_out_enum_result == ASR_S_OK;
-        };
-    }
-    else if constexpr (std::is_same_v<std::shared_ptr<IAsrSwigPlugin>, T>)
-    {
-        return [](T& p_plugin, _asr_internal_GetPluginFeatureContext context)
-        {
-            const auto swig_enum_result = p_plugin->EnumFeature(context.index);
-            *context.p_out_feature = swig_enum_result.value;
-            *context.p_out_enum_result = swig_enum_result.error_code;
-            return *context.p_out_enum_result == ASR_S_OK;
-        };
-    }
-    else
-    {
-        throw std::runtime_error("Unsupported plugin type");
-    }
-}
-
-template <class T>
-auto GetSupportedFeatures(T& p_plugin, std::string_view plugin_name)
-    -> ASR::Utils::ExpectedWithExplanation<std::vector<AsrPluginFeature>>
-{
-    std::vector<AsrPluginFeature> result{};
-    constexpr size_t              max_enum_count =
-        magic_enum::enum_count<AsrPluginFeature>() + static_cast<size_t>(10);
-
-    size_t index{};
+    constexpr size_t MAX_ENUM_COUNT =
+        magic_enum::enum_count<AsrPluginFeature>() + static_cast<size_t>(30);
 
     AsrPluginFeature feature{};
-    AsrResult        enum_feature_result{ASR_E_UNDEFINED_RETURN_VALUE};
+    auto             result = std::vector<AsrPluginFeature>{0};
+    result.reserve(magic_enum::enum_count<AsrPluginFeature>());
 
-    constexpr auto checker = MakePluginFeatureGetter<T>();
-
-    for (; checker(p_plugin, {index, &enum_feature_result, &feature}); index++)
+    for (size_t i = 0; i < MAX_ENUM_COUNT; ++i)
     {
-        if (index < max_enum_count)
+        const auto get_feature_result = p_plugin->EnumFeature(i, &feature);
+        if (IsOk(get_feature_result))
         {
             result.push_back(feature);
+            continue;
         }
-        else
+        else if (get_feature_result == ASR_E_OUT_OF_RANGE)
         {
-            return ASR::Utils::MakeUnexpected(
-                ASR_E_MAYBE_OVERFLOW,
-                ASR::fmt::format(
-                    "Executing function \"EnumFeature\" in plugin(name = {}) more than the maximum limit of {} times, stopping.",
-                    plugin_name,
-                    max_enum_count));
+            return result;
         }
+        return tl::make_unexpected(get_feature_result);
     }
-
-    if (enum_feature_result != ASR_E_OUT_OF_RANGE)
-    {
-        // TODO: Call function below when unexpected.
-        // LogErrorWhenGettingPluginFeature(enum_feature_result, plugin_name)
-        return ASR::Utils::MakeUnexpected(
-            enum_feature_result,
-            ASR::fmt::format(
-                "Getting plugin(name = {}) feature failed with error code {}.",
-                plugin_name,
-                enum_feature_result));
-    }
-
-    return {result};
+    ASR_CORE_LOG_WARN(
+        "Executing function \"EnumFeature\" in plugin more than the maximum limit of {} times, stopping.",
+        MAX_ENUM_COUNT);
+    return result;
 }
 
 template <class T>
@@ -225,8 +173,7 @@ auto GetIidsFrom(IAsrInspectable* pointer)
     -> Utils::Expected<AsrPtr<IAsrIidVector>>
 {
     ASR::AsrPtr<IAsrIidVector> p_iid_vector{};
-    if (const auto get_iid_result =
-            pointer->GetIids(p_iid_vector.Put());
+    if (const auto get_iid_result = pointer->GetIids(p_iid_vector.Put());
         !ASR::IsOk(get_iid_result))
     {
         ASR_CORE_LOG_ERROR(
@@ -536,17 +483,36 @@ auto ErrorLensManager::GetErrorMessage(
 
 ASR_DEFINE_VARIABLE(g_plugin_manager){};
 
-AsrResult PluginManager::AddInterface(ASR::AsrPtr<IAsrTask> p_task)
-{
-    (void)p_task;
-    // TODO: finish this implementation.
-    return ASR_E_NO_IMPLEMENTATION;
-}
+const std::unordered_map<AsrPluginFeature, std::function<void*()>>
+    g_plugin_object_factory{};
 
-AsrResult PluginManager::AddInterface(IAsrSwigTask* p_task)
+AsrResult PluginManager::AddInterface(CommonPluginPtr p_plugin)
 {
-    (void)p_task;
-    // TODO: finish this implementation.
+    SwigToCpp<IAsrSwigPlugin> swig_plugin{};
+    AsrPtr<IAsrPlugin>        p_cpp_plugin{};
+
+    if (auto* const pp_plugin = std::get_if<AsrPtr<IAsrSwigPlugin>>(&p_plugin);
+        pp_plugin != nullptr)
+    {
+        swig_plugin = decltype(swig_plugin){*pp_plugin};
+        p_cpp_plugin = {&swig_plugin, take_ownership};
+    }
+    else
+    {
+        p_cpp_plugin = std::get<AsrPtr<IAsrPlugin>>(p_plugin);
+    }
+
+    const auto expected_features = Details::GetFeaturesFrom(p_cpp_plugin.Get());
+    if (!expected_features)
+    {
+        return expected_features.error();
+    }
+    const auto& features = expected_features.value();
+    for (const auto feature : features)
+    {
+        // TODO: 根据feature枚举将对应接口添加到对应manager。
+
+    }
     return ASR_E_NO_IMPLEMENTATION;
 }
 

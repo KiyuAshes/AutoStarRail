@@ -30,8 +30,18 @@ class SwigToCpp;
 auto ConvertCppIidToSwigIid(const AsrGuid& cpp_iid)
     -> ASR::Utils::Expected<AsrGuid>;
 
+//TODO: 实现这个函数
 auto ConvertSwigIidToCppIid(const AsrGuid& swig_iid)
     -> ASR::Utils::Expected<AsrGuid>;
+
+bool IsCppIid(const AsrGuid& cpp_iid);
+
+bool IsSwigIid(const AsrGuid& swig_iid);
+
+AsrResult CreateCppToSwigObject(
+    const AsrGuid& swig_iid,
+    void*          p_swig_object,
+    void**         pp_out_cpp_object);
 
 template <is_asr_interface T>
 auto ConvertCppIidToSwigIid()
@@ -115,6 +125,8 @@ public:
     {
     }
 
+    SwigToCppBase() = default;
+
     int64_t AddRef() final
     {
         try
@@ -141,8 +153,22 @@ public:
         }
     }
 
+    /**
+     * @brief 只会接收CPP版本的IID
+     * @param iid
+     * @param pp_out_object
+     * @return
+     */
     AsrResult QueryInterface(const AsrGuid& iid, void** pp_out_object) final
     {
+        const auto get_default_query_interface_result =
+            ASR::Utils::QueryInterface<T>(this, iid, pp_out_object);
+        if (IsOk(get_default_query_interface_result)
+            || get_default_query_interface_result != ASR_E_NO_INTERFACE)
+        {
+            return get_default_query_interface_result;
+        }
+
         if (const auto swig_iid = ConvertCppIidToSwigIid(iid); swig_iid)
         {
             AsrRetSwigBase result;
@@ -161,8 +187,10 @@ public:
                 {
                     return ASR_E_INVALID_POINTER;
                 }
-                *pp_out_object = static_cast<T*>(result.value.GetVoid());
-                return ASR_S_OK;
+                return CreateCppToSwigObject(
+                    swig_iid.value(),
+                    result.value,
+                    pp_out_object);
             }
             AsrPtr<IAsrReadOnlyString> predefined_error_explanation{};
             ::AsrGetPredefinedErrorMessage(
@@ -221,6 +249,11 @@ class SwigToCppInspectable : public SwigToCppBase<SwigT, T>
 
 public:
     using Base::Base;
+    /**
+     * @brief 返回SWIG对象定义所有IID
+     * @param pp_out_vector
+     * @return
+     */
     AsrResult GetIids(IAsrIidVector** pp_out_vector) override{
         ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
             Base::p_impl_.Get(),

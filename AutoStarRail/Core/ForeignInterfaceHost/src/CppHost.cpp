@@ -23,7 +23,7 @@ public:
         return ASR_E_NO_IMPLEMENTATION;
     }
     auto LoadPlugin(const std::filesystem::path& path)
-        -> ASR::Utils::Expected<AsrPtr<IAsrPlugin>> override
+        -> ASR::Utils::Expected<CommonPluginPtr> override
     {
         plugin_lib_.load(path.c_str());
         // Get function pointer without heap allocation.

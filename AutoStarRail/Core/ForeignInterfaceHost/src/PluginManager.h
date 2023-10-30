@@ -2,6 +2,7 @@
 #define ASR_CORE_FOREIGNINTERFACEHOST_PLUGINFILEMANAGER_H
 
 #include "Plugin.h"
+#include "IForeignLanguageRuntime.h"
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
@@ -99,8 +100,7 @@ private:
     std::vector<AsrPtr<IAsrCaptureFactory>>   asr_capture_interfaces_;
     ErrorLensManager                          error_lens_manager_;
 
-    AsrResult AddInterface(ASR::AsrPtr<IAsrTask> p_task);
-    AsrResult AddInterface(IAsrSwigTask* p_task);
+    AsrResult AddInterface(CommonPluginPtr p_plugin);
 
     static std::unique_ptr<PluginDesc> GetPluginDesc(
         const boost::filesystem::path& metadata_path);

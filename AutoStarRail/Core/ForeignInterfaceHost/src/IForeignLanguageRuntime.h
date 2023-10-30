@@ -8,12 +8,15 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <variant>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/Utils/Expected.h>
 
 #define ASR_CORE_FOREIGNINTERFACEHOST_ASRCOCREATEPLUGIN_NAME "AsrCoCreatePlugin"
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
+
+using CommonPluginPtr = std::variant<AsrPtr<IAsrPlugin>, AsrPtr<IAsrSwigPlugin>>;
 
 struct ForeignLanguageRuntimeFactoryDescBase
 {
@@ -23,7 +26,7 @@ struct ForeignLanguageRuntimeFactoryDescBase
 ASR_INTERFACE IForeignLanguageRuntime : public IAsrBase
 {
     virtual auto LoadPlugin(const std::filesystem::path& path)
-        ->ASR::Utils::Expected<AsrPtr<IAsrPlugin>> = 0;
+        ->ASR::Utils::Expected<CommonPluginPtr> = 0;
 };
 
 auto CreateForeignLanguageRuntime(

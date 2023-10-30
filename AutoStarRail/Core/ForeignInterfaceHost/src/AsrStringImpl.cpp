@@ -94,13 +94,13 @@ void AsrStringCppImpl::UpdateUtf32Cache()
         auto* const p_cached_utf32_string =
             cached_utf32_string_.DiscardAndGetNullTerminateBufferPointer(
                 u32_char_count);
-        UErrorCode status = U_ZERO_ERROR;
-        impl_.toUTF32(p_cached_utf32_string, u32_char_count, status);
-        if (status != U_ZERO_ERROR)
+        UErrorCode error_code = U_ZERO_ERROR;
+        impl_.toUTF32(p_cached_utf32_string, u32_char_count, error_code);
+        if (error_code != U_ZERO_ERROR)
         {
             ASR_CORE_LOG_ERROR(
                 "Error happened when calling UnicodeString::toUTF32. Error code: {}",
-                status);
+                error_code);
         }
         ValidateCache<Encode::U32>();
     }

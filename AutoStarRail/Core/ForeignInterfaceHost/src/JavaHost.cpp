@@ -46,7 +46,7 @@ public:
         return ASR_E_NO_IMPLEMENTATION;
     }
     auto LoadPlugin(const std::filesystem::path& path)
-        -> ASR::Utils::Expected<AsrPtr<IAsrPlugin>> override;
+        -> ASR::Utils::Expected<CommonPluginPtr> override;
 };
 
 ASR_NS_JAVAHOST_END

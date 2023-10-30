@@ -43,6 +43,78 @@ auto ConvertCppIidToSwigIid(const AsrGuid& cpp_iid)
     return it->second;
 }
 
+bool IsCppIid(const AsrGuid& cpp_iid)
+{
+    const auto it = g_cpp_swig_map.left.find(cpp_iid);
+    return it != g_cpp_swig_map.left.end();
+}
+
+bool IsSwigIid(const AsrGuid& swig_iid)
+{
+    const auto it = g_cpp_swig_map.right.find(swig_iid);
+    return it != g_cpp_swig_map.right.end();
+}
+
+ASR_NS_ANONYMOUS_DETAILS_BEGIN
+
+template <class T>
+auto CreateCppToSwigObjectImpl(
+    const AsrGuid& swig_iid,
+    void*          p_swig_object,
+    void**         pp_out_cpp_object) -> ASR::Utils::Expected<void>
+{
+    if (swig_iid == AsrIidOf<T>())
+    {
+        auto* const p_cpp_object =
+            new SwigToCpp<T>(static_cast<T*>(p_swig_object));
+        p_cpp_object->AddRef();
+        *pp_out_cpp_object = p_cpp_object;
+        return tl::make_unexpected(ASR_S_OK);
+    }
+    return {};
+}
+
+ASR_NS_ANONYMOUS_DETAILS_END
+
+#define ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(Type)          \
+    [&]()                                                                      \
+    {                                                                          \
+        return Details::CreateCppToSwigObjectImpl<Type>(                       \
+            swig_iid,                                                          \
+            p_swig_object,                                                     \
+            pp_out_cpp_object);                                                \
+    }
+
+AsrResult CreateCppToSwigObject(
+    const AsrGuid& swig_iid,
+    void*          p_swig_object,
+    void**         pp_out_cpp_object)
+{
+    try
+    {
+        AsrResult result{ASR_E_UNDEFINED_RETURN_VALUE};
+
+        // TODO: 添加所有PluginInterface中的导出类型
+        Details::CreateCppToSwigObjectImpl<IAsrSwigBase>(
+            swig_iid,
+            p_swig_object,
+            pp_out_cpp_object)
+            .and_then(ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
+                IAsrSwigInspectable))
+            .and_then(ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
+                IAsrSwigPlugin))
+            .and_then(ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
+                IAsrSwigErrorLens))
+            .or_else([&result](const auto error_code) { result = error_code; });
+
+        return result;
+    }
+    catch (const std::bad_alloc& ex)
+    {
+        return ASR_E_OUT_OF_MEMORY;
+    }
+}
+
 // -------------------- implementation of SwigToCpp class --------------------
 
 AsrResult SwigToCpp<IAsrSwigErrorLens>::GetErrorMessage(

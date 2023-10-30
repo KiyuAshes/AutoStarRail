@@ -5,7 +5,7 @@
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/Core/Exceptions/InterfaceNotFoundException.h>
 #include <AutoStarRail/AsrPtr.hpp>
-#include "AutoStarRail/Utils/CommonUtils.hpp"
+#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/IAsrBase.h>
 #include "ForeignInterfaceHost.h"
 #include "ForeignInterfaceHostEnum.h"

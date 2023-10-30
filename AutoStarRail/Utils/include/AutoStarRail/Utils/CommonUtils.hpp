@@ -220,6 +220,15 @@ constexpr bool IsMatchOneOf(const auto value)
     }
 }
 
+template <class... Ts>
+struct overload_set : Ts...
+{
+    using Ts::operator()...;
+};
+
+template <class... Ts>
+overload_set(Ts...) -> overload_set<Ts...>;
+
 ASR_UTILS_NS_END
 
 #endif // ASR_UTILS_UTILS_HPP
