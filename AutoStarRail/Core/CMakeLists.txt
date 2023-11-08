@@ -41,6 +41,7 @@ asr_add_core_component(GlobalSettingsManager)
 asr_add_core_component(Logger)
 asr_add_core_component(Exceptions)
 asr_add_core_component(i18n)
+asr_add_core_component(TaskScheduler)
 
 add_library(libAsrCore SHARED)
 add_dependencies(libAsrCore AsrCoreObjects)
