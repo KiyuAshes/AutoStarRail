@@ -40,7 +40,7 @@ public:
     }
 };
 
-auto CreateForeignLanguageRuntime(const ForeignLanguageRuntimeFactoryDescBase&)
+auto CreateForeignLanguageRuntime(const ForeignLanguageRuntimeFactoryDesc&)
     -> ASR::Utils::Expected<AsrPtr<IForeignLanguageRuntime>>
 {
     return AsrPtr<IForeignLanguageRuntime>{new CppRuntime(), take_ownership};

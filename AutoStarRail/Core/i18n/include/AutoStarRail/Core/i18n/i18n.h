@@ -4,7 +4,7 @@
 #include <AutoStarRail/Core/i18n/Config.h>
 #include <AutoStarRail/ExportInterface/IAsrSettings.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 #include <map>
 #include <nlohmann/json_fwd.hpp>
 #include <string>
@@ -52,7 +52,7 @@ class I18n
     std::u8string             default_locale_;
 
 public:
-    explicit I18n(const boost::filesystem::path& json_path);
+    explicit I18n(const std::filesystem::path& json_path);
     explicit I18n(const nlohmann::json& json);
     explicit I18n(const InternalTranslateResource& translate_resource);
     explicit I18n(InternalTranslateResource&& translate_resource);

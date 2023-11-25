@@ -109,7 +109,7 @@ AsrResult CreateCppToSwigObject(
 
         return result;
     }
-    catch (const std::bad_alloc& ex)
+    catch (const std::bad_alloc&)
     {
         return ASR_E_OUT_OF_MEMORY;
     }

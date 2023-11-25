@@ -1,16 +1,16 @@
 include(FetchContent)
 include(ExternalProject)
 
-if(POLICY CMP0135)
+if (POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
-endif()
+endif ()
 
 # config SWIG
 include(UseSWIG)
 
-if(POLICY CMP0122)
+if (POLICY CMP0122)
     cmake_policy(SET CMP0122 NEW)
-endif()
+endif ()
 
 set(ASR_EXPORT_LANGUAGES_LIST "")
 set(SWIG_COMPONENTS "")
@@ -19,20 +19,20 @@ asr_check_language_export(JAVA ASR_EXPORT_LANGUAGES_LIST)
 asr_check_language_export(CSHARP ASR_EXPORT_LANGUAGES_LIST)
 asr_check_language_export(PYTHON ASR_EXPORT_LANGUAGES_LIST)
 
-if(NOT ASR_EXPORT_LANGUAGES_LIST)
+if (NOT ASR_EXPORT_LANGUAGES_LIST)
     message(STATUS "No interface needs to be exported.")
     message(STATUS "Skipping search SWIG executable.")
-else()
+else ()
     message(STATUS "The project will be exported as an interface to the following languages:\n${ASR_EXPORT_LANGUAGES_LIST}")
 
     # list(REMOVE_ITEM ASR_EXPORT_LANGUAGES_LIST lua)
     find_package(SWIG 4.1.1 COMPONENTS ${ASR_EXPORT_LANGUAGES_LIST} REQUIRED)
 
-    if(SWIG_FOUND)
+    if (SWIG_FOUND)
         message(STATUS "SWIG found: ${SWIG_EXECUTABLE}")
         set(SWIG_SOURCE_FILE_EXTENSIONS ".i" ".swg")
-    endif()
-endif()
+    endif ()
+endif ()
 
 add_custom_target(AsrAutoCopyDll ALL DEPENDS AsrUtils)
 
@@ -46,13 +46,13 @@ message(STATUS "The third-party libraries listed later are only used for plugins
 message(STATUS "Downloading and collecting headers in gzip-hpp")
 
 FetchContent_Declare(
-    gzip-hpp
-    URL "${GITHUB_MIRROR_URL}/mapbox/gzip-hpp/archive/refs/tags/v0.1.0.tar.gz"
-    URL_HASH SHA256=7ce3908cd13f186987820be97083fc5e62a7c6df0877af44b334a92e868eff06)
+        gzip-hpp
+        URL "${GITHUB_MIRROR_URL}/mapbox/gzip-hpp/archive/refs/tags/v0.1.0.tar.gz"
+        URL_HASH SHA256=7ce3908cd13f186987820be97083fc5e62a7c6df0877af44b334a92e868eff06)
 
-if(NOT gzip-hpp_POPULATED)
+if (NOT gzip-hpp_POPULATED)
     FetchContent_Populate(gzip-hpp)
-endif()
+endif ()
 
 message("================================================================")
 
@@ -69,9 +69,9 @@ function(_download_and_config_zlib_ng)
     set(ZLIB_ENABLE_TESTS OFF)
     set(BUILD_SHARED_LIBS OFF)
     FetchContent_Declare(
-        zlib-ng
-        URL "${GITHUB_MIRROR_URL}/zlib-ng/zlib-ng/archive/refs/tags/${ASR_ZLIB_NG_VERSION}.tar.gz"
-        URL_HASH SHA256=A0293475E6A44A3F6C045229FE50F69DC0EEBC62A42405A51F19D46A5541E77A)
+            zlib-ng
+            URL "${GITHUB_MIRROR_URL}/zlib-ng/zlib-ng/archive/refs/tags/${ASR_ZLIB_NG_VERSION}.tar.gz"
+            URL_HASH SHA256=A0293475E6A44A3F6C045229FE50F69DC0EEBC62A42405A51F19D46A5541E77A)
     FetchContent_MakeAvailable(zlib-ng)
 endfunction()
 
@@ -80,92 +80,92 @@ _download_and_config_zlib_ng()
 set(ZLIB_NG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/_deps/zlib-ng-build)
 set(ZLIB_NG_LIBRARY zlib)
 
-if(${ASR_BUILD_TEST})
+if (${ASR_BUILD_TEST})
     # config GoogleTest
     # GoogleTest requires at least C++14
     message(STATUS "Downloading and configuring google test.")
     FetchContent_Declare(
-        googletest
-        URL ${GITHUB_MIRROR_URL}/google/googletest/archive/refs/tags/v1.14.0.tar.gz
-        URL_HASH SHA256=8AD598C73AD796E0D8280B082CEBD82A630D73E73CD3C70057938A6501BBA5D7
+            googletest
+            URL ${GITHUB_MIRROR_URL}/google/googletest/archive/refs/tags/v1.14.0.tar.gz
+            URL_HASH SHA256=8AD598C73AD796E0D8280B082CEBD82A630D73E73CD3C70057938A6501BBA5D7
     )
 
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
     FetchContent_MakeAvailable(googletest)
-endif()
+endif ()
 
 # config QT5
-if(${ASR_BUILD_QT5_GUI})
+if (${ASR_BUILD_QT5_GUI})
     message(STATUS "Option ASR_BUILD_QT5_GUI=ON. Qt5 is required.")
     find_package(Qt5 COMPONENTS Widgets Qml Quick REQUIRED)
-endif()
+endif ()
 
 message(STATUS "Downloading and collecting headers in tl::expected")
 FetchContent_Declare(
-    tl_expected
-    URL "${GITHUB_MIRROR_URL}/TartanLlama/expected/archive/refs/tags/v1.1.0.zip"
-    URL_HASH SHA256=4B2A347CF5450E99F7624247F7D78F86F3ADB5E6ACD33CE307094E9507615B78
+        tl_expected
+        URL "${GITHUB_MIRROR_URL}/TartanLlama/expected/archive/refs/tags/v1.1.0.zip"
+        URL_HASH SHA256=4B2A347CF5450E99F7624247F7D78F86F3ADB5E6ACD33CE307094E9507615B78
 )
 
-if(NOT tl_expected_POPULATED)
+if (NOT tl_expected_POPULATED)
     FetchContent_Populate(tl_expected)
-endif()
+endif ()
 
 target_include_directories(Asr3rdParty INTERFACE ${tl_expected_SOURCE_DIR}/include)
 
 # config magic_enum
 message(STATUS "Downloading and collecting headers in magic enum.")
 FetchContent_Declare(
-    magic_enum
-    URL "${GITHUB_MIRROR_URL}/Neargye/magic_enum/archive/refs/tags/v0.9.3.tar.gz"
-    URL_HASH SHA256=3CADD6A05F1BFFC5141E5E731C46B2B73C2DBFF025E723C8ABAA659E0A24F072
+        magic_enum
+        URL "${GITHUB_MIRROR_URL}/Neargye/magic_enum/archive/refs/tags/v0.9.3.tar.gz"
+        URL_HASH SHA256=3CADD6A05F1BFFC5141E5E731C46B2B73C2DBFF025E723C8ABAA659E0A24F072
 )
 
-if(NOT magic_enum_POPULATED)
+if (NOT magic_enum_POPULATED)
     FetchContent_Populate(magic_enum)
-endif()
+endif ()
 
 target_include_directories(Asr3rdParty INTERFACE ${magic_enum_SOURCE_DIR}/include)
 
-if(ASR_USE_BUNDLIED_FMT)
+if (ASR_USE_BUNDLIED_FMT)
     set(ASR_FMT_VERSION "10.1.1")
     message(STATUS "Downloading and configuring fmt (VERSION = ${ASR_FMT_VERSION}).")
     FetchContent_Declare(
-        Asrfmt
-        URL "${GITHUB_MIRROR_URL}/fmtlib/fmt/releases/download/${ASR_FMT_VERSION}/fmt-${ASR_FMT_VERSION}.zip"
-        URL_HASH SHA256=B84E58A310C9B50196CDA48D5678D5FA0849BCA19E5FDBA6B684F0EE93ED9D1B)
+            Asrfmt
+            URL "${GITHUB_MIRROR_URL}/fmtlib/fmt/releases/download/${ASR_FMT_VERSION}/fmt-${ASR_FMT_VERSION}.zip"
+            URL_HASH SHA256=B84E58A310C9B50196CDA48D5678D5FA0849BCA19E5FDBA6B684F0EE93ED9D1B)
     FetchContent_MakeAvailable(Asrfmt)
     set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
     target_link_libraries(Asr3rdParty INTERFACE fmt::fmt)
     target_compile_definitions(Asr3rdParty INTERFACE -DASR_USE_STD_FMT=0)
-else()
+else ()
     target_compile_definitions(Asr3rdParty INTERFACE -DASR_USE_STD_FMT=1)
-endif()
+endif ()
 
 # config spdlog
 message(STATUS "Downloading and configuring spdlog.")
 FetchContent_Declare(
-    spdlog
-    URL "${GITHUB_MIRROR_URL}/gabime/spdlog/archive/refs/tags/v1.12.0.zip"
-    URL_HASH SHA256=6174BF8885287422A6C6A0312EB8A30E8D22BCFCEE7C48A6D02D1835D7769232)
+        spdlog
+        URL "${GITHUB_MIRROR_URL}/gabime/spdlog/archive/refs/tags/v1.12.0.zip"
+        URL_HASH SHA256=6174BF8885287422A6C6A0312EB8A30E8D22BCFCEE7C48A6D02D1835D7769232)
 
 set(SPDLOG_BUILD_PIC ON)
 
-if(ASR_SPDLOG_USE_STD_FMT)
+if (ASR_SPDLOG_USE_STD_FMT)
     message(STATUS "spdlog will use std format library.")
     set(SPDLOG_USE_STD_FORMAT ON)
-else()
+else ()
     # NOTE: The fmt version should be compatible with the spdlog version.
     # https://github.com/gabime/spdlog/pull/2694
     set(SPDLOG_FMT_EXTERNAL ON)
-endif()
+endif ()
 
-if(WIN32)
+if (WIN32)
     set(SPDLOG_WCHAR_SUPPORT ON)
     set(SDLOG_WCHAR_FILENAMES ON)
-endif()
+endif ()
 
 FetchContent_MakeAvailable(spdlog)
 target_link_libraries(Asr3rdParty INTERFACE spdlog::spdlog)
@@ -173,10 +173,15 @@ target_link_libraries(Asr3rdParty INTERFACE spdlog::spdlog)
 function(_download_and_config_opencv)
     message(STATUS "Downloading OpenCV source.")
 
+    # for OpenCV compatibility
+    if (POLICY CMP0148)
+        cmake_policy(SET CMP0148 OLD)
+    endif ()
+
     # fix error on CMake 3.27 rc4
-    if(POLICY CMP0148)
+    if (POLICY CMP0148)
         cmake_policy(SET CMP0148 NEW)
-    endif()
+    endif ()
 
     # NOTICE: OpenCV wil turn this option ON automically, so I explicitly set it.
     set(BUILD_SHARED_LIBS ON)
@@ -184,13 +189,13 @@ function(_download_and_config_opencv)
     include(AsrResetLibPrefix)
 
     FetchContent_Declare(
-        OpenCV48
-        URL ${GITHUB_MIRROR_URL}/opencv/opencv/archive/refs/tags/4.8.1.tar.gz
+            OpenCV48
+            URL ${GITHUB_MIRROR_URL}/opencv/opencv/archive/refs/tags/4.8.1.tar.gz
     )
 
-    if(${ASR_USE_CCACHE})
+    if (${ASR_USE_CCACHE})
         set(ENABLE_CCACHE ON)
-    endif()
+    endif ()
 
     # config OpenCV
     set(BUILD_opencv_apps OFF)
@@ -224,109 +229,109 @@ function(_download_and_config_opencv)
     target_link_libraries(Asr3rdParty INTERFACE ${ASR_OPENCV_COMPONENTS})
 endfunction()
 
-if(ASR_USE_BUNDLIED_OPENCV)
-    if(ASR_USE_BUNDLIED_OPENCV)
-        if(${ASR_USE_BUNDLIED_EIGEN})
+if (ASR_USE_BUNDLIED_OPENCV)
+    if (ASR_USE_BUNDLIED_OPENCV)
+        if (${ASR_USE_BUNDLIED_EIGEN})
             message(STATUS "Downloading Eigen3.4...")
             set(BUILD_TESTING OFF)
             set(EIGEN_BUILD_DOC OFF)
             FetchContent_Declare(AsrEigen3
-                URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip)
+                    URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.zip)
             FetchContent_MakeAvailable(AsrEigen3)
             set(WITH_EIGEN ON)
-        else()
+        else ()
             find_package(Eigen3 3.4 NO_MODULE)
 
-            if(NOT Eigen3_FOUND)
+            if (NOT Eigen3_FOUND)
                 set(WITH_EIGEN ON)
-            else()
+            else ()
                 set(WITH_EIGEN OFF)
-            endif()
-        endif()
+            endif ()
+        endif ()
 
         _download_and_config_opencv()
-    else()
+    else ()
         find_package(OpenCV 4.8)
 
-        if(NOT OpenCV_FOUND)
+        if (NOT OpenCV_FOUND)
             target_link_libraries(Asr3rdParty INTERFACE ${OpenCV_LIBS})
-        else()
+        else ()
             message(FATAL_ERROR "OpenCV not found. Please install it manually or set ASR_USE_BUNDLIED_OPENCV=ON.")
-        endif()
-    endif()
+        endif ()
+    endif ()
 
     _download_and_config_opencv()
-else()
+else ()
     find_package(OpenCV 4.8)
 
-    if(NOT OpenCV_FOUND)
+    if (OpenCV_FOUND)
         target_link_libraries(Asr3rdParty INTERFACE ${OpenCV_LIBS})
-    else()
+    else ()
         message(FATAL_ERROR "OpenCV not found. Please install it manually or set ASR_USE_BUNDLIED_OPENCV=ON.")
-    endif()
-endif()
+    endif ()
+endif ()
 
 function(_on_download_icu)
     message(STATUS "Downloading prebuilt icu binary...")
 endfunction()
 
-if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+if (WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(ASR_ICU_VERSION 73)
 
-    if(${PROCESSOR_ARCHITECTURE} MATCHES "ARM64")
+    if (${PROCESSOR_ARCHITECTURE} MATCHES "ARM64")
         # arm64
         _on_download_icu()
         FetchContent_Declare(
-            icu_msvc_2019_binary_arm64
-            URL ${GITHUB_MIRROR_URL}/unicode-org/icu/releases/download/release-73-1/icu4c-73_1-WinARM64-MSVC2019.zip
-            CONFIGURE_COMMAND ""
-            BUILD_COMMAND ""
-            INSTALL_COMMAND "")
+                icu_msvc_2019_binary_arm64
+                URL ${GITHUB_MIRROR_URL}/unicode-org/icu/releases/download/release-73-1/icu4c-73_1-WinARM64-MSVC2019.zip
+                CONFIGURE_COMMAND ""
+                BUILD_COMMAND ""
+                INSTALL_COMMAND "")
         FetchContent_MakeAvailable(icu_msvc_2019_binary_arm64)
         set(ICU_ROOT ${icu_msvc_2019_binary_arm64_SOURCE_DIR})
         set(ICU_DIR ${icu_msvc_2019_binary_arm64_SOURCE_DIR})
         list(APPEND ASR_BUNDLED_ICU_LIBRARIES
-            ${icu_msvc_2019_binary_arm64_SOURCE_DIR}/binARM64/icudt${ASR_ICU_VERSION}.dll
-            ${icu_msvc_2019_binary_arm64_SOURCE_DIR}/binARM64/icuin${ASR_ICU_VERSION}.dll
-            ${icu_msvc_2019_binary_arm64_SOURCE_DIR}/binARM64/icuuc${ASR_ICU_VERSION}.dll)
-    else()
-        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+                ${icu_msvc_2019_binary_arm64_SOURCE_DIR}/binARM64/icudt${ASR_ICU_VERSION}.dll
+                ${icu_msvc_2019_binary_arm64_SOURCE_DIR}/binARM64/icuin${ASR_ICU_VERSION}.dll
+                ${icu_msvc_2019_binary_arm64_SOURCE_DIR}/binARM64/icuuc${ASR_ICU_VERSION}.dll)
+    else ()
+        if (CMAKE_SIZEOF_VOID_P EQUAL 8)
             # 64 bits
             _on_download_icu()
             FetchContent_Declare(
-                icu_msvc_2019_binary_win64
-                URL ${GITHUB_MIRROR_URL}/unicode-org/icu/releases/download/release-73-1/icu4c-73_1-Win64-MSVC2019.zip
-                CONFIGURE_COMMAND ""
-                BUILD_COMMAND ""
-                INSTALL_COMMAND "")
+                    icu_msvc_2019_binary_win64
+                    URL ${GITHUB_MIRROR_URL}/unicode-org/icu/releases/download/release-73-1/icu4c-73_1-Win64-MSVC2019.zip
+                    CONFIGURE_COMMAND ""
+                    BUILD_COMMAND ""
+                    INSTALL_COMMAND "")
             FetchContent_MakeAvailable(icu_msvc_2019_binary_win64)
             set(ICU_ROOT ${icu_msvc_2019_binary_win64_SOURCE_DIR})
             set(ICU_DIR ${icu_msvc_2019_binary_win64_SOURCE_DIR})
             list(APPEND ASR_BUNDLED_ICU_LIBRARIES
-                ${icu_msvc_2019_binary_win64_SOURCE_DIR}/bin64/icudt${ASR_ICU_VERSION}.dll
-                ${icu_msvc_2019_binary_win64_SOURCE_DIR}/bin64/icuin${ASR_ICU_VERSION}.dll
-                ${icu_msvc_2019_binary_win64_SOURCE_DIR}/bin64/icuuc${ASR_ICU_VERSION}.dll)
-        elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+                    ${icu_msvc_2019_binary_win64_SOURCE_DIR}/bin64/icudt${ASR_ICU_VERSION}.dll
+                    ${icu_msvc_2019_binary_win64_SOURCE_DIR}/bin64/icuin${ASR_ICU_VERSION}.dll
+                    ${icu_msvc_2019_binary_win64_SOURCE_DIR}/bin64/icuuc${ASR_ICU_VERSION}.dll)
+        elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
             # 32 bits
             _on_download_icu()
             FetchContent_Declare(
-                icu_msvc_2019_binary_win32
-                URL ${GITHUB_MIRROR_URL}/unicode-org/icu/releases/download/release-73-1/icu4c-73_1-Win32-MSVC2019.zip
-                CONFIGURE_COMMAND ""
-                BUILD_COMMAND ""
-                INSTALL_COMMAND "")
+                    icu_msvc_2019_binary_win32
+                    URL ${GITHUB_MIRROR_URL}/unicode-org/icu/releases/download/release-73-1/icu4c-73_1-Win32-MSVC2019.zip
+                    CONFIGURE_COMMAND ""
+                    BUILD_COMMAND ""
+                    INSTALL_COMMAND "")
             FetchContent_MakeAvailable(icu_msvc_2019_binary_win32)
             set(ICU_ROOT ${icu_msvc_2019_binary_win32_SOURCE_DIR})
             set(ICU_DIR ${icu_msvc_2019_binary_win32_SOURCE_DIR})
             list(APPEND ASR_BUNDLED_ICU_LIBRARIES
-                ${icu_msvc_2019_binary_win32_SOURCE_DIR}/bin/icudt${ASR_ICU_VERSION}.dll
-                ${icu_msvc_2019_binary_win32_SOURCE_DIR}/bin/icuin${ASR_ICU_VERSION}.dll
-                ${icu_msvc_2019_binary_win32_SOURCE_DIR}/bin/icuuc${ASR_ICU_VERSION}.dll)
-        endif()
-    endif()
+                    ${icu_msvc_2019_binary_win32_SOURCE_DIR}/bin/icudt${ASR_ICU_VERSION}.dll
+                    ${icu_msvc_2019_binary_win32_SOURCE_DIR}/bin/icuin${ASR_ICU_VERSION}.dll
+                    ${icu_msvc_2019_binary_win32_SOURCE_DIR}/bin/icuuc${ASR_ICU_VERSION}.dll)
+        endif ()
+    endif ()
 
     asr_add_auto_copy_dll_path(ASR_BUNDLED_ICU_LIBRARIES)
-endif()
+endif ()
 
 find_package(ICU COMPONENTS data i18n uc REQUIRED)
 target_link_libraries(Asr3rdParty INTERFACE ICU::data ICU::i18n ICU::uc)
@@ -339,11 +344,11 @@ function(_download_and_config_boost)
     set(BUILD_TESTING OFF)
 
     FetchContent_Declare(
-        AsrBoost
-        URL ${GITHUB_MIRROR_URL}/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.7z
-        URL_HASH SHA256=AB41BF39435E5513A6141916B972B785B9A3096D9C84A7D943F607BCC3BC1132
-        PATCH_COMMAND ${CMAKE_COMMAND} -E copy
-        "${CMAKE_SOURCE_DIR}/cmake/AsrBoostContext182Patch.cmake" <SOURCE_DIR>/libs/context/CMakeLists.txt)
+            AsrBoost
+            URL ${GITHUB_MIRROR_URL}/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.7z
+            URL_HASH SHA256=AB41BF39435E5513A6141916B972B785B9A3096D9C84A7D943F607BCC3BC1132
+            PATCH_COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_SOURCE_DIR}/cmake/AsrBoostContext182Patch.cmake" <SOURCE_DIR>/libs/context/CMakeLists.txt)
 
     # See [Symbol redefinition on latest mingw gcc](https://github.com/boostorg/stacktrace/issues/133)
     # You should use boost from msys package manager to avoid this error.
@@ -354,34 +359,34 @@ function(_download_and_config_boost)
     set(BOOST_IOSTREAMS_ENABLE_ZSTD OFF)
 
     # Fix error: .../libs/asio/include/boost/asio/detail/impl/winsock_init.ipp:39: undefined reference to `__imp_WSAStartup'
-    if(WIN32)
+    if (WIN32)
         link_libraries(ws2_32)
-    endif()
+    endif ()
 
     FetchContent_MakeAvailable(AsrBoost)
 endfunction()
 
 set(BOOST_FILESYSTEM_NO_DEPRECATED ON)
 
-if(${ASR_USE_BUNDLED_BOOST})
+if (${ASR_USE_BUNDLED_BOOST})
     _download_and_config_boost()
     set(ASR_USE_BUNDLED_BOOST TRUE)
     list(APPEND ASR_BUNDLED_BOOST_LIBS
-        Boost::regex_icu
-        Boost::dll
-        Boost::predef
-        Boost::bimap
-        Boost::container_hash
-        Boost::pfr)
-else()
+            Boost::regex_icu
+            Boost::dll
+            Boost::predef
+            Boost::bimap
+            Boost::container_hash
+            Boost::pfr)
+else ()
     find_package(Boost 1.82 COMPONENTS filesystem url)
 
-    if(NOT Boost_FOUND)
+    if (NOT Boost_FOUND)
         message(FATAL_ERROR "Boost not found. Please install it manually or set ASR_USE_BUNDLED_BOOST=ON.")
-    else()
+    else ()
         set(ASR_USE_BUNDLED_BOOST OFF)
-    endif()
-endif()
+    endif ()
+endif ()
 
 add_compile_definitions(AsrUtils PUBLIC BOOST_FILESYSTEM_NO_DEPRECATED)
 
@@ -389,13 +394,13 @@ add_compile_definitions(AsrUtils PUBLIC BOOST_FILESYSTEM_NO_DEPRECATED)
 # Notice: This library assume string is encoded in UTF-8.
 message(STATUS "Downloading and collecting headers in nlohmann json.")
 FetchContent_Declare(
-    nlohnmann_json
-    URL ${GITHUB_MIRROR_URL}/nlohmann/json/releases/download/v3.11.2/include.zip
-    URL_HASH SHA256=E5C7A9F49A16814BE27E4ED0EE900ECD0092BFB7DBFCA65B5A421B774DCCAAED)
+        nlohnmann_json
+        URL ${GITHUB_MIRROR_URL}/nlohmann/json/releases/download/v3.11.2/include.zip
+        URL_HASH SHA256=E5C7A9F49A16814BE27E4ED0EE900ECD0092BFB7DBFCA65B5A421B774DCCAAED)
 
-if(NOT nlohnmann_json_POPULATED)
+if (NOT nlohnmann_json_POPULATED)
     FetchContent_Populate(nlohnmann_json)
-endif()
+endif ()
 
 message(${nlohnmann_json_SOURCE_DIR}/include)
 target_include_directories(Asr3rdParty INTERFACE ${nlohnmann_json_SOURCE_DIR}/include)
@@ -405,10 +410,10 @@ find_package(onnxruntime)
 
 function(_download_and_config_onnxruntime TARGET_NAME URL)
     FetchContent_Declare(${TARGET_NAME}
-        URL ${URL}
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND "")
+            URL ${URL}
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND "")
     FetchContent_MakeAvailable(${TARGET_NAME})
     FetchContent_GetProperties(${TARGET_NAME})
 
@@ -417,121 +422,121 @@ function(_download_and_config_onnxruntime TARGET_NAME URL)
     add_library(AsrBundledOnnxRuntimeDll SHARED IMPORTED)
     find_library(${TARGET_NAME}_DLL onnxruntime "${${TARGET_NAME}_SOURCE_DIR}/lib")
     set_target_properties(
-        AsrBundledOnnxRuntimeDll
-        PROPERTIES
-        IMPORTED_CONFIGURATIONS RELEASE
-        IMPORTED_LOCATION "${${TARGET_NAME}_DLL}"
-        INTERFACE_INCLUDE_DIRECTORIES "${${TARGET_NAME}_SOURCE_DIR}/include"
-        INTERFACE_COMPILE_OPTIONS "")
+            AsrBundledOnnxRuntimeDll
+            PROPERTIES
+            IMPORTED_CONFIGURATIONS RELEASE
+            IMPORTED_LOCATION "${${TARGET_NAME}_DLL}"
+            INTERFACE_INCLUDE_DIRECTORIES "${${TARGET_NAME}_SOURCE_DIR}/include"
+            INTERFACE_COMPILE_OPTIONS "")
     set_property(
-        TARGET AsrBundledOnnxRuntime
-        APPEND PROPERTY IMPORTED_CONFIGURATIONS RELWITHDEBINFO)
+            TARGET AsrBundledOnnxRuntime
+            APPEND PROPERTY IMPORTED_CONFIGURATIONS RELWITHDEBINFO)
 
     add_library(AsrBundledOnnxRuntimeProvidersSharedDll SHARED IMPORTED)
     find_library(${TARGET_NAME}_ProvidersSharedDLL onnxruntime_providers_shared "${${TARGET_NAME}_SOURCE_DIR}/lib")
 
-    if(WIN32 OR(NOT ${${TARGET_NAME}_ProvidersSharedDLL} STREQUAL "${TARGET_NAME}_ProvidersSharedDLL-NOTFOUND"))
+    if (WIN32 OR (NOT ${${TARGET_NAME}_ProvidersSharedDLL} STREQUAL "${TARGET_NAME}_ProvidersSharedDLL-NOTFOUND"))
         set_target_properties(
-            AsrBundledOnnxRuntimeProvidersSharedDll
-            PROPERTIES
-            IMPORTED_CONFIGURATIONS RELEASE
-            IMPORTED_LOCATION "${${TARGET_NAME}_ProvidersSharedDLL}"
-            INTERFACE_INCLUDE_DIRECTORIES "${${TARGET_NAME}_SOURCE_DIR}/include"
-            INTERFACE_COMPILE_OPTIONS "")
+                AsrBundledOnnxRuntimeProvidersSharedDll
+                PROPERTIES
+                IMPORTED_CONFIGURATIONS RELEASE
+                IMPORTED_LOCATION "${${TARGET_NAME}_ProvidersSharedDLL}"
+                INTERFACE_INCLUDE_DIRECTORIES "${${TARGET_NAME}_SOURCE_DIR}/include"
+                INTERFACE_COMPILE_OPTIONS "")
         set_property(
-            TARGET AsrBundledOnnxRuntime
-            APPEND PROPERTY IMPORTED_CONFIGURATIONS RELWITHDEBINFO)
+                TARGET AsrBundledOnnxRuntime
+                APPEND PROPERTY IMPORTED_CONFIGURATIONS RELWITHDEBINFO)
 
-        if(WIN32)
+        if (WIN32)
             set_property(
-                TARGET AsrBundledOnnxRuntimeDll
-                PROPERTY IMPORTED_IMPLIB "${${TARGET_NAME}_SOURCE_DIR}/lib/onnxruntime.lib")
+                    TARGET AsrBundledOnnxRuntimeDll
+                    PROPERTY IMPORTED_IMPLIB "${${TARGET_NAME}_SOURCE_DIR}/lib/onnxruntime.lib")
             set_property(
-                TARGET AsrBundledOnnxRuntimeProvidersSharedDll
-                PROPERTY IMPORTED_IMPLIB "${${TARGET_NAME}_SOURCE_DIR}/lib/onnxruntime_providers_shared.lib")
-        endif()
+                    TARGET AsrBundledOnnxRuntimeProvidersSharedDll
+                    PROPERTY IMPORTED_IMPLIB "${${TARGET_NAME}_SOURCE_DIR}/lib/onnxruntime_providers_shared.lib")
+        endif ()
 
         set_property(
+                TARGET AsrBundledOnnxRuntime
+                PROPERTY
+                INTERFACE_LINK_LIBRARIES
+                AsrBundledOnnxRuntimeProvidersSharedDll)
+    endif ()
+
+    set_property(
             TARGET AsrBundledOnnxRuntime
             PROPERTY
             INTERFACE_LINK_LIBRARIES
-            AsrBundledOnnxRuntimeProvidersSharedDll)
-    endif()
+            AsrBundledOnnxRuntimeDll)
 
-    set_property(
-        TARGET AsrBundledOnnxRuntime
-        PROPERTY
-        INTERFACE_LINK_LIBRARIES
-        AsrBundledOnnxRuntimeDll)
-
-    if(WIN32)
+    if (WIN32)
         set(ASR_ORT_DLL_PATH ${${TARGET_NAME}_SOURCE_DIR}/lib/onnxruntime.dll)
         set(ASR_ORT_RUNTIME_PROVIDER_SHARED_DLL_PATH ${${TARGET_NAME}_SOURCE_DIR}/lib/onnxruntime_providers_shared.dll)
         list(APPEND ASR_ONNXRUNTIME_DLL_PATH "${ASR_ORT_DLL_PATH}" "${ASR_ORT_RUNTIME_PROVIDER_SHARED_DLL_PATH}")
-    else()
-        if(NOT ${${TARGET_NAME}_ProvidersSharedDLL} STREQUAL "${TARGET_NAME}_ProvidersSharedDLL-NOTFOUND")
+    else ()
+        if (NOT ${${TARGET_NAME}_ProvidersSharedDLL} STREQUAL "${TARGET_NAME}_ProvidersSharedDLL-NOTFOUND")
             list(APPEND ASR_ONNXRUNTIME_DLL_PATH "${${TARGET_NAME}_ProvidersSharedDLL}")
-        endif()
+        endif ()
 
         list(APPEND ASR_ONNXRUNTIME_DLL_PATH "${${TARGET_NAME}_DLL}")
-    endif()
+    endif ()
 
     asr_add_auto_copy_dll_path(ASR_ONNXRUNTIME_DLL_PATH)
 endfunction()
 
-if(NOT onnxruntime_FOUND)
+if (NOT onnxruntime_FOUND)
     set(ASR_ONNXRUNTIME_BINARY_VERSION "1.16.1")
     message(STATUS "Downloading prebuilt onnxruntime binary (VERSION = ${ASR_ONNXRUNTIME_BINARY_VERSION})...")
 
-    if(WIN32)
-        if(${PROCESSOR_ARCHITECTURE} MATCHES "ARM64")
+    if (WIN32)
+        if (${PROCESSOR_ARCHITECTURE} MATCHES "ARM64")
             # arm64
             _download_and_config_onnxruntime(
-                "onnxruntime_msvc_amd64"
-                "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-win-arm64-${ASR_ONNXRUNTIME_BINARY_VERSION}.zip")
-        elseif(${PROCESSOR_ARCHITECTURE} MATCHES "ARM")
+                    "onnxruntime_msvc_amd64"
+                    "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-win-arm64-${ASR_ONNXRUNTIME_BINARY_VERSION}.zip")
+        elseif (${PROCESSOR_ARCHITECTURE} MATCHES "ARM")
             # arm
             _download_and_config_onnxruntime(
-                "onnxruntime_msvc_amd64"
-                "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-win-arm-${ASR_ONNXRUNTIME_BINARY_VERSION}.zip")
-        elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+                    "onnxruntime_msvc_amd64"
+                    "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-win-arm-${ASR_ONNXRUNTIME_BINARY_VERSION}.zip")
+        elseif (CMAKE_SIZEOF_VOID_P EQUAL 8)
             # amd64
             _download_and_config_onnxruntime(
-                "onnxruntime_msvc_amd64"
-                "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-win-x64-${ASR_ONNXRUNTIME_BINARY_VERSION}.zip")
-        elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+                    "onnxruntime_msvc_amd64"
+                    "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-win-x64-${ASR_ONNXRUNTIME_BINARY_VERSION}.zip")
+        elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
             # x86
             _download_and_config_onnxruntime(
-                "onnxruntime_msvc_x86"
-                "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-win-x86-${ASR_ONNXRUNTIME_BINARY_VERSION}.zip")
-        else()
+                    "onnxruntime_msvc_x86"
+                    "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-win-x86-${ASR_ONNXRUNTIME_BINARY_VERSION}.zip")
+        else ()
             message(FATAL_ERROR "Unsupported architecture.")
-        endif()
-    elseif(APPLE)
+        endif ()
+    elseif (APPLE)
         # TODO
         message(FATAL_ERROR "Not yet supported. PR welcome.")
-    elseif(UNIX)
-        if(${PROCESSOR_ARCHITECTURE} MATCHES "ARM")
+    elseif (UNIX)
+        if (${PROCESSOR_ARCHITECTURE} MATCHES "ARM")
             # arm64
             _download_and_config_onnxruntime(
-                "onnxruntime_linux_arm64"
-                "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-linux-aarch64-${ASR_ONNXRUNTIME_BINARY_VERSION}.tgz")
-        elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+                    "onnxruntime_linux_arm64"
+                    "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-linux-aarch64-${ASR_ONNXRUNTIME_BINARY_VERSION}.tgz")
+        elseif (CMAKE_SIZEOF_VOID_P EQUAL 8)
             # amd64
             _download_and_config_onnxruntime(
-                "onnxruntime_linux_amd64"
-                "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-linux-x64-${ASR_ONNXRUNTIME_BINARY_VERSION}.tgz")
-        elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+                    "onnxruntime_linux_amd64"
+                    "${GITHUB_MIRROR_URL}/microsoft/onnxruntime/releases/download/v${ASR_ONNXRUNTIME_BINARY_VERSION}/onnxruntime-linux-x64-${ASR_ONNXRUNTIME_BINARY_VERSION}.tgz")
+        elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
             # x86
             message(FATAL_ERROR "No official prebuilt binary for this architecture.")
-        else()
+        else ()
             message(FATAL_ERROR "Unsupported architecture.")
-        endif()
-    endif()
+        endif ()
+    endif ()
 
     target_link_libraries(Asr3rdParty INTERFACE AsrBundledOnnxRuntime)
-else()
+else ()
     target_link_libraries(Asr3rdParty INTERFACE onnxruntime::onnxruntime)
-endif()
+endif ()
 
 message("================================================================")

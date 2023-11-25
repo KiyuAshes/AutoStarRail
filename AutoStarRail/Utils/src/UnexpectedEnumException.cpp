@@ -3,10 +3,6 @@
 
 ASR_UTILS_NS_BEGIN
 
-ASR_NS_ANONYMOUS_DETAILS_BEGIN
-
-ASR_NS_ANONYMOUS_DETAILS_END
-
 UnexpectedEnumException::UnexpectedEnumException(
     const std::string_view u8_enum_value)
     : Base{ASR::fmt::format("Unexpected enum found. Value = {}", u8_enum_value)}

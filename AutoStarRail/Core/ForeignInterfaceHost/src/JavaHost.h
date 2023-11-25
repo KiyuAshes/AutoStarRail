@@ -1,7 +1,7 @@
 #ifndef ASR_CORE_FOREIGNINTERFACEHOST_JAVAHOST_H
 #define ASR_CORE_FOREIGNINTERFACEHOST_JAVAHOST_H
 
-#include "boost/filesystem/path.hpp"
+#include <filesystem>
 #ifdef ASR_EXPORT_JAVA
 
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
@@ -19,9 +19,9 @@ ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 ASR_NS_JAVAHOST_BEGIN
 
-struct JavaRuntimeDesc : public ForeignLanguageRuntimeFactoryDescBase
+struct JavaRuntimeDesc : public ForeignLanguageRuntimeFactoryDesc
 {
-    boost::filesystem::path jvm_dll_path;
+    std::filesystem::path jvm_dll_path;
 };
 
 ASR_NS_JAVAHOST_END

@@ -8,7 +8,7 @@
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 auto CreateForeignLanguageRuntime(
-    const ForeignLanguageRuntimeFactoryDescBase& desc_base)
+    const ForeignLanguageRuntimeFactoryDesc& desc_base)
     -> ASR::Utils::Expected<AsrPtr<IForeignLanguageRuntime>>
 {
     switch (desc_base.language)

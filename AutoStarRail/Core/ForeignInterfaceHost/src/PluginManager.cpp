@@ -1,7 +1,6 @@
 #include "PluginManager.h"
 #include "ForeignInterfaceHost.h"
 #include <AutoStarRail/AsrString.hpp>
-#include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Core/i18n/AsrResultTranslator.h>
@@ -15,13 +14,11 @@
 #include <AutoStarRail/Utils/StringUtils.h>
 
 #include <boost/pfr/core.hpp>
-#include <cstddef>
 #include <fstream>
 #include <functional>
 #include <magic_enum.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <string>
 #include <string_view>
 #include <unordered_set>
 #include <utility>
@@ -511,13 +508,12 @@ AsrResult PluginManager::AddInterface(CommonPluginPtr p_plugin)
     for (const auto feature : features)
     {
         // TODO: 根据feature枚举将对应接口添加到对应manager。
-
     }
     return ASR_E_NO_IMPLEMENTATION;
 }
 
 std::unique_ptr<PluginDesc> PluginManager::GetPluginDesc(
-    const boost::filesystem::path& metadata_path)
+    const std::filesystem::path& metadata_path)
 {
     std::unique_ptr<PluginDesc> result{};
     std::ifstream               plugin_config_stream{};
@@ -545,18 +541,20 @@ std::vector<AsrResult> PluginManager::Refresh()
     constexpr std::size_t POSSIBLE_COUNT_OF_PLUGINS = 50;
     result.reserve(POSSIBLE_COUNT_OF_PLUGINS);
 
-    for (const auto  current_path = boost::filesystem::path{"./plugins"};
-         const auto& it : boost::filesystem::directory_iterator{current_path})
+    for (const auto  current_path = std::filesystem::path{"./plugins"};
+         const auto& it : std::filesystem::directory_iterator{current_path})
     {
         const auto& it_path = it.path();
         const auto  extension = it_path.extension();
         if (ASR_UTILS_STRINGUTILS_COMPARE_STRING(extension, "json"))
         {
-            AsrResult plugin_result{ASR_S_OK};
+            AsrResult plugin_result{ASR_E_UNDEFINED_RETURN_VALUE};
+            std::unique_ptr<PluginDesc> up_plugin_desc{};
 
             try
             {
-                const auto up_plugin_desc = GetPluginDesc(it_path);
+                auto tmp_up_plugin_desc = GetPluginDesc(it_path);
+                up_plugin_desc = std::move(tmp_up_plugin_desc);
 
                 if (const auto* const CURRENT_PLATFORM =
                         static_cast<const char*>(
@@ -573,22 +571,6 @@ std::vector<AsrResult> PluginManager::Refresh()
                         result.back());
                     continue;
                 }
-
-                boost::filesystem::path plugin_path =
-                    it_path.parent_path()
-                    / boost::filesystem::path{
-                        it_path.stem().string()
-                        + up_plugin_desc->plugin_filename_extension};
-                if (!boost::filesystem::exists(plugin_path))
-                {
-                    result.push_back(ASR_E_FILE_NOT_FOUND);
-                    ASR_CORE_LOG_ERROR(
-                        "Error when checking plugin file. Expected file path:\"{}\". Error code (" ASR_STR(
-                            ASR_E_FILE_NOT_FOUND) "): {}",
-                        plugin_path.string(),
-                        result.back());
-                    continue;
-                }
             }
             catch (const nlohmann::json::exception& ex)
             {
@@ -600,7 +582,50 @@ std::vector<AsrResult> PluginManager::Refresh()
                 ASR_CORE_LOG_EXCEPTION(ex);
                 plugin_result = ASR_E_INVALID_FILE;
             }
-            result.push_back(plugin_result);
+
+            if (plugin_result != ASR_E_UNDEFINED_RETURN_VALUE)
+            {
+                result.push_back(plugin_result);
+                continue;
+            }
+
+            std::filesystem::path plugin_path =
+                it_path.parent_path()
+                / std::filesystem::path{
+                    it_path.stem().u8string()
+                    + std::u8string{ASR_FULL_RANGE_OF(
+                        up_plugin_desc->plugin_filename_extension)}};
+            if (!std::filesystem::exists(plugin_path))
+            {
+                result.push_back(ASR_E_FILE_NOT_FOUND);
+                ASR_CORE_LOG_ERROR(
+                    "Error when checking plugin file. Expected file path:\"{}\". Error code (" ASR_STR(
+                        ASR_E_FILE_NOT_FOUND) "): {}",
+                    plugin_path.string(),
+                    result.back());
+                continue;
+            }
+
+            ForeignLanguageRuntimeFactoryDesc desc{};
+            desc.language = up_plugin_desc->language;
+            const auto expected_p_runtime = CreateForeignLanguageRuntime(desc);
+            if (!expected_p_runtime)
+            {
+                ASR_CORE_LOG_ERROR(
+                    "Error happened when calling CreateForeignLanguageRuntime.\n"
+                    "----ForeignLanguageRuntimeFactoryDesc dump begin----");
+                ASR_CORE_LOG_ERROR("{{\n{}\n}}", *up_plugin_desc);
+                ASR_CORE_LOG_ERROR(
+                    "----ForeignLanguageRuntimeFactoryDesc dump end----");
+                result.push_back(expected_p_runtime.error());
+            }
+
+            if (auto expected_p_plugin =
+                    expected_p_runtime.value()->LoadPlugin(plugin_path);
+                !expected_p_plugin)
+            {
+                result.push_back(expected_p_plugin.error());
+            }
         }
     }
     return result;

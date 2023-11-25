@@ -15,7 +15,7 @@ ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 ASR_NS_CPPHOST_BEGIN
 
 auto CreateForeignLanguageRuntime(
-    const ForeignLanguageRuntimeFactoryDescBase& desc)
+    const ForeignLanguageRuntimeFactoryDesc& desc)
     -> ASR::Utils::Expected<AsrPtr<IForeignLanguageRuntime>>;
 
 ASR_NS_CPPHOST_END

@@ -8,16 +8,49 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/ExportInterface/IAsrSettings.h>
+#include <AutoStarRail/Utils/fmt.h>
 #include <nlohmann/json_fwd.hpp>
+#include "ForeignInterfaceHostEnum.h"
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
+struct PluginSettingDesc;
+struct PluginDesc;
+
+ASR_CORE_FOREIGNINTERFACEHOST_NS_END
+
+template <>
+struct ASR_FMT_NS::
+    formatter<ASR::Core::ForeignInterfaceHost::PluginSettingDesc, char>
+    : public formatter<std::string, char>
+{
+    auto format(
+        const ASR::Core::ForeignInterfaceHost::PluginSettingDesc& desc,
+        format_context&                                           ctx) const ->
+        typename std::remove_reference_t<decltype(ctx)>::iterator;
+};
+
+template <>
+struct ASR_FMT_NS::formatter<ASR::Core::ForeignInterfaceHost::PluginDesc, char>
+    : public formatter<std::string, char>
+{
+    auto format(
+        const ASR::Core::ForeignInterfaceHost::PluginDesc& desc,
+        format_context&                                    ctx) const ->
+        typename std::remove_reference_t<decltype(ctx)>::iterator;
+};
+
+ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
+
+/**
+ * @brief 当更新这一结构体时，记得更新相关formatter
+ *  （位于 AutoStarRail/Core/ForeignInterfaceHost/src/ForeignInterfaceHost.cpp）
+ */
 struct PluginSettingDesc
 {
     std::string name;
     std::variant<std::monostate, bool, std::int64_t, float, std::string>
-        default_value;
-
+                                            default_value;
     std::optional<std::string>              description;
     std::optional<std::vector<std::string>> enum_values;
     std::optional<std::vector<std::string>> enum_descriptions;
@@ -37,6 +70,7 @@ void from_json(const ::nlohmann::json& input, PluginSettingDesc& output);
 struct PluginDesc
 {
     int32_t                        plugin_metadata_version;
+    ForeignInterfaceLanguage       language;
     std::string                    name;
     std::string                    description;
     std::string                    author;

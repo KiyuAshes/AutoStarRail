@@ -30,8 +30,8 @@ else()
     option(ASR_USE_BUNDLIED_FMT "" ON)
 endif()
 
-option(ASR_BUILD_TEST "" OFF)
-option(ASR_BUILD_QT5_GUI "" ON)
+option(ASR_BUILD_TEST "构建测试，会下载GTEST库" OFF)
+option(ASR_BUILD_QT5_GUI "构建基于Qt5的GUI" ON)
 option(ASR_USE_LLD "Using lld instead of using ld." OFF)
 option(ASR_USE_CCACHE "Using CCACHE" OFF)
 
@@ -42,6 +42,9 @@ option(ASR_USE_BUNDLIED_OPENCV "强制使用下载的OpenCV源码构建" OFF)
 if(NOT DEFINED GITHUB_MIRROR_URL)
     set(GITHUB_MIRROR_URL "https://github.com")
 endif()
+
+# TODO: 配置时打印当前设置
+# get_property(result CACHE SampleOpt PROPERTY HELPSTRING)
 
 set(ASR_DEFAULT_SHARED_LIBRARY_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
 set(ASR_DEFAULT_STATIC_LIBRARY_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})

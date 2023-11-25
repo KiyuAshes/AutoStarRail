@@ -21,7 +21,7 @@ ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 ASR_NS_PYTHONHOST_BEGIN
 
-struct PythonRuntimeDesc : public ForeignLanguageRuntimeFactoryDescBase
+struct PythonRuntimeDesc : public ForeignLanguageRuntimeFactoryDesc
 {
 };
 

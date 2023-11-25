@@ -8,11 +8,10 @@
 #include <unicode/uversion.h>
 #include <unicode/ustring.h>
 #include <new>
-#include <functional>
-#include <cwchar>
 #include <algorithm>
 #include <cstring>
 #include <nlohmann/json.hpp>
+#include <unicode/ustring.h>
 
 bool operator==(AsrReadOnlyString lhs, AsrReadOnlyString rhs)
 {
@@ -80,6 +79,25 @@ std::size_t AsrStringHash::operator()(
 }
 
 ASR_NS_END
+
+bool Asr::AsrStringLess::operator()(
+    const Asr::AsrPtr<IAsrReadOnlyString>& lhs,
+    const Asr::AsrPtr<IAsrReadOnlyString>& rhs) const
+{
+    const char16_t* p_lhs{};
+    const char16_t* p_rhs{};
+    size_t          lhs_size{};
+    size_t          rhs_size{};
+    lhs->GetUtf16(&p_lhs, &lhs_size);
+    rhs->GetUtf16(&p_rhs, &rhs_size);
+
+    return ::u_strCompare(
+               p_lhs,
+               static_cast<int32_t>(lhs_size),
+               p_rhs,
+               static_cast<int32_t>(rhs_size),
+               false) < 0;
+}
 
 void AsrStringCppImpl::InvalidateCache()
 {

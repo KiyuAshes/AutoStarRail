@@ -36,6 +36,13 @@ struct AsrStringHash
     std::size_t operator()(const AsrPtr<IAsrReadOnlyString>& str) const;
 };
 
+struct AsrStringLess
+{
+    bool operator()(
+        const AsrPtr<IAsrReadOnlyString>& lhs,
+        const AsrPtr<IAsrReadOnlyString>& rhs) const;
+};
+
 namespace Details
 {
     template <class T>

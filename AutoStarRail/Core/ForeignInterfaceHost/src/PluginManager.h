@@ -5,13 +5,14 @@
 #include "IForeignLanguageRuntime.h"
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
 #include <AutoStarRail/Utils/Expected.h>
 #include <AutoStarRail/Utils/fmt.h>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <map>
 #include <memory>
 #include <vector>
@@ -95,15 +96,16 @@ public:
 class PluginManager
 {
 private:
-    std::map<boost::filesystem::path, Plugin> plugin_file_paths_{};
-    InterfaceManager<IAsrTask, IAsrSwigTask>  asr_task_interface_manager_;
-    std::vector<AsrPtr<IAsrCaptureFactory>>   asr_capture_interfaces_;
-    ErrorLensManager                          error_lens_manager_;
+    std::map<AsrPtr<IAsrReadOnlyString>, Plugin, AsrStringLess>
+                                             plugin_file_paths_{};
+    InterfaceManager<IAsrTask, IAsrSwigTask> asr_task_interface_manager_;
+    std::vector<AsrPtr<IAsrCaptureFactory>>  asr_capture_interfaces_;
+    ErrorLensManager                         error_lens_manager_;
 
     AsrResult AddInterface(CommonPluginPtr p_plugin);
 
     static std::unique_ptr<PluginDesc> GetPluginDesc(
-        const boost::filesystem::path& metadata_path);
+        const std::filesystem::path& metadata_path);
 
     AsrResult GetInterface(const Plugin& plugin);
 

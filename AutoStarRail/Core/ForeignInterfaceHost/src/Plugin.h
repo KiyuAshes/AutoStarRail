@@ -25,17 +25,19 @@ class Plugin
 {
     friend class PluginManager;
 
-    AsrPtr<IAsrPlugin>                       p_plugin_{};
-    std::unique_ptr<PluginDesc>              desc_;
-    std::unique_ptr<IForeignLanguageRuntime> up_runtime_;
-    ForeignInterfaceLanguage                 language_;
+    AsrPtr<IForeignLanguageRuntime> p_runtime_;
+    CommonPluginPtr                 p_plugin_{};
+    std::unique_ptr<PluginDesc>     desc_;
 
 public:
     Plugin(
-        AsrPtr<IAsrPlugin>                       p_plugin,
-        std::unique_ptr<PluginDesc>              up_desc,
-        std::unique_ptr<IForeignLanguageRuntime> up_runtime,
-        ForeignInterfaceLanguage                 languange);
+        AsrPtr<IForeignLanguageRuntime> up_runtime,
+        AsrPtr<IAsrPlugin>              p_plugin,
+        std::unique_ptr<PluginDesc>     up_desc);
+    Plugin(
+        AsrPtr<IForeignLanguageRuntime> up_runtime,
+        AsrPtr<IAsrSwigPlugin>          p_swig_plugin,
+        std::unique_ptr<PluginDesc>     up_desc);
 
     ~Plugin();
 };

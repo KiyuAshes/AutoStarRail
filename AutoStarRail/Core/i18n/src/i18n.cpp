@@ -70,7 +70,7 @@ void from_json(const ::nlohmann::json& input, TranslateItemMap<T, Item>& output)
 }
 
 template <class T>
-I18n<T>::I18n(const boost::filesystem::path& json_path)
+I18n<T>::I18n(const std::filesystem::path& json_path)
 {
     std::ifstream ifs{};
     ASR::Utils::EnableStreamException(
