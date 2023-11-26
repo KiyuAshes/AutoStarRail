@@ -1,3 +1,5 @@
+#include <boost/cstdint.hpp>
+#include <boost/nowide/config.hpp>
 #ifdef ASR_EXPORT_PYTHON
 
 #include "PythonHost.h"
@@ -323,31 +325,6 @@ class PyInterpreter
     }
 };
 
-class PythonRuntime final : public IForeignLanguageRuntime
-{
-private:
-    PyObjectPtr p_plugin_module;
-
-public:
-    PythonRuntime();
-
-    int64_t   AddRef() override { return 1; };
-    int64_t   Release() override { return 1; };
-    AsrResult QueryInterface(const AsrGuid&, void**) override
-    {
-        return ASR_E_NO_IMPLEMENTATION;
-    }
-    auto LoadPlugin(const std::filesystem::path& path)
-        -> ASR::Utils::Expected<CommonPluginPtr> override;
-
-    static auto ImportPluginModule(
-        const std::filesystem::path& py_plugin_initializer)
-        -> ASR::Utils::Expected<PyObjectPtr>;
-    static auto ResolveClassName(const std::filesystem::path& relative_path)
-        -> ASR::Utils::Expected<std::wstring>;
-    auto GetPluginInitializer(PyObject& py_module) -> PyObjectPtr;
-};
-
 auto PythonRuntime::LoadPlugin(const std::filesystem::path& path)
     -> ASR::Utils::Expected<CommonPluginPtr>
 {
@@ -394,9 +371,9 @@ auto PythonRuntime::LoadPlugin(const std::filesystem::path& path)
 }
 
 auto PythonRuntime::ResolveClassName(const std::filesystem::path& relative_path)
-    -> ASR::Utils::Expected<std::wstring>
+    -> ASR::Utils::Expected<std::u8string>
 {
-    std::wstring result{};
+    std::u8string result{};
 
     if (relative_path.begin() == relative_path.end())
     {
@@ -409,16 +386,17 @@ auto PythonRuntime::ResolveClassName(const std::filesystem::path& relative_path)
     for (auto it_next = std::next(relative_path.begin()); it_next != it_end;
          ++it, ++it_next)
     {
-        const auto part_string = it->wstring();
+        const auto part_string = it->u8string();
+        // TODO: review此处的逻辑并重构为u8string
         if (part_string
-            == std::wstring{std::filesystem::path::preferred_separator})
+            == std::u8string{std::filesystem::path::preferred_separator})
         {
             return tl::make_unexpected(ASR_E_INVALID_PATH);
         }
         result += part_string;
         result += L'.';
     }
-    result += it->wstring();
+    result += it->u8string();
     return result;
 }
 

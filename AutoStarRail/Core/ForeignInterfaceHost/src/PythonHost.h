@@ -57,6 +57,31 @@ public:
     explicit operator bool() const noexcept;
 };
 
+class PythonRuntime final : public IForeignLanguageRuntime
+{
+private:
+    PyObjectPtr p_plugin_module;
+
+public:
+    PythonRuntime();
+
+    int64_t   AddRef() override { return 1; };
+    int64_t   Release() override { return 1; };
+    AsrResult QueryInterface(const AsrGuid&, void**) override
+    {
+        return ASR_E_NO_IMPLEMENTATION;
+    }
+    auto LoadPlugin(const std::filesystem::path& path)
+        -> ASR::Utils::Expected<CommonPluginPtr> override;
+
+    static auto ImportPluginModule(
+        const std::filesystem::path& py_plugin_initializer)
+        -> ASR::Utils::Expected<PyObjectPtr>;
+    static auto ResolveClassName(const std::filesystem::path& relative_path)
+        -> ASR::Utils::Expected<std::wstring>;
+    auto GetPluginInitializer(_object& py_module) -> PyObjectPtr;
+};
+
 ASR_NS_PYTHONHOST_END
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
