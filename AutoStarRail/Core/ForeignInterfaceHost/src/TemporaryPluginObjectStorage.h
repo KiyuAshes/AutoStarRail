@@ -3,15 +3,15 @@
 
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
-#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <mutex>
+#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 class TemporaryPluginObjectStorage
 {
-    std::mutex         mutex_{};
-    AsrPtr<IAsrPlugin> p_plugin_{};
+    std::mutex      mutex_{};
+    CommonPluginPtr p_plugin_{};
 
     friend AsrResult(::AsrRegisterPluginObject)(
         AsrRetSwigBase result_and_p_object);
@@ -29,7 +29,7 @@ public:
             TemporaryPluginObjectStorage& storage);
         ~TemporaryPluginObjectStorageReader();
 
-        auto GetObject() -> AsrPtr<IAsrPlugin>;
+        auto GetObject() -> CommonPluginPtr;
     };
 
     friend TemporaryPluginObjectStorageReader;

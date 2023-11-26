@@ -20,10 +20,11 @@ ASR_DEFINE_GUID(
     0xdd);
 SWIG_IGNORE(IAsrBasicErrorLens)
 /**
- * A basic error lens implementation for developers.
+ * @brief A basic error lens implementation for developers.
  */
 ASR_INTERFACE IAsrBasicErrorLens : public IAsrErrorLens
 {
+    ASR_METHOD GetSupportedIids(IAsrIidVector * *pp_out_iids) = 0;
     ASR_METHOD RegisterExplanation(
         IAsrReadOnlyString * locale_name,
         AsrResult error_code,

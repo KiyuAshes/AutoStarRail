@@ -15,7 +15,7 @@ Asr::Core::ForeignInterfaceHost::TemporaryPluginObjectStorage::
 }
 
 auto Asr::Core::ForeignInterfaceHost::TemporaryPluginObjectStorage::
-    TemporaryPluginObjectStorageReader::GetObject() -> Asr::AsrPtr<IAsrPlugin>
+    TemporaryPluginObjectStorageReader::GetObject() -> CommonPluginPtr
 {
     return storage_.p_plugin_;
 }

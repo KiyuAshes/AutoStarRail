@@ -23,6 +23,7 @@ ASR_DEFINE_GUID(
 SWIG_IGNORE(IAsrErrorLens)
 ASR_INTERFACE IAsrErrorLens : public IAsrBase
 {
+    ASR_METHOD GetSupportedIids(IAsrIidVector * *pp_out_iids) = 0;
     ASR_METHOD GetErrorMessage(
         IAsrReadOnlyString * locale_name,
         AsrResult error_code,
@@ -47,6 +48,7 @@ ASR_DEFINE_GUID(
 SWIG_ENABLE_DIRECTOR(IAsrSwigErrorLens)
 ASR_INTERFACE IAsrSwigErrorLens : public IAsrSwigBase
 {
+    virtual AsrRetSwigIidVector  GetSupportedIids() = 0;
     virtual AsrRetReadOnlyString GetErrorMessage(
         const AsrReadOnlyString locale_name,
         AsrResult               error_code) = 0;

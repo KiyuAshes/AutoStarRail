@@ -7,7 +7,8 @@
 
 void DumpBuffer(const char16_t* p_buffer, size_t size)
 {
-    std::cout << "---------DUMP BUFFER FOR POINTER "
+    std::cout << '\n'
+              << "---------DUMP BUFFER FOR POINTER "
               << static_cast<const void*>(p_buffer) << " BEGIN---------"
               << '\n';
     for (size_t i = 0; i < size; ++i)
@@ -133,8 +134,8 @@ TEST(ICUTest, u_strFromWCSTest2)
 
     /**
      * The buffer contents is (probably) not NUL-terminated.
-     * You can check if it is with (s.length() < s.getCapacity() && buffer[s.length()]==0).
-     * (See getTerminatedBuffer().)
+     * You can check if it is with (s.length() < s.getCapacity() &&
+     * buffer[s.length()]==0). (See getTerminatedBuffer().)
      */
     const auto icu_string = U_NAMESPACE_QUALIFIER UnicodeString{
         p_buffer,
@@ -143,7 +144,9 @@ TEST(ICUTest, u_strFromWCSTest2)
     EXPECT_EQ(icu_string.length(), 11);
     EXPECT_EQ(icu_string.countChar32(), 9);
     EXPECT_EQ(icu_string.getCapacity(), 12);
-    EXPECT_TRUE((icu_string.length() < icu_string.getCapacity() && icu_string.getBuffer()[icu_string.length()]==0));
+    EXPECT_TRUE(
+        (icu_string.length() < icu_string.getCapacity()
+         && icu_string.getBuffer()[icu_string.length()] == 0));
 }
 
 TEST(ICUTest, UnicodeStringToUtf32Test)

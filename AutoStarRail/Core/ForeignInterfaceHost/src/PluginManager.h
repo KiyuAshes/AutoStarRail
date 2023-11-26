@@ -2,7 +2,8 @@
 #define ASR_CORE_FOREIGNINTERFACEHOST_PLUGINFILEMANAGER_H
 
 #include "Plugin.h"
-#include "IForeignLanguageRuntime.h"
+#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
+#include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
@@ -111,6 +112,8 @@ private:
 
 public:
     std::vector<AsrResult> Refresh();
+
+    AsrResult EnumInfo(size_t index, PluginInfo* p_out_info);
 
     /**
      * @brief Get the Error Explanation from AsrResult.

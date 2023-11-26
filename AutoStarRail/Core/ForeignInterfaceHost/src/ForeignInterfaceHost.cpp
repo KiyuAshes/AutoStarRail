@@ -27,6 +27,7 @@ struct ASR_FMT_NS::formatter<std::vector<T>, char>
             result = ASR_FMT_NS::format_to(result, "{}", value.back());
         }
         result = ASR_FMT_NS::format_to(result, "]");
+        return result;
     }
 };
 
@@ -59,14 +60,16 @@ struct ASR_FMT_NS::formatter<std::optional<T>, char>
     auto format(const std::optional<T>& opt_value, format_context& ctx) const ->
         typename std::remove_reference_t<decltype(ctx)>::iterator
     {
+        auto result = ctx.out();
         if (opt_value)
         {
-            ASR_FMT_NS::format_to(ctx.out(), "{}", opt_value.value());
+            ASR_FMT_NS::format_to(result, "{}", opt_value.value());
         }
         else
         {
-            ASR_FMT_NS::format_to(ctx.out(), "null");
+            ASR_FMT_NS::format_to(result, "null");
         }
+        return result;
     }
 };
 

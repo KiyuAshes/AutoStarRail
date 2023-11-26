@@ -102,8 +102,6 @@ AsrResult CreateCppToSwigObject(
             .and_then(ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
                 IAsrSwigInspectable))
             .and_then(ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
-                IAsrSwigPlugin))
-            .and_then(ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
                 IAsrSwigErrorLens))
             .or_else([&result](const auto error_code) { result = error_code; });
 
@@ -117,37 +115,53 @@ AsrResult CreateCppToSwigObject(
 
 // -------------------- implementation of SwigToCpp class --------------------
 
+AsrResult SwigToCpp<IAsrSwigErrorLens>::GetSupportedIids(
+    IAsrIidVector** pp_out_iids)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigErrorLens::GetSupportedIids,
+        pp_out_iids);
+}
+
 AsrResult SwigToCpp<IAsrSwigErrorLens>::GetErrorMessage(
     IAsrReadOnlyString*  locale_name,
     AsrResult            error_code,
-    IAsrReadOnlyString** pp_out_string){
+    IAsrReadOnlyString** pp_out_string)
+{
     ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
         p_impl_.Get(),
         &IAsrSwigErrorLens::GetErrorMessage,
         pp_out_string,
         locale_name,
-        error_code)}
-
-AsrResult SwigToCpp<IAsrSwigPlugin>::EnumFeature(
-    const size_t      index,
-    AsrPluginFeature* p_out_feature)
-{
-    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
-        p_impl_.Get(),
-        &IAsrSwigPlugin::EnumFeature,
-        p_out_feature,
-        index);
+        error_code);
 }
 
-AsrResult SwigToCpp<IAsrSwigPlugin>::CreateFeatureInterface(
-    AsrPluginFeature feature,
-    void**           pp_out_interface)
+AsrResult CommonPluginEnumFeature(
+    const CommonPluginPtr& p_this,
+    size_t                 index,
+    AsrPluginFeature*      p_out_feature)
 {
-    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
-        p_impl_.Get(),
-        &IAsrSwigPlugin::CreateFeatureInterface,
-        pp_out_interface,
-        feature);
+    if (p_out_feature == nullptr)
+    {
+        return ASR_E_INVALID_POINTER;
+    }
+
+    return std::visit(
+        ASR::Utils::overload_set{
+            [index, p_out_feature](AsrPtr<IAsrPlugin> p_plugin) -> AsrResult
+            { return p_plugin->EnumFeature(index, p_out_feature); },
+            [index,
+             p_out_feature](AsrPtr<IAsrSwigPlugin> p_swig_plugin) -> AsrResult
+            {
+                const auto result = p_swig_plugin->EnumFeature(index);
+                if (ASR::IsOk(result.error_code))
+                {
+                    *p_out_feature = result.value;
+                }
+                return result.error_code;
+            }},
+        p_this);
 }
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

@@ -5,7 +5,7 @@
 #ifdef ASR_EXPORT_JAVA
 
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
-#include "IForeignLanguageRuntime.h"
+#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
 #include <memory>
 
 

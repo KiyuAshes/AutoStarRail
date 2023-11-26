@@ -351,7 +351,7 @@ public:
 auto PythonRuntime::LoadPlugin(const std::filesystem::path& path)
     -> ASR::Utils::Expected<CommonPluginPtr>
 {
-    AsrPtr<IAsrPlugin> result{};
+    CommonPluginPtr result{};
 
     const auto expected_py_module = ImportPluginModule(path);
     if (!expected_py_module)
@@ -403,8 +403,11 @@ auto PythonRuntime::ResolveClassName(const std::filesystem::path& relative_path)
         return tl::make_unexpected(ASR_E_INVALID_PATH);
     }
 
-    const auto prev_end_relative_path = std::prev(relative_path.end());
-    for (auto it = relative_path.begin(); it != prev_end_relative_path; ++it)
+    const auto it_end = std::end(relative_path);
+    auto       it = relative_path.begin();
+
+    for (auto it_next = std::next(relative_path.begin()); it_next != it_end;
+         ++it, ++it_next)
     {
         const auto part_string = it->wstring();
         if (part_string
@@ -415,7 +418,7 @@ auto PythonRuntime::ResolveClassName(const std::filesystem::path& relative_path)
         result += part_string;
         result += L'.';
     }
-    result += prev_end_relative_path->wstring();
+    result += it->wstring();
     return result;
 }
 
@@ -471,6 +474,8 @@ auto PythonRuntime::ImportPluginModule(
     catch (const PythonException& ex)
     {
         ASR_CORE_LOG_ERROR("Import python plugin module failed.");
+
+        ASR_CORE_LOG_EXCEPTION(ex);
 
         AsrPtr<IAsrReadOnlyString> p_package_name{};
         ::CreateIAsrReadOnlyStringFromWChar(

@@ -47,7 +47,7 @@ TEST(AsrCoreI18n, AsrResultUserDefinedLocaleTest)
     ASR::AsrPtr<IAsrReadOnlyString>  zh_cn_expected{};
     ::CreateIAsrReadOnlyStringFromUtf8(
         static_cast<const char*>(
-            ASR_UTILS_STRINGUTILS_DEFINE_U8STR("测试错误")),
+            ASR_UTILS_STRINGUTILS_DEFINE_U8STR("测试错误消息")),
         zh_cn_expected.Put());
     ASR::AsrPtr<IAsrReadOnlyString> zh_cn_result{};
     test_instance.GetErrorMessage(u8"zh-cn", -1, zh_cn_result.Put());

@@ -5,13 +5,13 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/IsCastAvailableImpl.hpp>
+#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
-#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/Expected.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <cstdint>
@@ -30,7 +30,7 @@ class SwigToCpp;
 auto ConvertCppIidToSwigIid(const AsrGuid& cpp_iid)
     -> ASR::Utils::Expected<AsrGuid>;
 
-//TODO: 实现这个函数
+// TODO: 实现这个函数
 auto ConvertSwigIidToCppIid(const AsrGuid& swig_iid)
     -> ASR::Utils::Expected<AsrGuid>;
 
@@ -38,6 +38,13 @@ bool IsCppIid(const AsrGuid& cpp_iid);
 
 bool IsSwigIid(const AsrGuid& swig_iid);
 
+/**
+ * @brief 使用SWIG接口iid和对象指针创建对应的C++对象包装
+ * @param swig_iid swig 接口类型的iid
+ * @param p_swig_object swig 对象指针
+ * @param pp_out_cpp_object 输出的 cpp 对象
+ * @return 操作结果
+ */
 AsrResult CreateCppToSwigObject(
     const AsrGuid& swig_iid,
     void*          p_swig_object,
@@ -291,25 +298,17 @@ class SwigToCpp<IAsrSwigErrorLens> final
 public:
     ASR_USING_BASE_CTOR(SwigToCppBase);
 
+    AsrResult GetSupportedIids(IAsrIidVector** pp_out_iids) override;
     AsrResult GetErrorMessage(
         IAsrReadOnlyString*  locale_name,
         AsrResult            error_code,
         IAsrReadOnlyString** pp_out_string) override;
 };
 
-template <>
-class SwigToCpp<IAsrSwigPlugin> final
-    : public SwigToCppBase<IAsrSwigPlugin, IAsrPlugin>
-{
-public:
-    ASR_USING_BASE_CTOR(SwigToCppBase);
-
-    ASR_IMPL EnumFeature(const size_t index, AsrPluginFeature* p_out_feature)
-        override;
-    ASR_IMPL CreateFeatureInterface(
-        AsrPluginFeature feature,
-        void**           pp_out_interface) override;
-};
+AsrResult CommonPluginEnumFeature(
+    const CommonPluginPtr& p_this,
+    size_t                 index,
+    AsrPluginFeature*      p_out_feature);
 
 template <class SwigT>
 class CppToSwig;

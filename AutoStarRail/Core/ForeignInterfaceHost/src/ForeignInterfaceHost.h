@@ -10,7 +10,7 @@
 #include <AutoStarRail/ExportInterface/IAsrSettings.h>
 #include <AutoStarRail/Utils/fmt.h>
 #include <nlohmann/json_fwd.hpp>
-#include "ForeignInterfaceHostEnum.h"
+#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHostEnum.h>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 

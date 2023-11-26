@@ -2,7 +2,8 @@ include(FetchContent)
 include(ExternalProject)
 
 if (POLICY CMP0135)
-    cmake_policy(SET CMP0135 NEW)
+    # 减少不必要的第三方库下载
+    cmake_policy(SET CMP0135 OLD)
 endif ()
 
 # config SWIG
@@ -129,7 +130,7 @@ endif ()
 
 target_include_directories(Asr3rdParty INTERFACE ${magic_enum_SOURCE_DIR}/include)
 
-if (ASR_USE_BUNDLIED_FMT)
+if (ASR_USE_BUNDLED_FMT)
     set(ASR_FMT_VERSION "10.1.1")
     message(STATUS "Downloading and configuring fmt (VERSION = ${ASR_FMT_VERSION}).")
     FetchContent_Declare(
@@ -164,26 +165,21 @@ endif ()
 
 if (WIN32)
     set(SPDLOG_WCHAR_SUPPORT ON)
-    set(SDLOG_WCHAR_FILENAMES ON)
+    set(SPDLOG_WCHAR_FILENAMES OFF)
 endif ()
 
 FetchContent_MakeAvailable(spdlog)
 target_link_libraries(Asr3rdParty INTERFACE spdlog::spdlog)
 
+# for OpenCV compatibility
+if (POLICY CMP0148)
+    cmake_policy(SET CMP0148 OLD)
+endif ()
+
 function(_download_and_config_opencv)
     message(STATUS "Downloading OpenCV source.")
 
-    # for OpenCV compatibility
-    if (POLICY CMP0148)
-        cmake_policy(SET CMP0148 OLD)
-    endif ()
-
-    # fix error on CMake 3.27 rc4
-    if (POLICY CMP0148)
-        cmake_policy(SET CMP0148 NEW)
-    endif ()
-
-    # NOTICE: OpenCV wil turn this option ON automically, so I explicitly set it.
+    # NOTICE: OpenCV wil turn this option ON automatically, so I explicitly set it.
     set(BUILD_SHARED_LIBS ON)
 
     include(AsrResetLibPrefix)
@@ -229,9 +225,9 @@ function(_download_and_config_opencv)
     target_link_libraries(Asr3rdParty INTERFACE ${ASR_OPENCV_COMPONENTS})
 endfunction()
 
-if (ASR_USE_BUNDLIED_OPENCV)
-    if (ASR_USE_BUNDLIED_OPENCV)
-        if (${ASR_USE_BUNDLIED_EIGEN})
+if (ASR_USE_BUNDLED_OPENCV)
+    if (ASR_USE_BUNDLED_OPENCV)
+        if (${ASR_USE_BUNDLED_EIGEN})
             message(STATUS "Downloading Eigen3.4...")
             set(BUILD_TESTING OFF)
             set(EIGEN_BUILD_DOC OFF)
@@ -256,7 +252,7 @@ if (ASR_USE_BUNDLIED_OPENCV)
         if (NOT OpenCV_FOUND)
             target_link_libraries(Asr3rdParty INTERFACE ${OpenCV_LIBS})
         else ()
-            message(FATAL_ERROR "OpenCV not found. Please install it manually or set ASR_USE_BUNDLIED_OPENCV=ON.")
+            message(FATAL_ERROR "OpenCV not found. Please install it manually or set ASR_USE_BUNDLED_OPENCV=ON.")
         endif ()
     endif ()
 
@@ -267,7 +263,7 @@ else ()
     if (OpenCV_FOUND)
         target_link_libraries(Asr3rdParty INTERFACE ${OpenCV_LIBS})
     else ()
-        message(FATAL_ERROR "OpenCV not found. Please install it manually or set ASR_USE_BUNDLIED_OPENCV=ON.")
+        message(FATAL_ERROR "OpenCV not found. Please install it manually or set ASR_USE_BUNDLED_OPENCV=ON.")
     endif ()
 endif ()
 
@@ -377,7 +373,8 @@ if (${ASR_USE_BUNDLED_BOOST})
             Boost::predef
             Boost::bimap
             Boost::container_hash
-            Boost::pfr)
+            Boost::pfr
+            Boost::nowide)
 else ()
     find_package(Boost 1.82 COMPONENTS filesystem url)
 

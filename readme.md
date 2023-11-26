@@ -25,7 +25,7 @@ git clone git@github.com:BombaxCeiba/AutoStarRail.git
 | USE_LLD                 | OFF                | 是否添加编译选项（非MSVC时）-fuse-ld=lld    |
 | ASR_USE_CCACHE          | OFF                | 是否使用ccache                              |
 | ASR_USE_BUNDLED_BOOST   | OFF                | 是否下载Boost源码编译                       |
-| ASR_USE_BUNDLIED_OPENCV | OFF                | 是否下载OpenCV源码编译                      |
+| ASR_USE_BUNDLED_OPENCV | OFF                | 是否下载OpenCV源码编译                      |
 | GITHUB_MIRROR_URL       | https://github.com |                                             |
 
 ## 3.配置SWIG

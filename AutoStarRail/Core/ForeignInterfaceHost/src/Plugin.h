@@ -8,8 +8,8 @@
 #include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/IAsrBase.h>
 #include "ForeignInterfaceHost.h"
-#include "ForeignInterfaceHostEnum.h"
-#include "IForeignLanguageRuntime.h"
+#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHostEnum.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
 #include <stdexcept>
 #include <memory>
 #include <ctime>

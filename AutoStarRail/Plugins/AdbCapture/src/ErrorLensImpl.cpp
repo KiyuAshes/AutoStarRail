@@ -46,13 +46,28 @@ AsrResult AdbCaptureErrorLens::QueryInterface(
     return ASR::Utils::QueryInterface<IAsrErrorLens>(this, iid, pp_out_object);
 }
 
+AsrResult AdbCaptureErrorLens::GetSupportedIids(IAsrIidVector** pp_out_iids)
+{
+    const auto result = ::CreateAsrSwigIidVector(iids_);
+    if (ASR::IsOk(result.error_code))
+    {
+        if (pp_out_iids == nullptr)
+        {
+            return ASR_E_INVALID_POINTER;
+        }
+        *pp_out_iids = result.value;
+    }
+    return result.error_code;
+}
+
 AsrResult AdbCaptureErrorLens::GetErrorMessage(
     IAsrReadOnlyString*  locale_name,
     AsrResult            error_code,
     IAsrReadOnlyString** out_string)
 {
     AsrPtr locale_name_ptr{locale_name, ASR::take_ownership};
-    if (const auto locale_it = map_.find(locale_name_ptr); locale_it != map_.end())
+    if (const auto locale_it = map_.find(locale_name_ptr);
+        locale_it != map_.end())
     {
         const auto& error_code_map = locale_it->second;
         if (const auto it = error_code_map.find(error_code);
@@ -85,6 +100,19 @@ AsrResult AdbCaptureErrorLens::RegisterErrorCode(
     AsrPtr<IAsrReadOnlyString> p_explanation)
 {
     map_[locale_name][error_code] = p_explanation;
+    return ASR_S_OK;
+}
+
+AsrResult AdbCaptureErrorLens::AddSupportedIid(const AsrGuid& iid)
+{
+    try
+    {
+        iids_.push_back(iid);
+    }
+    catch (std::bad_alloc&)
+    {
+        return ASR_E_OUT_OF_MEMORY;
+    }
     return ASR_S_OK;
 }
 

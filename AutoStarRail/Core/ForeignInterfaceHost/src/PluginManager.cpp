@@ -22,12 +22,15 @@
 #include <string_view>
 #include <unordered_set>
 #include <utility>
+#include <AutoStarRail/Utils/UnexpectedEnumException.h>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
+using CommonBasePtr = std::variant<AsrPtr<IAsrBase>, AsrPtr<IAsrSwigBase>>;
+
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
-auto GetFeaturesFrom(IAsrPlugin* p_plugin)
+auto GetFeaturesFrom(const CommonPluginPtr& p_plugin)
     -> ASR::Utils::Expected<std::vector<AsrPluginFeature>>
 {
     constexpr size_t MAX_ENUM_COUNT =
@@ -39,13 +42,14 @@ auto GetFeaturesFrom(IAsrPlugin* p_plugin)
 
     for (size_t i = 0; i < MAX_ENUM_COUNT; ++i)
     {
-        const auto get_feature_result = p_plugin->EnumFeature(i, &feature);
+        const auto get_feature_result =
+            CommonPluginEnumFeature(p_plugin, i, &feature);
         if (IsOk(get_feature_result))
         {
             result.push_back(feature);
             continue;
         }
-        else if (get_feature_result == ASR_E_OUT_OF_RANGE)
+        if (get_feature_result == ASR_E_OUT_OF_RANGE)
         {
             return result;
         }
@@ -485,29 +489,34 @@ const std::unordered_map<AsrPluginFeature, std::function<void*()>>
 
 AsrResult PluginManager::AddInterface(CommonPluginPtr p_plugin)
 {
-    SwigToCpp<IAsrSwigPlugin> swig_plugin{};
-    AsrPtr<IAsrPlugin>        p_cpp_plugin{};
-
-    if (auto* const pp_plugin = std::get_if<AsrPtr<IAsrSwigPlugin>>(&p_plugin);
-        pp_plugin != nullptr)
-    {
-        swig_plugin = decltype(swig_plugin){*pp_plugin};
-        p_cpp_plugin = {&swig_plugin, take_ownership};
-    }
-    else
-    {
-        p_cpp_plugin = std::get<AsrPtr<IAsrPlugin>>(p_plugin);
-    }
-
-    const auto expected_features = Details::GetFeaturesFrom(p_cpp_plugin.Get());
+    const auto expected_features = Details::GetFeaturesFrom(p_plugin);
     if (!expected_features)
     {
         return expected_features.error();
     }
-    const auto& features = expected_features.value();
-    for (const auto feature : features)
+    for (const auto& features = expected_features.value();
+         const auto  feature : features)
     {
         // TODO: 根据feature枚举将对应接口添加到对应manager。
+        CommonBasePtr common_p_base{};
+
+        switch (feature)
+        {
+        case ASR_PLUGIN_FEATURE_ERROR_LENS:
+        {
+            AsrPtr<IAsrIidVector> p_iids{};
+            AsrPtr<IAsrErrorLens> p_error_lens{};
+            std::visit(
+                ASR::Utils::overload_set{
+                    [](AsrPtr<IAsrBase>) {},
+                    [](AsrPtr<IAsrSwigBase>) {}},
+                common_p_base);
+            error_lens_manager_.Register(p_iids.Get(), p_error_lens.Get());
+            break;
+        }
+        default:
+            throw ASR::Utils::UnexpectedEnumException::FromEnum(feature);
+        }
     }
     return ASR_E_NO_IMPLEMENTATION;
 }

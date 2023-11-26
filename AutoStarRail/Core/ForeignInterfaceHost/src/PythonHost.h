@@ -3,7 +3,7 @@
 
 #ifdef ASR_EXPORT_PYTHON
 
-#include "IForeignLanguageRuntime.h"
+#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
 
 /**
  * @brief 在Python.h中声明，其中：typedef _object* PyObject;

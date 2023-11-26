@@ -3,10 +3,7 @@
 
 #include <AutoStarRail/AsrPtr.hpp>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
-#include "ForeignInterfaceHostEnum.h"
-#include <memory>
-#include <vector>
-#include <string>
+#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHostEnum.h>
 #include <variant>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/Utils/Expected.h>

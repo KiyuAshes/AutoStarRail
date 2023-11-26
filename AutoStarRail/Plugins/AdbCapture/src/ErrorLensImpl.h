@@ -28,6 +28,7 @@ class AdbCaptureErrorLens final : public IAsrErrorLens
         AsrReadOnlyStringHash>;
     LocaleErrorCodeMap                          map_;
     ASR::Utils::RefCounter<AdbCaptureErrorLens> ref_counter_;
+    std::vector<AsrGuid>                        iids_;
 
     static AsrPtr<IAsrReadOnlyString> p_default_locale_name;
     static std::string (*error_code_not_found_explanation_generator)(
@@ -40,6 +41,7 @@ public:
     int64_t   Release() override;
     AsrResult QueryInterface(const AsrGuid& iid, void** pp_out_object) override;
     // IAsrErrorLens
+    AsrResult GetSupportedIids(IAsrIidVector** pp_out_iids);
     AsrResult GetErrorMessage(
         IAsrReadOnlyString*  locale_name,
         AsrResult            error_code,
@@ -48,6 +50,7 @@ public:
         const AsrResult            error_code,
         AsrPtr<IAsrReadOnlyString> locale_name,
         AsrPtr<IAsrReadOnlyString> p_explanation);
+    AsrResult AddSupportedIid(const AsrGuid& iid);
 };
 
 ASR_NS_END
