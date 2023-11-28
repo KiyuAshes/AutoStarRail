@@ -137,6 +137,83 @@ AsrResult SwigToCpp<IAsrSwigErrorLens>::GetErrorMessage(
         error_code);
 }
 
+AsrResult SwigToCpp<IAsrSwigTask>::GetIids(IAsrIidVector** pp_out_iid_vector)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigTask::GetIids,
+        pp_out_iid_vector);
+}
+AsrResult SwigToCpp<IAsrSwigTask>::GetRuntimeClassName(
+    IAsrReadOnlyString** pp_out_name)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigTask::GetRuntimeClassName,
+        pp_out_name);
+}
+
+AsrResult SwigToCpp<IAsrSwigTask>::Do(
+    IAsrReadOnlyString* p_connection_json,
+    IAsrReadOnlyString* p_task_settings_json)
+{
+    try
+    {
+        const auto result = (p_impl_.Get()->IAsrSwigTask::Do)(
+            p_connection_json,
+            p_task_settings_json);
+        return result;
+    }
+    catch (const std::exception& ex)
+    {
+        ASR_CORE_LOG_ERROR(ex.what());
+        return ASR_E_SWIG_INTERNAL_ERROR;
+    }
+}
+
+AsrResult SwigToCpp<IAsrSwigTask>::GetNextExecutionTime(AsrDate* p_out_date)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigTask::GetNextExecutionTime,
+        p_out_date);
+}
+
+AsrResult SwigToCpp<IAsrSwigTask>::GetName(IAsrReadOnlyString** pp_out_name)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigTask::GetName,
+        pp_out_name);
+}
+
+AsrResult SwigToCpp<IAsrSwigTask>::GetDescription(
+    IAsrReadOnlyString** pp_out_settings)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigTask::GetDescription,
+        pp_out_settings);
+}
+
+AsrResult SwigToCpp<IAsrSwigTask>::GetLabel(IAsrReadOnlyString** pp_out_label)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigTask::GetLabel,
+        pp_out_label);
+}
+
+AsrResult SwigToCpp<IAsrSwigTask>::GetType(AsrTaskType* p_out_type)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigTask::GetType,
+        p_out_type);
+}
+
+// TODO: IAsrSwigCaptureFactory CreateInstance
+
 AsrResult CommonPluginEnumFeature(
     const CommonPluginPtr& p_this,
     size_t                 index,
