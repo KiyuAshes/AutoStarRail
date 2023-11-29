@@ -1,11 +1,11 @@
 #ifndef ASR_ICAPTURE_H
 #define ASR_ICAPTURE_H
 
-#include <AutoStarRail/IAsrInspectable.h>
 #include <AutoStarRail/AsrString.hpp>
-#include <memory>
+#include <AutoStarRail/IAsrInspectable.h>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 
 ASR_INTERFACE IAsrImage;
 
@@ -25,7 +25,7 @@ ASR_DEFINE_GUID(
     0x8e,
     0x95)
 SWIG_IGNORE(IAsrCapture)
-ASR_INTERFACE IAsrCapture : public IAsrInspectable
+ASR_INTERFACE IAsrCapture : public IAsrBase
 {
     ASR_METHOD Capture(IAsrImage * *pp_out_image) = 0;
 };
@@ -46,18 +46,18 @@ ASR_DEFINE_GUID(
     0x7c,
     0xf9)
 SWIG_IGNORE(IAsrCaptureFactory)
-ASR_INTERFACE IAsrCaptureFactory : public IAsrInspectable
+ASR_INTERFACE IAsrCaptureFactory : public IAsrBase
 {
     /**
      * @brief Create an instance
      *
      * @param p_json_config
-     * @param pp_object
+     * @param pp_out_object
      * @return ASR_METHOD
      */
     ASR_METHOD CreateInstance(
         IAsrReadOnlyString * p_json_config,
-        IAsrCapture * *pp_object) = 0;
+        IAsrCapture * *pp_out_object) = 0;
 };
 
 ASR_INTERFACE IAsrSwigCaptureFactory;
@@ -85,7 +85,7 @@ ASR_DEFINE_GUID(
     0x19,
     0xd2,
     0x86)
-ASR_INTERFACE IAsrSwigCaptureFactory
+ASR_INTERFACE IAsrSwigCaptureFactory : public IAsrSwigBase
 {
     virtual AsrRetCapture CreateInstance(AsrReadOnlyString json_config) = 0;
 };

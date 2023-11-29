@@ -4,8 +4,8 @@
 #include <AutoStarRail/AsrPtr.hpp>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
-#include <AutoStarRail/Core/ForeignInterfaceHost/IsCastAvailableImpl.hpp>
 #include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/IsCastAvailableImpl.hpp>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
@@ -204,7 +204,8 @@ public:
                 result.error_code,
                 predefined_error_explanation.Put());
             ASR_CORE_LOG_ERROR(
-                "Error happened in class IAsrSwigBase. Error code: {}. Explanation: {}.",
+                "Error happened in class IAsrSwigBase. Error code: "
+                "{}. Explanation: {}.",
                 result.error_code,
                 predefined_error_explanation);
             return ASR_E_NO_INTERFACE;
@@ -304,6 +305,28 @@ public:
         AsrResult            error_code,
         IAsrReadOnlyString** pp_out_string) override;
 };
+
+template <>
+class SwigToCpp<IAsrSwigTask> final
+    : public SwigToCppBase<IAsrSwigTask, IAsrTask>
+{
+public:
+    ASR_USING_BASE_CTOR(SwigToCppBase);
+
+    AsrResult GetIids(IAsrIidVector** pp_out_iid_vector) override;
+    AsrResult GetRuntimeClassName(IAsrReadOnlyString** pp_out_name) override;
+
+    AsrResult Do(
+        IAsrReadOnlyString* p_connection_json,
+        IAsrReadOnlyString* p_task_settings_json) override;
+    AsrResult GetNextExecutionTime(AsrDate* p_out_date) override;
+    AsrResult GetName(IAsrReadOnlyString** pp_out_name) override;
+    AsrResult GetDescription(IAsrReadOnlyString** pp_out_settings) override;
+    AsrResult GetLabel(IAsrReadOnlyString** pp_out_label) override;
+    AsrResult GetType(AsrTaskType* p_out_type) override;
+};
+
+// TODO: IAsrSwigCaptureFactory
 
 AsrResult CommonPluginEnumFeature(
     const CommonPluginPtr& p_this,
