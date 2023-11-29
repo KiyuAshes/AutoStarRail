@@ -1,10 +1,8 @@
 #ifndef ASR_CORE_TASKSCHEDULER_H
 #define ASR_CORE_TASKSCHEDULER_H
 
-#include "AutoStarRail/IAsrBase.h"
-#include <chrono>
-#include <unistd.h>
 #include <vector>
+#include <chrono>
 
 #include <AutoStarRail/AsrPtr.hpp>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
@@ -28,7 +26,7 @@ namespace Core
         std::vector<SchedulingUnit> task_queue;
 
         void AddTask(SchedulingUnit Task);
-        void DelTask(SchedulingUnit Task);
+        void DeleteTask(SchedulingUnit Task);
 
         void RunTaskQueue();
 

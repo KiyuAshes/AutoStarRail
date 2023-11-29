@@ -24,7 +24,7 @@ namespace Core
             { return t1.next_run_time <= t2.next_run_time; });
     }
 
-    void TaskScheduler::DelTask(SchedulingUnit Task)
+    void TaskScheduler::DeleteTask(SchedulingUnit Task)
     {
         std::ignore = std::remove(task_queue.begin(), task_queue.end(), Task);
 
@@ -41,7 +41,7 @@ namespace Core
 
         task_queue.pop_back();
 
-        // function is awaiting implementation
+        // TODO: 插件调用方式待实现
         // current_task.p_task->Do(p_connection_json, p_task_settings_json);
     }
 } // namespace Core
