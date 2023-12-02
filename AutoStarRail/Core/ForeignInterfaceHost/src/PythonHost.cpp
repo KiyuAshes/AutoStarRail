@@ -1,3 +1,4 @@
+#include <AutoStarRail/Utils/StringUtils.h>
 #include <boost/cstdint.hpp>
 #include <boost/nowide/config.hpp>
 #ifdef ASR_EXPORT_PYTHON
@@ -95,11 +96,15 @@ PyObject* PyObjectPtr::Detach() noexcept
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
-PyObjectPtr PyUnicodeFromWString(const std::wstring_view std_wstring_view)
+PyObjectPtr PyUnicodeFromU8String(const char8_t* u8_string)
 {
-    return PyObjectPtr::Attach(PyUnicode_FromWideChar(
-        std_wstring_view.data(),
-        std_wstring_view.size()));
+    return PyObjectPtr::Attach(
+        PyUnicode_FromString(reinterpret_cast<const char*>(u8_string)));
+}
+
+PyObjectPtr PyUnicodeFromU8String(const std::string_view std_string_view)
+{
+    return PyObjectPtr::Attach(PyUnicode_FromString(std_string_view.data()));
 }
 
 template <class T>
@@ -114,6 +119,21 @@ bool IsSubDirectory(T path, T root)
         path = path.parent_path();
     }
     return false;
+}
+
+auto GetPreferedSeparator() -> const std::u8string&
+{
+    static std::u8string result{
+        []
+        {
+            std::string                               tmp_result;
+            const U_NAMESPACE_QUALIFIER UnicodeString icu_string{
+                std::filesystem::path::preferred_separator};
+            icu_string.toUTF8String(tmp_result);
+            std::u8string result{ASR_FULL_RANGE_OF(tmp_result)};
+            return result;
+        }()};
+    return result;
 }
 
 ASR_NS_ANONYMOUS_DETAILS_END
@@ -259,12 +279,13 @@ class PyInterpreter
         }
 
         // create folder path string
-        const auto w_plugin_folder = std::wstring{L"\""}
-                                     + std::filesystem::current_path().wstring()
-                                     + std::wstring{L"\""};
+        const auto u8_plugin_folder =
+            std::u8string{u8"\""} + std::filesystem::current_path().u8string()
+            + std::u8string{u8"\""};
         // {anonymous variable 0} = "CURRENT PATH"
         auto py_plugin_folder_path =
-            PythonResult{Details::PyUnicodeFromWString(w_plugin_folder)}
+            PythonResult{
+                Details::PyUnicodeFromU8String(u8_plugin_folder.c_str())}
                 .CheckAndGet();
         // {anonymous variable 1} = 0
         auto py_zero =
@@ -297,7 +318,8 @@ class PyInterpreter
                     })
                 .CheckAndGet();
         // import sys
-        auto py_str_sys = Details::PyUnicodeFromWString(L"sys");
+        auto py_str_sys = Details::PyUnicodeFromU8String(
+            ASR_UTILS_STRINGUTILS_DEFINE_U8STR("sys"));
         sys_module_ = PyObjectPtr::Attach(PyImport_Import(py_str_sys.Get()));
         PythonResult{sys_module_}
             .then(
@@ -383,18 +405,18 @@ auto PythonRuntime::ResolveClassName(const std::filesystem::path& relative_path)
     const auto it_end = std::end(relative_path);
     auto       it = relative_path.begin();
 
+    const auto                        part_string = it->u8string();
+    static AsrPtr<IAsrReadOnlyString> perfered_sperator{};
+
     for (auto it_next = std::next(relative_path.begin()); it_next != it_end;
          ++it, ++it_next)
     {
-        const auto part_string = it->u8string();
-        // TODO: review此处的逻辑并重构为u8string
-        if (part_string
-            == std::u8string{std::filesystem::path::preferred_separator})
+        if (part_string == Details::GetPreferedSeparator())
         {
             return tl::make_unexpected(ASR_E_INVALID_PATH);
         }
         result += part_string;
-        result += L'.';
+        result += u8'.';
     }
     result += it->u8string();
     return result;
@@ -441,7 +463,8 @@ auto PythonRuntime::ImportPluginModule(
 
     try
     {
-        return PythonResult{Details::PyUnicodeFromWString(package_path.value())}
+        return PythonResult{
+            Details::PyUnicodeFromU8String(package_path.value().c_str())}
             .then(
                 [](auto py_package_path) {
                     return PyObjectPtr::Attach(
@@ -455,14 +478,9 @@ auto PythonRuntime::ImportPluginModule(
 
         ASR_CORE_LOG_EXCEPTION(ex);
 
-        AsrPtr<IAsrReadOnlyString> p_package_name{};
-        ::CreateIAsrReadOnlyStringFromWChar(
-            package_path->c_str(),
-            package_path->size(),
-            p_package_name.Put());
         ASR_CORE_LOG_ERROR(
             "NOTE: The python plugin module name is \"{}\".",
-            p_package_name);
+            reinterpret_cast<const char*>(package_path.value().c_str()));
         return tl::make_unexpected(ASR_E_PYTHON_ERROR);
     }
 }

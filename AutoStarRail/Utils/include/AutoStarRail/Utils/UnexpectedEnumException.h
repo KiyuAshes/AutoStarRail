@@ -4,6 +4,7 @@
 #include <AutoStarRail/Utils/Config.h>
 #include <cstdint>
 #include <stdexcept>
+#include <string_view>
 
 ASR_UTILS_NS_BEGIN
 

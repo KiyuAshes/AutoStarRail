@@ -78,7 +78,7 @@ public:
         const std::filesystem::path& py_plugin_initializer)
         -> ASR::Utils::Expected<PyObjectPtr>;
     static auto ResolveClassName(const std::filesystem::path& relative_path)
-        -> ASR::Utils::Expected<std::wstring>;
+        -> ASR::Utils::Expected<std::u8string>;
     auto GetPluginInitializer(_object& py_module) -> PyObjectPtr;
 };
 

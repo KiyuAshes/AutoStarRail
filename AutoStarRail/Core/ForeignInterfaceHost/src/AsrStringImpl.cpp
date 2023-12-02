@@ -43,7 +43,7 @@ auto(ASR_FMT_NS::formatter<AsrReadOnlyString, char>::format)(
     format_context&          ctx) const ->
     typename std::remove_reference_t<decltype(ctx)>::iterator
 {
-    return format_to(ctx.out(), "{}", asr_string.GetUtf8());
+    return ASR_FMT_NS::format_to(ctx.out(), "{}", asr_string.GetUtf8());
 }
 
 ASR_NS_BEGIN

@@ -31,12 +31,14 @@ auto CreateForeignLanguageRuntime(
 #else
 #endif // ASR_EXPORT_JAVA
     case Lua:
-        return tl::make_unexpected(ASR_E_NO_IMPLEMENTATION);
+        goto on_no_interface;
     case Cpp:
         return CppHost::CreateForeignLanguageRuntime(desc_base);
     default:
         throw ASR::Utils::UnexpectedEnumException::FromEnum(desc_base.language);
     }
+on_no_interface:
+    return tl::make_unexpected(ASR_E_NO_IMPLEMENTATION);
 }
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

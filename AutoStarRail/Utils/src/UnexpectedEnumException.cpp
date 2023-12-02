@@ -1,5 +1,6 @@
 #include <AutoStarRail/Utils/UnexpectedEnumException.h>
 #include <AutoStarRail/Utils/fmt.h>
+#include <magic_enum_format.hpp>
 
 ASR_UTILS_NS_BEGIN
 

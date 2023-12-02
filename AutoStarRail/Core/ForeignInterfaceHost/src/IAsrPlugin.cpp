@@ -5,16 +5,25 @@
 
 AsrResult AsrRegisterPluginObject(AsrRetSwigBase result_and_p_object)
 {
-    ASR::AsrPtr<IAsrSwigPlugin> p_plugin{
+    ASR::AsrPtr p_plugin{
         static_cast<IAsrSwigPlugin*>(result_and_p_object.value.GetVoid()),
         Asr::take_ownership};
 
-    // TODO: 确认其它语言中生命周期管理的规范后，尝试对plugin的ref_count进行检验
-    if (p_plugin->Release() == 0)
+    switch (const auto ref_count = p_plugin->AddRef())
     {
+    case 1:
+        ASR_CORE_LOG_WARN(
+            "The reference count inside the plugin object is too small. "
+            "Maybe the plugin author forget to call AddRef for plugin object.");
+        break;
+    case 2:
+        p_plugin->Release();
+        break;
+    default:
         ASR_CORE_LOG_ERROR(
-            "The plugin object was unexpectedly released. Maybe the plugin author forget to call AddRef for plugin object.");
-        return ASR_E_INVALID_POINTER;
+            "Unexpected reference count inside the plugin object."
+            "Expected 3 but {} found.",
+            ref_count);
     }
 
     // See

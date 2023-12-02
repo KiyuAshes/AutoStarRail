@@ -21,7 +21,7 @@ option(EXPORT_PYTHON "导出Python接口" OFF)
 # See [C++ 20 Compiler support](https://en.cppreference.com/w/cpp/compiler_support/20)
 include(AsrCheckStdFmt)
 
-set(ASR_SPD_FMT_OPTION_EXPLANATION "项目自带的spdlog使用标准库的fmt，OFF则会使用spdlog自带的fmt")
+set(ASR_SPD_FMT_OPTION_EXPLANATION "项目自带的spdlog使用标准库的fmt，OFF则会使用项目附带的fmt")
 if(ASR_STD_FMT_SUPPORT)
     option(ASR_SPDLOG_USE_STD_FMT ${ASR_SPD_FMT_OPTION_EXPLANATION} ON)
     option(ASR_USE_BUNDLED_FMT "" OFF)

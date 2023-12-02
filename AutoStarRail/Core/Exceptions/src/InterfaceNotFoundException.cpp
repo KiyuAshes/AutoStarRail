@@ -4,7 +4,7 @@
 ASR_CORE_EXCEPTIONS_NS_BEGIN
 
 InterfaceNotFoundException::InterfaceNotFoundException(const AsrGuid& iid)
-    : Base{ASR::fmt::format(
+    : Base{ASR_FMT_NS::format(
         "Attempt to convert interface to one that not exist. Interface id = {} .",
         iid)}
 {
