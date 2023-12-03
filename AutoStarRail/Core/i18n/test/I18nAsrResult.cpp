@@ -1,4 +1,4 @@
-#include <AutoStarRail/Core/i18n/i18n.h>
+#include "AutoStarRail/Core/i18n/i18n.hpp"
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Utils/StringUtils.h>
 #include <gtest/gtest.h>

@@ -15,6 +15,30 @@ ASR_UTILS_NS_BEGIN
     result.GetImpl(pp_out_class_name);                                         \
     return ASR_S_OK
 
+template <class Target, class TypeList>
+struct remove_type;
+
+template <class Target>
+struct remove_type<Target, internal_type_holder<>>
+{
+    using type = internal_type_holder<>;
+};
+
+template <class First, class... Others>
+struct remove_type<First, internal_type_holder<First, Others...>>
+{
+    using type =
+        typename remove_type<First, internal_type_holder<Others...>>::type;
+};
+
+template <class Target, class First, class... Others>
+struct remove_type<Target, internal_type_holder<First, Others...>>
+{
+    using type =
+        decltype(internal_type_holder<First>{} + typename remove_type<Target, Others...>::type{})::
+            type;
+};
+
 /**
  * @brief Every member function MUST NOT modify the member variables.
  */
@@ -57,7 +81,7 @@ public:
         {
             return ASR_E_INVALID_POINTER;
         }
-        const uint32_t size = static_cast<uint32_t>(impl_.size());
+        const auto size = static_cast<uint32_t>(impl_.size());
         *p_out_size = size;
         return ASR_S_OK;
     }
@@ -87,12 +111,35 @@ public:
     };
 };
 
-template <class... Ts>
+template <class LHS, class RHS>
+struct transform;
+
+template <
+    template <class...>
+    class LHS,
+    template <class...>
+    class RHS,
+    class... LhsArgs>
+struct transform<LHS<LhsArgs...>, RHS<>>
+{
+    using type = RHS<LhsArgs...>;
+};
+
+template <class T>
+struct get_no_base_and_inspectable_type_list
+{
+    using type = typename remove_type<
+        IAsrInspectable,
+        typename remove_type<IAsrBase, T>::type>::type;
+};
+
+template <class T>
 AsrResult InternalGetIids(
-    internal_type_holder<Ts...>,
+    T,
     IAsrIidVector** pp_out_iid_vector)
 {
-    using Impl = IAsrIidsVectorImpl<Ts...>;
+    using NoBaseAndInspectable = typename get_no_base_and_inspectable_type_list<T>::type;
+    using Impl = typename transform<NoBaseAndInspectable, IAsrIidsVectorImpl<>>::type;
     constinit static Impl iids{};
     if (pp_out_iid_vector == nullptr)
     {

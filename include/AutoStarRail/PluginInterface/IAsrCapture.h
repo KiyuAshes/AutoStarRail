@@ -25,7 +25,7 @@ ASR_DEFINE_GUID(
     0x8e,
     0x95)
 SWIG_IGNORE(IAsrCapture)
-ASR_INTERFACE IAsrCapture : public IAsrBase
+ASR_INTERFACE IAsrCapture : public IAsrInspectable
 {
     ASR_METHOD Capture(IAsrImage * *pp_out_image) = 0;
 };
@@ -46,7 +46,7 @@ ASR_DEFINE_GUID(
     0x7c,
     0xf9)
 SWIG_IGNORE(IAsrCaptureFactory)
-ASR_INTERFACE IAsrCaptureFactory : public IAsrBase
+ASR_INTERFACE IAsrCaptureFactory : public IAsrInspectable
 {
     /**
      * @brief Create an instance
@@ -85,7 +85,7 @@ ASR_DEFINE_GUID(
     0x19,
     0xd2,
     0x86)
-ASR_INTERFACE IAsrSwigCaptureFactory : public IAsrSwigBase
+ASR_INTERFACE IAsrSwigCaptureFactory : public IAsrSwigInspectable
 {
     virtual AsrRetCapture CreateInstance(AsrReadOnlyString json_config) = 0;
 };
@@ -109,7 +109,7 @@ ASR_DEFINE_GUID(
     0x71,
     0xda,
     0x10);
-ASR_INTERFACE IAsrSwigCapture : public IAsrSwigBase
+ASR_INTERFACE IAsrSwigCapture : public IAsrSwigInspectable
 {
     virtual AsrRetImage Capture() = 0;
 };

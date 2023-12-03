@@ -1,7 +1,7 @@
 #ifndef ASR_CORE_I18N_ASRRESULTTRANSLATOR_H
 #define ASR_CORE_I18N_ASRRESULTTRANSLATOR_H
 
-#include <AutoStarRail/Core/i18n/i18n.h>
+#include "i18n.hpp"
 
 ASR_CORE_I18N_NS_BEGIN
 

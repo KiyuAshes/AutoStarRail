@@ -159,7 +159,7 @@ AsrResult SwigToCpp<IAsrSwigTask>::Do(
 {
     try
     {
-        const auto result = (p_impl_.Get()->IAsrSwigTask::Do)(
+        const auto result = p_impl_->Do(
             p_connection_json,
             p_task_settings_json);
         return result;

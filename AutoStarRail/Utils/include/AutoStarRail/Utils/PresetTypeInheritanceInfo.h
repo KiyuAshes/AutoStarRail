@@ -34,6 +34,7 @@ ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
     IAsrString,
     IAsrBase,
     IAsrReadOnlyString);
+
 // PluginInterface/IAsrCapture.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
     IAsrCapture,
@@ -46,9 +47,10 @@ ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
 // PluginInterface/IAsrPlugin.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrPlugin, IAsrBase);
 // PluginInterface/IAsrErrorLens.h
-ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
-    IAsrErrorLens,
-    IAsrBase);
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrErrorLens, IAsrBase);
+// PluginInterface/IAsrTask.h
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrTask, IAsrBase);
+
 // ExportInterface/IAsrCaptureManager.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrCaptureManager, IAsrBase);
 // ExportInterface/IAsrSettings.h
