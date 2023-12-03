@@ -7,12 +7,12 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # fix missing CMAKE_ASM_MASM_COMPILE_OBJECT or CMAKE_ASM_NASM_COMPILE_OBJECT
 # NOTICE: I have modified the CMakeLists.txt in boost context, so that boost can explicitly use MASM on Windows.
 #         Then I MUST enable ASM_NASM after ASM_MASM, therefore CMake will compile asm files in OpenCV using NASM compiler as default asm compiler.
-if(CMAKE_ASM_MASM_COMPILER)
+if (CMAKE_ASM_MASM_COMPILER)
     enable_language(ASM_MASM)
-endif()
-if(CMAKE_ASM_NASM_COMPILER)
+endif ()
+if (CMAKE_ASM_NASM_COMPILER)
     enable_language(ASM_NASM)
-endif()
+endif ()
 
 option(EXPORT_JAVA "导出Java接口" OFF)
 option(EXPORT_CSHARP "导出C#接口" OFF)
@@ -22,13 +22,17 @@ option(EXPORT_PYTHON "导出Python接口" OFF)
 include(AsrCheckStdFmt)
 
 set(ASR_SPD_FMT_OPTION_EXPLANATION "项目自带的spdlog使用标准库的fmt，OFF则会使用项目附带的fmt")
-if(ASR_STD_FMT_SUPPORT)
+if (ASR_STD_FMT_SUPPORT)
     option(ASR_SPDLOG_USE_STD_FMT ${ASR_SPD_FMT_OPTION_EXPLANATION} ON)
     option(ASR_USE_BUNDLED_FMT "" OFF)
-else()
+else ()
     option(ASR_SPDLOG_USE_STD_FMT ${ASR_SPD_FMT_OPTION_EXPLANATION} OFF)
     option(ASR_USE_BUNDLED_FMT "" ON)
-endif()
+endif ()
+
+if (ASR_USE_BUNDLED_FMT)
+    set(ASR_SPDLOG_USE_STD_FMT OFF)
+endif ()
 
 option(ASR_BUILD_TEST "构建测试，会下载GTEST库" OFF)
 option(ASR_BUILD_QT5_GUI "构建基于Qt5的GUI" ON)
@@ -39,9 +43,9 @@ option(ASR_USE_BUNDLED_EIGEN "强制使用下载的Eigen源码构建OpenCV" OFF)
 option(ASR_USE_BUNDLED_BOOST "强制使用下载的Boost源码构建" OFF)
 option(ASR_USE_BUNDLED_OPENCV "强制使用下载的OpenCV源码构建" OFF)
 
-if(NOT DEFINED GITHUB_MIRROR_URL)
+if (NOT DEFINED GITHUB_MIRROR_URL)
     set(GITHUB_MIRROR_URL "https://github.com")
-endif()
+endif ()
 
 # TODO: 配置时打印当前设置
 # get_property(result CACHE SampleOpt PROPERTY HELPSTRING)
@@ -58,9 +62,10 @@ include(AsrUtils)
 include(AsrSetLibPrefix)
 include(AsrSetOutputPath)
 
-if(${EXPORT_PYTHON})
+if (${EXPORT_PYTHON})
+    set(Python3_FIND_STRATEGY LOCATION)
     find_package(Python3 COMPONENTS Development REQUIRED)
-endif()
+endif ()
 
 include(3rdParty/CMakeLists.txt)
 
@@ -68,38 +73,38 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(${ASR_USE_CCACHE})
+if (${ASR_USE_CCACHE})
     find_program(CCACHE "ccache")
 
-    if(CCACHE)
+    if (CCACHE)
         set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
         set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
-    endif()
-endif()
+    endif ()
+endif ()
 
-if(WIN32)
+if (WIN32)
     add_definitions(-DNOMINMAX -D_USE_MATH_DEFINES)
-endif()
+endif ()
 
-if(MSVC)
+if (MSVC)
     add_compile_options(/Zc:__cplusplus /utf-8)
-endif()
+endif ()
 
-if(${ASR_USE_LLD} AND NOT MSVC)
+if (${ASR_USE_LLD} AND NOT MSVC)
     option(ASR_LLD_EXECUTABLE "lld")
     find_program(
-        LLD_FOUND
-        lld REQUIRED)
+            LLD_FOUND
+            lld REQUIRED)
     add_compile_options("-fuse-ld=lld")
-endif()
+endif ()
 
 configure_file(${CMAKE_SOURCE_DIR}/cmake/CTestCustom.cmake ${CMAKE_BINARY_DIR} @ONLY)
 
 add_custom_target(RemoveSwigOutput
-    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake/AsrRemoveSwigOutput.cmake)
+        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake/AsrRemoveSwigOutput.cmake)
 
-if(${ASR_BUILD_TEST})
+if (${ASR_BUILD_TEST})
     enable_testing()
-endif()
+endif ()
 
 add_subdirectory(AutoStarRail)

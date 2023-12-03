@@ -418,7 +418,7 @@ auto PythonRuntime::ResolveClassName(const std::filesystem::path& relative_path)
         result += part_string;
         result += u8'.';
     }
-    result += it->u8string();
+    result += it->stem().u8string();
     return result;
 }
 
