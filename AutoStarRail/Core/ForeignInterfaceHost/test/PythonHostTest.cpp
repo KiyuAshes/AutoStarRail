@@ -1,3 +1,5 @@
+#ifdef ASR_EXPORT_PYTHON
+
 #include <gtest/gtest.h>
 #include "../src/PythonHost.h"
 
@@ -64,3 +66,5 @@ TEST(PythonHost, PathToPackageNameTest2)
             == 0);
     }
 }
+
+#endif // ASR_EXPORT_PYTHON
