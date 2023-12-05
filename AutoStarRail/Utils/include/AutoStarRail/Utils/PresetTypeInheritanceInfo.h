@@ -11,9 +11,9 @@ struct PresetTypeInheritanceInfo;
 
 #define ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(EndType, ...)                 \
     using EndType##InheritanceInfo =                                           \
-        internal_type_holder<__VA_ARGS__, ASR_INTERFACE EndType>;              \
+        ASR::Utils::internal_type_holder<__VA_ARGS__, ASR_INTERFACE EndType>;  \
     template <>                                                                \
-    struct PresetTypeInheritanceInfo<EndType>                                  \
+    struct ASR::Utils::PresetTypeInheritanceInfo<EndType>                      \
     {                                                                          \
         using TypeInfo = EndType##InheritanceInfo;                             \
     }
@@ -25,6 +25,9 @@ struct PresetTypeInheritanceInfo<IAsrBase>
 {
     using TypeInfo = IAsrBaseInheritanceInfo;
 };
+
+ASR_UTILS_NS_END
+
 // IAsrInspectable.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrInspectable, IAsrBase);
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrIidVector, IAsrBase);
@@ -56,6 +59,5 @@ ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrCaptureManager, IAsrBase);
 // ExportInterface/IAsrSettings.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSettings, IAsrBase);
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigSettings, IAsrSwigBase);
-ASR_UTILS_NS_END
 
 #endif // ASR_UTILS_PRESETTYPEINHERITANCEINFO_H

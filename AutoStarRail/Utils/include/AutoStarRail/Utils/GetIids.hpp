@@ -1,8 +1,8 @@
 #ifndef ASR_UTILS_GETIIDS_HPP
 #define ASR_UTILS_GETIIDS_HPP
 
-#include <AutoStarRail/Utils/PresetTypeInheritanceInfo.h>
 #include <AutoStarRail/IAsrInspectable.h>
+#include <AutoStarRail/Utils/PresetTypeInheritanceInfo.h>
 #include <vector>
 #include <array>
 
@@ -24,19 +24,18 @@ struct remove_type<Target, internal_type_holder<>>
     using type = internal_type_holder<>;
 };
 
-template <class First, class... Others>
-struct remove_type<First, internal_type_holder<First, Others...>>
+template <class Target, class... Others>
+struct remove_type<Target, internal_type_holder<Target, Others...>>
 {
     using type =
-        typename remove_type<First, internal_type_holder<Others...>>::type;
+        typename remove_type<Target, internal_type_holder<Others...>>::type;
 };
 
 template <class Target, class First, class... Others>
 struct remove_type<Target, internal_type_holder<First, Others...>>
 {
     using type =
-        decltype(internal_type_holder<First>{} + typename remove_type<Target, Others...>::type{})::
-            type;
+        decltype(internal_type_holder<First>{} + typename remove_type<Target, internal_type_holder<Others...>>::type{});
 };
 
 /**
@@ -134,12 +133,12 @@ struct get_no_base_and_inspectable_type_list
 };
 
 template <class T>
-AsrResult InternalGetIids(
-    T,
-    IAsrIidVector** pp_out_iid_vector)
+AsrResult InternalGetIids(IAsrIidVector** pp_out_iid_vector)
 {
-    using NoBaseAndInspectable = typename get_no_base_and_inspectable_type_list<T>::type;
-    using Impl = typename transform<NoBaseAndInspectable, IAsrIidsVectorImpl<>>::type;
+    using NoBaseAndInspectable =
+        typename get_no_base_and_inspectable_type_list<T>::type;
+    using Impl =
+        typename transform<NoBaseAndInspectable, IAsrIidsVectorImpl<>>::type;
     constinit static Impl iids{};
     if (pp_out_iid_vector == nullptr)
     {
@@ -160,8 +159,7 @@ template <class PresetTypeInheritanceInfo, class... AdditionalTs>
 AsrResult GetIids(IAsrIidVector** pp_out_iid_vector)
 {
     using RhsType = internal_type_holder<AdditionalTs...>;
-    return InternalGetIids(
-        decltype(PresetTypeInheritanceInfo{} + RhsType{}){},
+    return InternalGetIids<decltype(PresetTypeInheritanceInfo{} + RhsType{})>(
         pp_out_iid_vector);
 }
 
@@ -176,8 +174,7 @@ template <class PresetTypeInheritanceInfo, class T>
 AsrResult GetIids(T*, IAsrIidVector** pp_out_iid_vector)
 {
     using RhsType = internal_type_holder<T>;
-    return InternalGetIids(
-        decltype(PresetTypeInheritanceInfo{} + RhsType{}){},
+    return InternalGetIids<decltype(PresetTypeInheritanceInfo{} + RhsType{})>(
         pp_out_iid_vector);
 }
 
