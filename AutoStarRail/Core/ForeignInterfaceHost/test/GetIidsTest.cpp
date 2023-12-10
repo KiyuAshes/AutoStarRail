@@ -9,7 +9,7 @@
 TEST(GetIidsTest, Default)
 {
     ASR::AsrPtr<IAsrIidVector> p_iids;
-    ASR::Utils::GetIids<::IAsrTaskInheritanceInfo>(p_iids.Put());
+    ASR::Utils::GetIids<ASR::Utils::IAsrTaskInheritanceInfo>(p_iids.Put());
     AsrSwigIidVector iids_wrapper{p_iids};
     ASSERT_EQ(iids_wrapper.Size().value, 1);
     ASSERT_EQ(iids_wrapper.At(0).value, ASR_IID_TASK);

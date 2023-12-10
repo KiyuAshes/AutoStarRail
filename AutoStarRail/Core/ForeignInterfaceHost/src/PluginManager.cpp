@@ -567,8 +567,7 @@ std::vector<AsrResult> PluginManager::Refresh()
 
                 if (const auto* const CURRENT_PLATFORM =
                         static_cast<const char*>(
-                            ASR_UTILS_STRINGUTILS_DEFINE_U8STR(
-                                ASR_STR(ASR_PLATFORM)));
+                            ASR_UTILS_STRINGUTILS_DEFINE_U8STR(ASR_PLATFORM));
                     up_plugin_desc->supported_system.find_first_of(
                         CURRENT_PLATFORM)
                     != decltype(up_plugin_desc->supported_system)::npos)

@@ -46,7 +46,7 @@ ASR_DEFINE_GUID(
     0xe4,
     0x1f,
     0x9b);
-SWIG_ENABLE_DIRECTOR(IAsrSwigBasicErrorLens)
+ASR_SWIG_INTERFACE_ATTRIBUTE(IAsrSwigBasicErrorLens)
 ASR_INTERFACE IAsrSwigBasicErrorLens : public IAsrSwigErrorLens
 {
     virtual AsrResult RegisterExplanation(

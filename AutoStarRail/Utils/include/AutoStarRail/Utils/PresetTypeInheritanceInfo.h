@@ -10,13 +10,15 @@ template <class T>
 struct PresetTypeInheritanceInfo;
 
 #define ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(EndType, ...)                 \
-    using EndType##InheritanceInfo =                                           \
-        ASR::Utils::internal_type_holder<__VA_ARGS__, ASR_INTERFACE EndType>;  \
+    ASR_INTERFACE EndType;                                                     \
+    ASR_UTILS_NS_BEGIN using EndType##InheritanceInfo =                        \
+        ASR::Utils::internal_type_holder<__VA_ARGS__, EndType>;                \
     template <>                                                                \
-    struct ASR::Utils::PresetTypeInheritanceInfo<EndType>                      \
+    struct PresetTypeInheritanceInfo<EndType>                                  \
     {                                                                          \
         using TypeInfo = EndType##InheritanceInfo;                             \
-    }
+    };                                                                         \
+    ASR_UTILS_NS_END
 
 // IAsrBase.h
 using IAsrBaseInheritanceInfo = internal_type_holder<IAsrBase>;

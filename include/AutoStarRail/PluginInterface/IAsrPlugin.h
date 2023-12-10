@@ -48,7 +48,7 @@ ASR_INTERFACE IAsrPlugin : public IAsrBase
      * @brief 插件检查是否还有已创建的接口实例存活，若有，返回 ASR_FALSE ；否则返回 ASR_TRUE 。
      * @return ASR_FALSE 或 ASR_TRUE 。注意：非ASR_FALSE的值都会被认为是 ASR_TRUE。
      */
-    ASR_METHOD CanUnloadPlugin() = 0;
+    ASR_METHOD CanUnloadNow() = 0;
 };
 
 using AsrCoCreatePluginFunction = AsrResult (*)(IAsrPlugin** pp_out_plugin);
@@ -72,7 +72,7 @@ ASR_DEFINE_GUID(
     0xff,
     0x9d,
     0xaa);
-SWIG_ENABLE_DIRECTOR(IAsrSwigPlugin)
+ASR_SWIG_INTERFACE_ATTRIBUTE(IAsrSwigPlugin)
 /**
  * @brief Plugin should define AsrRetPlugin AsrCoCreatePlugin()
  *

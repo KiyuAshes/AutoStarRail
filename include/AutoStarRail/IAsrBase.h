@@ -22,7 +22,8 @@
 #define SWIG_ENABLE_DIRECTOR(x) %feature("director") x;
 #define SWIG_POINTER_CLASS(x, y) %pointer_class(x, y);
 #define SWIG_NEW_OBJECT(x) %newobject x;
-#define SWIG_DEL_OBJECT(x) %delobject x;
+#define SWIG_DEL_OBJECT(x) %delobject x::Release;
+#define SWIG_UNREF_OBJECT(x) %feature("unref") x "$this->Release();"
 #define SWIG_ENABLE_SHARED_PTR(x) %shared_ptr(x);
 #define SWIG_NO_DEFAULT_CTOR(x) %nodefaultctor x;
 #define ASR_DEFINE_GUID(name, type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
@@ -37,6 +38,7 @@
 #define SWIG_POINTER_CLASS(x, y)
 #define SWIG_NEW_OBJECT(x)
 #define SWIG_DEL_OBJECT(x)
+#define SWIG_UNREF_OBJECT(x)
 #define SWIG_ENABLE_SHARED_PTR(x)
 #define SWIG_NO_DEFAULT_CTOR(x)
 #define ASR_DEFINE_GUID(name, type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
@@ -50,6 +52,10 @@
     ASR_DEFINE_CLASS_GUID_HOLDER_IN_NAMESPACE(ns ,type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8);
 #endif
 // clang-format on
+
+#define ASR_SWIG_INTERFACE_ATTRIBUTE(x)                                        \
+    SWIG_ENABLE_DIRECTOR(x)                                                    \
+    SWIG_UNREF_OBJECT(x)
 
 #define ASR_S_OK 1
 #define ASR_S_FALSE 0
@@ -80,11 +86,19 @@
 #define ASR_E_JAVA_ERROR ASR_E_RESERVED - 20
 #define ASR_E_CSHARP_ERROR ASR_E_RESERVED - 21
 
+#ifdef ASR_WINDOWS
+// MSVC
 #ifdef _MSC_VER
 #define ASR_STD_CALL __stdcall
 #else
+// GCC AND CLANG
 #define ASR_STD_CALL __attribute__((__stdcall__))
 #endif // _MSC_VER
+#endif // ASR_WINDOWS
+
+#ifndef ASR_STD_CALL
+#define ASR_STD_CALL
+#endif // ASR_STD_CALL
 
 #define ASR_INTERFACE struct
 
@@ -164,11 +178,6 @@ ASR_INTERFACE IAsrBase
     ASR_METHOD      QueryInterface(const AsrGuid& iid, void** pp_object) = 0;
 };
 
-struct IAsrBaseDeleter
-{
-    void operator()(IAsrBase* ptr) const noexcept { ptr->Release(); }
-};
-
 ASR_INTERFACE IAsrGuidVector : public IAsrBase
 {
     ASR_METHOD At(size_t index, AsrGuid * p_out_guid) = 0;
@@ -225,7 +234,7 @@ ASR_DEFINE_GUID(
     0x3,
     0x50,
     0xa2)
-SWIG_ENABLE_DIRECTOR(IAsrSwigBase)
+ASR_SWIG_INTERFACE_ATTRIBUTE(IAsrSwigBase)
 ASR_INTERFACE IAsrSwigBase
 {
     virtual int64_t AddRef() = 0;

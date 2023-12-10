@@ -43,6 +43,7 @@ public:
     AsrResult CreateFeatureInterface(
         AsrPluginFeature feature,
         void**           pp_out_interface) override;
+    AsrResult CanUnloadNow() override;
 };
 
 ASR_NS_END
