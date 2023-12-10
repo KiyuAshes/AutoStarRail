@@ -387,20 +387,21 @@ endif ()
 
 add_compile_definitions(AsrUtils PUBLIC BOOST_FILESYSTEM_NO_DEPRECATED)
 
-# config Nlohnmann Json
+# config Nlohmann Json
 # Notice: This library assume string is encoded in UTF-8.
-message(STATUS "Downloading and collecting headers in nlohmann json.")
+set(ASR_NLOHMANN_JSON_VERSION v3.11.3)
+message(STATUS "Downloading and collecting headers in nlohmann json. (VERSION = ${ASR_NLOHMANN_JSON_VERSION})")
 FetchContent_Declare(
-        nlohnmann_json
-        URL ${GITHUB_MIRROR_URL}/nlohmann/json/releases/download/v3.11.2/include.zip
-        URL_HASH SHA256=E5C7A9F49A16814BE27E4ED0EE900ECD0092BFB7DBFCA65B5A421B774DCCAAED)
+        nlohmann_json
+        URL ${GITHUB_MIRROR_URL}/nlohmann/json/releases/download/v3.11.3/include.zip
+        URL_HASH SHA256=A22461D13119AC5C78F205D3DF1DB13403E58CE1BB1794EDC9313677313F4A9D)
 
-if (NOT nlohnmann_json_POPULATED)
-    FetchContent_Populate(nlohnmann_json)
+if (NOT nlohmann_json_POPULATED)
+    FetchContent_Populate(nlohmann_json)
 endif ()
 
-message(${nlohnmann_json_SOURCE_DIR}/include)
-target_include_directories(Asr3rdParty INTERFACE ${nlohnmann_json_SOURCE_DIR}/include)
+message(${nlohmann_json_SOURCE_DIR}/include)
+target_include_directories(Asr3rdParty INTERFACE ${nlohmann_json_SOURCE_DIR}/include)
 
 # See [added support for cmake "find_package"](https://github.com/microsoft/onnxruntime/pull/8919)
 find_package(onnxruntime)
