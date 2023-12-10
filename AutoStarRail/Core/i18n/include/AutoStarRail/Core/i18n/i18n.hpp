@@ -31,30 +31,12 @@ struct AsrReadOnlyStringWrapper
     void GetImpl(IAsrReadOnlyString** pp_impl) const;
 };
 
-
-
 template <class T, class Item>
 using TranslateItemMap = std::map<T, Item>;
 
 template <class T, class Item>
 using TranslateResources =
     std::unordered_map<std::u8string, TranslateItemMap<T, Item>>;
-
-namespace Details
-{
-    template <class T>
-    T FromString(std::string_view input)
-    {
-        if constexpr (std::is_same_v<T, int>)
-        {
-            return std::stoi(input.data());
-        }
-        else if (std::is_same_v<T, float>)
-        {
-            return std::stof(input.data());
-        }
-    }
-}
 
 void from_json(const ::nlohmann::json& input, AsrReadOnlyStringWrapper& output);
 

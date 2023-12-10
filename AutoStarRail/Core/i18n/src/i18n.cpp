@@ -1,6 +1,6 @@
-#include "AutoStarRail/ExportInterface/IAsrSettings.h"
+#include <AutoStarRail/ExportInterface/IAsrSettings.h>
 #include <AutoStarRail/Core/Exceptions/TypeError.h>
-#include "AutoStarRail/Core/i18n/i18n.hpp"
+#include <AutoStarRail/Core/i18n/i18n.hpp>
 
 ASR_CORE_I18N_NS_BEGIN
 
@@ -25,5 +25,12 @@ void AsrReadOnlyStringWrapper::GetImpl(IAsrReadOnlyString** pp_impl) const
 AsrReadOnlyStringWrapper::AsrReadOnlyStringWrapper() = default;
 
 AsrReadOnlyStringWrapper::~AsrReadOnlyStringWrapper() = default;
+
+void from_json(const ::nlohmann::json& input, AsrReadOnlyStringWrapper& output)
+{
+    std::string value{};
+    input.get_to(value);
+    output = {value.c_str()};
+}
 
 ASR_CORE_I18N_NS_END
