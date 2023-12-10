@@ -6,9 +6,9 @@
 #include "AutoStarRail/Utils/CommonUtils.hpp"
 #include "GlobalVariables.h"
 
-#ifdef ASR_WIN32
+#ifdef ASR_WINDOWS
 #include <windows.h>
-#endif // ASR_WIN32
+#endif // ASR_WINDOWS
 
 // As parameter of macro QStringLiteral
 #define ASR_QML_RESOURCE(x) u"qrc:/AsrQml/" ASR_USTR(x)
@@ -17,10 +17,10 @@ namespace
 {
     void HideConsoleWindow()
     {
-#ifdef ASR_WIN32
+#ifdef ASR_WINDOWS
         auto h_cmd_window = ::GetConsoleWindow();
         ASR::Utils::IfNotNull(h_cmd_window) >> [](auto h) { ::ShowWindow(h, SW_HIDE); };
-#endif // ASR_WIN32
+#endif // ASR_WINDOWS
     }
 }
 

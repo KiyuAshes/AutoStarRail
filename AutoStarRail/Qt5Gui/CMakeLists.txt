@@ -24,5 +24,5 @@ target_link_libraries(AutoStarRailQt5Gui PRIVATE
     Qt::Quick)
 
 if(WIN32)
-    target_compile_definitions(AutoStarRailQt5Gui PRIVATE ASR_WIN32)
+    target_compile_definitions(AutoStarRailQt5Gui PRIVATE ASR_WINDOWS)
 endif()
