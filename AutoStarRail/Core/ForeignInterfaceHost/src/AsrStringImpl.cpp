@@ -1,4 +1,4 @@
-#include "AutoStarRail/AsrConfig.h"
+#include <AutoStarRail/AsrConfig.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <cstring>
 #include <nlohmann/json.hpp>
-#include <unicode/ustring.h>
 
 bool operator==(AsrReadOnlyString lhs, AsrReadOnlyString rhs)
 {

@@ -12,17 +12,16 @@
 #include <AutoStarRail/Utils/Expected.h>
 #include <AutoStarRail/Utils/StreamUtils.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
-
-#include <boost/pfr/core.hpp>
+#include <AutoStarRail/Utils/UnexpectedEnumException.h>
 #include <fstream>
 #include <functional>
+#include <boost/pfr/core.hpp>
 #include <magic_enum.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string_view>
 #include <unordered_set>
 #include <utility>
-#include <AutoStarRail/Utils/UnexpectedEnumException.h>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 

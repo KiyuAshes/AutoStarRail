@@ -29,6 +29,8 @@ struct PluginInfo
     AsrGuid             guid;
 };
 
+
+
 // {B2678FF8-720C-48E6-AC00-77D43D08F580}
 ASR_DEFINE_GUID(
     ASR_IID_PLUGIN_MANAGER,
