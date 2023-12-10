@@ -100,7 +100,7 @@ ASR_DEFINE_GUID(
     0xe9,
     0x9,
     0x15)
-ASR_SWIG_INTERFACE_ATTRIBUTE(IAsrSwigInspectable)
+ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigInspectable)
 ASR_INTERFACE IAsrSwigInspectable : public IAsrSwigBase
 {
     virtual AsrRetSwigIidVector  GetIids() = 0;

@@ -53,7 +53,7 @@
 #endif
 // clang-format on
 
-#define ASR_SWIG_INTERFACE_ATTRIBUTE(x)                                        \
+#define ASR_SWIG_EXPORT_ATTRIBUTE(x)                                        \
     SWIG_ENABLE_DIRECTOR(x)                                                    \
     SWIG_UNREF_OBJECT(x)
 
@@ -155,6 +155,7 @@ ASR_NS_BEGIN
 inline bool IsOk(const AsrResult result) { return result >= 0; }
 
 ASR_NS_END
+
 #endif // __cplusplus
 
 ASR_DEFINE_GUID(
@@ -234,7 +235,7 @@ ASR_DEFINE_GUID(
     0x3,
     0x50,
     0xa2)
-ASR_SWIG_INTERFACE_ATTRIBUTE(IAsrSwigBase)
+ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigBase)
 ASR_INTERFACE IAsrSwigBase
 {
     virtual int64_t AddRef() = 0;

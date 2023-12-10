@@ -72,7 +72,7 @@ ASR_DEFINE_GUID(
     0xff,
     0x9d,
     0xaa);
-ASR_SWIG_INTERFACE_ATTRIBUTE(IAsrSwigPlugin)
+ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigPlugin)
 /**
  * @brief Plugin should define AsrRetPlugin AsrCoCreatePlugin()
  *

@@ -45,7 +45,7 @@ ASR_DEFINE_GUID(
     0x31,
     0x8b,
     0x83);
-ASR_SWIG_INTERFACE_ATTRIBUTE(IAsrSwigErrorLens)
+ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigErrorLens)
 ASR_INTERFACE IAsrSwigErrorLens : public IAsrSwigBase
 {
     virtual AsrRetSwigIidVector  GetSupportedIids() = 0;
