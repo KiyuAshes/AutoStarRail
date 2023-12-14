@@ -111,9 +111,13 @@ private:
     AsrResult GetInterface(const Plugin& plugin);
 
 public:
+    /**
+     * @brief try to load all plugin. And get all interface.
+     * @return AsrResult ASR_S_OK when all plugin are loaded successfully.\n
+     *         ASR_S_FALSE when some plugin have error.\n
+     *         ASR_E_INTERNAL_FATAL_ERROR when any plugin have ASR_E_SWIG_INTERNAL_ERROR or even worse.
+     */
     std::vector<AsrResult> Refresh();
-
-    AsrResult EnumInfo(size_t index, PluginInfo* p_out_info);
 
     /**
      * @brief Get the Error Explanation from AsrResult.

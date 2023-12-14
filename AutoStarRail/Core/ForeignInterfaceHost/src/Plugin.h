@@ -28,6 +28,8 @@ class Plugin
     AsrPtr<IForeignLanguageRuntime> p_runtime_;
     CommonPluginPtr                 p_plugin_{};
     std::unique_ptr<PluginDesc>     desc_;
+    AsrResult                       load_state_; // NOTE: 4 byte padding here.
+    AsrPtr<IAsrReadOnlyString>      load_error_messaged;
 
 public:
     Plugin(

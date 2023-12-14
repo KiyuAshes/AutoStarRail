@@ -18,7 +18,7 @@ auto CreateForeignLanguageRuntime(
 #ifndef ASR_EXPORT_PYTHON
         goto on_no_interface;
 #else
-
+        return PythonHost::CreateForeignLanguageRuntime(desc_base);
 #endif // ASR_EXPORT_PYTHON
     case CSharp:
 #ifndef ASR_EXPORT_CSHARP

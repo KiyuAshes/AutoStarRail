@@ -204,11 +204,6 @@ public:
     }
 
     // IAsrSwigSettings
-    AsrResult IsCastAvailable(const AsrGuid& iid) override
-    {
-        return impl_.IsCastAvailable(iid);
-    }
-
     AsrRetReadOnlyString GetString(const AsrReadOnlyString key) override
     {
         return impl_.GetString(key.GetUtf8());

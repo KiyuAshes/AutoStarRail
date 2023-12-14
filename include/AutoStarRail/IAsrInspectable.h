@@ -27,16 +27,13 @@ ASR_INTERFACE IAsrIidVector : public IAsrBase
     ASR_METHOD Find(const AsrGuid& p_iid) = 0;
 };
 
-#ifndef SWIG //ignore SWIG warning.
-template class ASR_API ASR::AsrPtr<IAsrIidVector>;
-#endif // SWIG
-
-class ASR_API AsrSwigIidVector
+class AsrSwigIidVector
 {
     ASR::AsrPtr<IAsrIidVector> p_impl_{};
 
 public:
-    AsrSwigIidVector() = default;
+    ASR_API AsrSwigIidVector() = default;
+    ASR_API ~AsrSwigIidVector() = default;
 
 #ifndef SWIG
     AsrSwigIidVector(ASR::AsrPtr<IAsrIidVector> p_impl);
@@ -44,9 +41,9 @@ public:
     operator IAsrIidVector*() const;
 #endif // SWIG
 
-    AsrRetUInt Size();
-    AsrRetGuid At(uint32_t index);
-    AsrRetBool Find(const AsrGuid* p_iid);
+    ASR_API AsrRetUInt Size();
+    ASR_API AsrRetGuid At(uint32_t index);
+    ASR_API AsrRetBool Find(const AsrGuid* p_iid);
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetSwigIidVector)
@@ -100,7 +97,7 @@ ASR_DEFINE_GUID(
     0xe9,
     0x9,
     0x15)
-ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigInspectable)
+ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigInspectable)
 ASR_INTERFACE IAsrSwigInspectable : public IAsrSwigBase
 {
     virtual AsrRetSwigIidVector  GetIids() = 0;

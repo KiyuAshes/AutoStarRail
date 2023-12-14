@@ -21,11 +21,7 @@ ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 ASR_NS_PYTHONHOST_BEGIN
 
-struct PythonRuntimeDesc : public ForeignLanguageRuntimeFactoryDesc
-{
-};
-
-auto CreateForeignLanguageRuntime(const PythonRuntimeDesc& desc)
+auto CreateForeignLanguageRuntime(const ForeignLanguageRuntimeFactoryDesc& desc)
     -> ASR::Utils::Expected<AsrPtr<IForeignLanguageRuntime>>;
 
 class PyObjectPtr
@@ -63,8 +59,6 @@ private:
     PyObjectPtr p_plugin_module;
 
 public:
-    PythonRuntime();
-
     int64_t   AddRef() override { return 1; };
     int64_t   Release() override { return 1; };
     AsrResult QueryInterface(const AsrGuid&, void**) override

@@ -23,7 +23,7 @@
 #define SWIG_POINTER_CLASS(x, y) %pointer_class(x, y);
 #define SWIG_NEW_OBJECT(x) %newobject x;
 #define SWIG_DEL_OBJECT(x) %delobject x::Release;
-#define SWIG_UNREF_OBJECT(x) %feature("unref") x "$this->Release();"
+#define SWIG_UNREF_OBJECT(x) %feature("unref") x "if($this) { $this->Release(); }"
 #define SWIG_ENABLE_SHARED_PTR(x) %shared_ptr(x);
 #define SWIG_NO_DEFAULT_CTOR(x) %nodefaultctor x;
 #define ASR_DEFINE_GUID(name, type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
@@ -53,9 +53,11 @@
 #endif
 // clang-format on
 
-#define ASR_SWIG_EXPORT_ATTRIBUTE(x)                                        \
+#define ASR_SWIG_DIRECTOR_ATTRIBUTE(x)                                         \
     SWIG_ENABLE_DIRECTOR(x)                                                    \
     SWIG_UNREF_OBJECT(x)
+
+#define ASR_SWIG_EXPORT_ATTRIBUTE(x) SWIG_UNREF_OBJECT(x)
 
 #define ASR_S_OK 1
 #define ASR_S_FALSE 0
@@ -85,6 +87,7 @@
 #define ASR_E_PYTHON_ERROR ASR_E_RESERVED - 19
 #define ASR_E_JAVA_ERROR ASR_E_RESERVED - 20
 #define ASR_E_CSHARP_ERROR ASR_E_RESERVED - 21
+#define ASR_E_INTERNAL_FATAL_ERROR ASR_E_RESERVED - 22
 
 #ifdef ASR_WINDOWS
 // MSVC
@@ -235,13 +238,11 @@ ASR_DEFINE_GUID(
     0x3,
     0x50,
     0xa2)
-ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigBase)
+ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigBase)
 ASR_INTERFACE IAsrSwigBase
 {
     virtual int64_t AddRef() = 0;
     virtual int64_t Release() = 0;
-    // TODO: Remove this code until all code can be compiled.
-    ASR_METHOD IsCastAvailable(const AsrGuid& iid) = 0;
     /**
      * @brief Implementation should only return ASR_S_OK or ASR_E_NO_INTERFACE.
      * NOTICE: If returned value is not equal to ASR_S_OK, then the interface is

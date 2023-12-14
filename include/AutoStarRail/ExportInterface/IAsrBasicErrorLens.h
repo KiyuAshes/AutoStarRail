@@ -46,7 +46,7 @@ ASR_DEFINE_GUID(
     0xe4,
     0x1f,
     0x9b);
-ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigBasicErrorLens)
+ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigBasicErrorLens)
 ASR_INTERFACE IAsrSwigBasicErrorLens : public IAsrSwigErrorLens
 {
     virtual AsrResult RegisterExplanation(
