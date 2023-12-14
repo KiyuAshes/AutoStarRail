@@ -57,60 +57,120 @@ bool IsSwigIid(const AsrGuid& swig_iid)
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
-template <class T>
-auto CreateCppToSwigObjectImpl(
-    const AsrGuid& swig_iid,
-    void*          p_swig_object,
-    void**         pp_out_cpp_object) -> ASR::Utils::Expected<void>
+template <class SwigT>
+auto CreateCppToSwigObjectImpl(void* p_swig_object, void** pp_out_cpp_object)
+    -> AsrResult
 {
-    if (swig_iid == AsrIidOf<T>())
+    try
     {
         auto* const p_cpp_object =
-            new SwigToCpp<T>(static_cast<T*>(p_swig_object));
+            new SwigToCpp<SwigT>(static_cast<SwigT*>(p_swig_object));
         p_cpp_object->AddRef();
         *pp_out_cpp_object = p_cpp_object;
-        return tl::make_unexpected(ASR_S_OK);
+        return ASR_S_OK;
     }
-    return {};
+    catch (const std::bad_alloc&)
+    {
+        return ASR_E_OUT_OF_MEMORY;
+    }
 }
 
 ASR_NS_ANONYMOUS_DETAILS_END
 
-#define ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(Type)          \
-    [&]()                                                                      \
+#define ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(SwigType)      \
     {                                                                          \
-        return Details::CreateCppToSwigObjectImpl<Type>(                       \
-            swig_iid,                                                          \
-            p_swig_object,                                                     \
-            pp_out_cpp_object);                                                \
+        AsrIidOf<SwigType>(),                                                  \
+            [](void* p_swig_object, void** pp_out_cpp_object)                  \
+        {                                                                      \
+            return Details::CreateCppToSwigObjectImpl<SwigType>(               \
+                p_swig_object,                                                 \
+                pp_out_cpp_object);                                            \
+        }                                                                      \
     }
+
+// TODO: 添加所有PluginInterface中的导出类型
+const static std::unordered_map<
+    AsrGuid,
+    AsrResult (*)(void* p_swig_object, void** pp_out_cpp_object)>
+    g_cpp_to_swig_factory{
+        ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(IAsrSwigBase),
+        ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
+            IAsrSwigInspectable),
+        ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
+            IAsrSwigErrorLens)};
 
 AsrResult CreateCppToSwigObject(
     const AsrGuid& swig_iid,
     void*          p_swig_object,
     void**         pp_out_cpp_object)
 {
+    const auto it = g_cpp_to_swig_factory.find(swig_iid);
+    if (it != g_cpp_to_swig_factory.end())
+    {
+        return it->second(p_swig_object, pp_out_cpp_object);
+    }
+
+    return ASR_E_NO_INTERFACE;
+}
+
+ASR_NS_ANONYMOUS_DETAILS_BEGIN
+
+/**
+ * @brief
+ * 注意：外部保证传入的指针一定是已经转换到T的指针。如果指针是QueryInterface的返回值，则代表无问题。
+ * @tparam T
+ * @param p_cpp_object
+ * @return
+ */
+template <class T>
+auto CreateSwigToCppObjectImpl(void* p_cpp_object) -> AsrRetSwigBase
+{
+    AsrRetSwigBase result{};
     try
     {
-        AsrResult result{ASR_E_UNDEFINED_RETURN_VALUE};
-
-        // TODO: 添加所有PluginInterface中的导出类型
-        Details::CreateCppToSwigObjectImpl<IAsrSwigBase>(
-            swig_iid,
-            p_swig_object,
-            pp_out_cpp_object)
-            .and_then(ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
-                IAsrSwigInspectable))
-            .and_then(ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
-                IAsrSwigErrorLens))
-            .or_else([&result](const auto error_code) { result = error_code; });
+        using SwigType = CppToSwig<T>::SwigType;
+        auto* const p_swig_object =
+            new CppToSwig<T>(static_cast<T*>(p_cpp_object));
+        p_swig_object->AddRef();
+        result.error_code = ASR_S_OK;
+        // explicit 导致要decltype来显式写出类型，似乎没有必要explicit了
+        result.value = decltype(result.value){
+            static_cast<void*>(static_cast<SwigType*>(p_swig_object))};
 
         return result;
     }
     catch (const std::bad_alloc&)
     {
-        return ASR_E_OUT_OF_MEMORY;
+        result.error_code = ASR_E_OUT_OF_MEMORY;
+        return result;
     }
+}
+
+ASR_NS_ANONYMOUS_DETAILS_END
+
+#define ASR_CORE_FOREIGNINTERFACEHOST_CREATE_SWIG_TO_CPP_OBJECT(Type)          \
+    {                                                                          \
+        AsrIidOf<Type>(), [](void* p_cpp_object)                               \
+        { return Details::CreateSwigToCppObjectImpl<Type>(p_cpp_object); }     \
+    }
+
+// TODO: 添加所有PluginInterface中的导出类型
+const static std::unordered_map<AsrGuid, AsrRetSwigBase (*)(void* p_cpp_object)>
+    g_swig_to_cpp_factory{};
+
+auto CreateSwigToCppObject(const AsrGuid& iid, void* p_cpp_object)
+    -> AsrRetSwigBase
+{
+    AsrRetSwigBase result;
+
+    const auto it = g_swig_to_cpp_factory.find(iid);
+    if (it != g_swig_to_cpp_factory.end())
+    {
+        return it->second(p_cpp_object);
+    }
+
+    result.error_code = ASR_E_NO_INTERFACE;
+    return result;
 }
 
 // -------------------- implementation of SwigToCpp class --------------------
@@ -159,9 +219,8 @@ AsrResult SwigToCpp<IAsrSwigTask>::Do(
 {
     try
     {
-        const auto result = p_impl_->Do(
-            p_connection_json,
-            p_task_settings_json);
+        const auto result =
+            p_impl_->Do(p_connection_json, p_task_settings_json);
         return result;
     }
     catch (const std::exception& ex)
@@ -239,6 +298,37 @@ AsrResult CommonPluginEnumFeature(
                 return result.error_code;
             }},
         p_this);
+}
+
+AsrRetImage CppToSwig<IAsrCapture>::Capture()
+{
+    return CallCppMethod<
+        AsrRetImage,
+        IAsrImage,
+        ASR_DV_V(&IAsrCapture::Capture)>(p_impl_.Get());
+}
+
+AsrRetCapture CppToSwig<IAsrCaptureFactory>::CreateInstance(
+    AsrReadOnlyString json_config)
+{
+    AsrRetCapture       result{};
+    AsrPtr<IAsrCapture> p_cpp_result;
+
+    result.error_code = p_impl_->CreateInstance(
+        static_cast<IAsrReadOnlyString*>(json_config),
+        p_cpp_result.Put());
+
+    if (!IsOk(result.error_code))
+    {
+        return result;
+    }
+
+    auto p_result = new CppToSwig<IAsrCapture>{std::move(p_cpp_result)};
+
+    p_result->AddRef();
+    result.value = p_result;
+
+    return result;
 }
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

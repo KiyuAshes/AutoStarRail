@@ -12,6 +12,7 @@
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
+#include <AutoStarRail/ExportInterface/IAsrImage.h>
 #include <AutoStarRail/Utils/Expected.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <cstdint>
@@ -24,7 +25,7 @@ concept is_asr_swig_interface = std::is_base_of_v<IAsrSwigBase, T>;
 template <class T>
 concept is_asr_interface = std::is_base_of_v<IAsrBase, T>;
 
-template <class T>
+template <class SwigT>
 class SwigToCpp;
 
 auto ConvertCppIidToSwigIid(const AsrGuid& cpp_iid)
@@ -49,6 +50,9 @@ AsrResult CreateCppToSwigObject(
     const AsrGuid& swig_iid,
     void*          p_swig_object,
     void**         pp_out_cpp_object);
+
+auto CreateSwigToCppObject(const AsrGuid& iid, void* p_cpp_object)
+    -> AsrRetSwigBase;
 
 template <is_asr_interface T>
 auto ConvertCppIidToSwigIid()
@@ -78,8 +82,8 @@ struct FunctionArgumentsSeparator
  * @return
  */
 template <
-    class T2Function,
-    T2Function            T2FunctionPointer,
+    class T4Function,
+    T4Function            FunctionPointer,
     is_asr_swig_interface SwigT,
     class OutputArg,
     class... InputArgs>
@@ -89,7 +93,7 @@ auto CallSwigMethod(
     OutputArg&& output_arg,
     InputArgs&&... input_args)
 {
-    const auto result = (p_swig_object->*T2FunctionPointer)(
+    const auto result = (p_swig_object->*FunctionPointer)(
         std::forward<InputArgs>(input_args)...);
     *std::forward<OutputArg>(output_arg) =
         static_cast<std::remove_reference_t<decltype(*output_arg)>>(
@@ -194,6 +198,7 @@ public:
                 {
                     return ASR_E_INVALID_POINTER;
                 }
+                // 注意：此时虚表指针应该指向Swig生成的导演类的虚表
                 return CreateCppToSwigObject(
                     swig_iid.value(),
                     result.value,
@@ -253,6 +258,10 @@ public:
 template <is_asr_swig_interface SwigT, is_asr_interface T>
 class SwigToCppInspectable : public SwigToCppBase<SwigT, T>
 {
+    static_assert(
+        std::is_base_of_v<IAsrSwigInspectable, SwigT>,
+        "SwigT is not inherit from IAsrSwigInspectable!");
+
     using Base = SwigToCppBase<SwigT, T>;
 
 public:
@@ -326,19 +335,58 @@ public:
     AsrResult GetType(AsrTaskType* p_out_type) override;
 };
 
-// TODO: IAsrSwigCaptureFactory
-
 AsrResult CommonPluginEnumFeature(
     const CommonPluginPtr& p_this,
     size_t                 index,
     AsrPluginFeature*      p_out_feature);
 
-template <class SwigT>
+// NOTE: template<auto FunctionPointer>
+// 或许可用，但是上面的都是那么写的，就不重构了
+template <
+    class AsrRetT,
+    class CppRetT,
+    class T4Function,
+    T4Function       FunctionPointer,
+    is_asr_interface T,
+    class... InputArgs>
+[[nodiscard]]
+AsrRetT CallCppMethod(T* p_cpp_object, InputArgs&&... input_args)
+{
+    AsrRetT         result{};
+    AsrPtr<CppRetT> p_result;
+
+    result.error_code = (p_cpp_object->*FunctionPointer)(
+        std::forward<InputArgs>(input_args)...,
+        p_result.Put());
+
+    if (!ASR::IsOk(result.error_code))
+    {
+        return result;
+    }
+
+    using ValueType = decltype(result.value);
+    if constexpr (std::is_pointer_v<ValueType>)
+    {
+        p_result->AddRef();
+        result.value = p_result.Get();
+    }
+    else
+    {
+        result.value = {std::move(p_result)};
+    }
+
+    return result;
+}
+
+template <class T>
 class CppToSwig;
 
 template <is_asr_swig_interface SwigT, is_asr_interface T>
 class CppToSwigBase : public SwigT
 {
+public:
+    using SwigType = SwigT;
+
 protected:
     ASR::AsrPtr<T> p_impl_;
 
@@ -347,11 +395,158 @@ public:
     CppToSwigBase(ASR::AsrPtr<Other> p_impl) : p_impl_{p_impl}
     {
     }
+
     template <class Other>
     explicit CppToSwigBase(CppToSwig<Other> other) : p_impl_{other.p_impl_}
     {
     }
-    ~CppToSwigBase() override = default;
+
+    template <class Other, class = std::enable_if<is_asr_interface<Other>>>
+    explicit CppToSwigBase(Other* p_other) : p_impl_{p_other, take_ownership}
+    {
+    }
+
+    int64_t AddRef() final
+    {
+        try
+        {
+            return p_impl_->AddRef();
+        }
+        catch (std::exception& ex)
+        {
+            ASR_CORE_LOG_ERROR(ex.what());
+            throw;
+        }
+    }
+
+    int64_t Release() final
+    {
+        try
+        {
+            return p_impl_->Release();
+        }
+        catch (std::exception& ex)
+        {
+            ASR_CORE_LOG_ERROR(ex.what());
+            throw;
+        }
+    }
+
+    AsrRetSwigBase QueryInterface(const AsrGuid& swig_iid) final
+    {
+        AsrRetSwigBase result{};
+        void*          p_out_object{};
+        const auto     pp_out_object = &p_out_object;
+
+        const auto get_default_query_interface_result =
+            ASR::Utils::QueryInterface<SwigT>(this, swig_iid, pp_out_object);
+        if (IsOk(get_default_query_interface_result)
+            || get_default_query_interface_result != ASR_E_NO_INTERFACE)
+        {
+            result.error_code = get_default_query_interface_result;
+            return result;
+        }
+
+        if (const auto expected_iid = ConvertCppIidToSwigIid(swig_iid);
+            expected_iid)
+        {
+            try
+            {
+                result.error_code = p_impl_->QueryInterface(
+                    expected_iid.value(),
+                    pp_out_object);
+            }
+            catch (std::exception& ex)
+            {
+                ASR_CORE_LOG_EXCEPTION(ex);
+                result.error_code = ASR_E_INTERNAL_FATAL_ERROR;
+                return result;
+            }
+
+            if (IsOk(result.error_code))
+            {
+                result =
+                    CreateSwigToCppObject(expected_iid.value(), p_out_object);
+                return result;
+            }
+
+            AsrPtr<IAsrReadOnlyString> predefined_error_explanation{};
+            ::AsrGetPredefinedErrorMessage(
+                result.error_code,
+                predefined_error_explanation.Put());
+            ASR_CORE_LOG_ERROR(
+                "Error happened in class IAsrSwigBase. Error code: "
+                "{}. Explanation: {}.",
+                result.error_code,
+                predefined_error_explanation);
+        }
+        result.error_code = ASR_E_NO_INTERFACE;
+        return result;
+    }
+};
+
+template <is_asr_swig_interface SwigT, is_asr_interface T>
+class CppToSwigInspectable : public CppToSwigBase<SwigT, T>
+{
+    static_assert(
+        std::is_base_of_v<IAsrInspectable, T>,
+        "T is not inherit from IAsrInspectable!");
+
+    using Base = CppToSwigBase<SwigT, T>;
+
+public:
+    using Base::Base;
+
+    auto GetRuntimeClassName() -> AsrRetReadOnlyString final
+    {
+        return CallCppMethod<
+            AsrRetReadOnlyString,
+            IAsrReadOnlyString,
+            ASR_DV_V(&IAsrInspectable::GetRuntimeClassName)>(
+            Base::p_impl_.Get());
+    }
+    auto GetIids() -> AsrRetSwigIidVector final
+    {
+        return CallCppMethod<
+            AsrRetSwigIidVector,
+            IAsrIidVector,
+            ASR_DV_V(&IAsrInspectable::GetIids)>(Base::p_impl_.Get());
+    }
+};
+
+template <>
+class CppToSwig<IAsrBase> final : public CppToSwigBase<IAsrSwigBase, IAsrBase>
+{
+public:
+    ASR_USING_BASE_CTOR(CppToSwigBase);
+};
+
+template <>
+class CppToSwig<IAsrInspectable> final
+    : public CppToSwigInspectable<IAsrSwigInspectable, IAsrInspectable>
+{
+public:
+    ASR_USING_BASE_CTOR(CppToSwigInspectable);
+};
+
+template <>
+class CppToSwig<IAsrCapture> final
+    : public CppToSwigInspectable<IAsrSwigCapture, IAsrCapture>
+{
+public:
+    ASR_USING_BASE_CTOR(CppToSwigInspectable);
+
+    AsrRetImage Capture() override;
+};
+
+template <>
+class CppToSwig<IAsrCaptureFactory> final
+    : public CppToSwigInspectable<IAsrSwigCaptureFactory, IAsrCaptureFactory>
+{
+public:
+    ASR_USING_BASE_CTOR(CppToSwigInspectable);
+
+    AsrRetCapture CreateInstance(AsrReadOnlyString json_config) override;
 };
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

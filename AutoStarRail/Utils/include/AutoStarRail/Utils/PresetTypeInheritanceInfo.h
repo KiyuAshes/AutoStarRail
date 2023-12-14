@@ -23,9 +23,16 @@ struct PresetTypeInheritanceInfo;
 // IAsrBase.h
 using IAsrBaseInheritanceInfo = internal_type_holder<IAsrBase>;
 template <>
-struct PresetTypeInheritanceInfo<IAsrBase>
+struct PresetTypeInheritanceInfo<::IAsrBase>
 {
     using TypeInfo = IAsrBaseInheritanceInfo;
+};
+
+using IAsrSwigBaseInheritanceInfo = internal_type_holder<IAsrSwigBase>;
+template <>
+struct PresetTypeInheritanceInfo<::IAsrSwigBase>
+{
+    using TypeInfo = IAsrSwigBaseInheritanceInfo;
 };
 
 ASR_UTILS_NS_END
@@ -33,12 +40,16 @@ ASR_UTILS_NS_END
 // IAsrInspectable.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrInspectable, IAsrBase);
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrIidVector, IAsrBase);
+// -------------------------------------
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigInspectable, IAsrSwigBase);
+
 // AsrReadOnlyString.hpp
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrReadOnlyString, IAsrBase);
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
     IAsrString,
     IAsrBase,
     IAsrReadOnlyString);
+// -------------------------------------
 
 // PluginInterface/IAsrCapture.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
@@ -49,17 +60,41 @@ ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
     IAsrCaptureFactory,
     IAsrBase,
     IAsrInspectable);
+// -------------------------------------
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
+    IAsrSwigCapture,
+    IAsrSwigBase,
+    IAsrSwigInspectable);
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
+    IAsrSwigCaptureFactory,
+    IAsrSwigBase,
+    IAsrSwigInspectable);
+
 // PluginInterface/IAsrPlugin.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrPlugin, IAsrBase);
+// -------------------------------------
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigPlugin, IAsrSwigBase);
+
 // PluginInterface/IAsrErrorLens.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrErrorLens, IAsrBase);
+// -------------------------------------
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigErrorLens, IAsrSwigBase);
+
 // PluginInterface/IAsrTask.h
-ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrTask, IAsrBase);
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrTask, IAsrBase, IAsrInspectable);
+// -------------------------------------
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
+    IAsrSwigTask,
+    IAsrSwigBase,
+    IAsrSwigInspectable);
 
 // ExportInterface/IAsrCaptureManager.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrCaptureManager, IAsrBase);
+// -------------------------------------
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigCaptureManager, IAsrSwigBase);
 // ExportInterface/IAsrSettings.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSettings, IAsrBase);
+// -------------------------------------
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigSettings, IAsrSwigBase);
 
 #endif // ASR_UTILS_PRESETTYPEINHERITANCEINFO_H

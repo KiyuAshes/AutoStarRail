@@ -23,6 +23,8 @@
 
 #define ASR_FULL_RANGE_OF(x) std::begin(x), std::end(x)
 
+#define ASR_DV_V(x) decltype(x), x
+
 #define ASR_PRAGMA_IMPL(x) _Pragma(#x)
 #define ASR_PRAGMA(x) ASR_PRAGMA_IMPL(x)
 

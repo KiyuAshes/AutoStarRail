@@ -75,7 +75,7 @@ AsrResult InternalQueryInterface(T context, internal_type_holder<Ts...>)
  * @return
  */
 template <class PresetTypeInheritanceInfo, class... AdditionalTs>
-AsrResult QueryInterface1(
+AsrResult QueryInterfaceAsLastClassInInheritanceInfo(
     std::add_pointer_t<typename internal_type_holder<
         AdditionalTs...>::template At<sizeof...(AdditionalTs) - 1>> p_this,
     const AsrGuid&                                                  iid,
@@ -89,7 +89,7 @@ AsrResult QueryInterface1(
 }
 
 template <class PresetTypeInheritanceInfo>
-AsrResult QueryInterface1(
+AsrResult QueryInterfaceAsLastClassInInheritanceInfo(
     std::add_pointer_t<typename PresetTypeInheritanceInfo::template At<
         PresetTypeInheritanceInfo::size - 1>> p_this,
     const AsrGuid&                            iid,
@@ -112,7 +112,8 @@ template <class T, class TImpl>
 AsrResult
 QueryInterface(TImpl* p_this, const AsrGuid& iid, void** pp_out_object)
 {
-    return QueryInterface1<typename PresetTypeInheritanceInfo<T>::TypeInfo>(
+    return QueryInterfaceAsLastClassInInheritanceInfo<
+        typename PresetTypeInheritanceInfo<T>::TypeInfo>(
         p_this,
         iid,
         pp_out_object);
