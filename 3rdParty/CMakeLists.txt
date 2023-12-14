@@ -404,7 +404,8 @@ message(${nlohmann_json_SOURCE_DIR}/include)
 target_include_directories(Asr3rdParty INTERFACE ${nlohmann_json_SOURCE_DIR}/include)
 
 # See [added support for cmake "find_package"](https://github.com/microsoft/onnxruntime/pull/8919)
-find_package(onnxruntime)
+# prevent warning when package not found.
+find_package(onnxruntime QUIET)
 
 function(_download_and_config_onnxruntime TARGET_NAME URL)
     FetchContent_Declare(${TARGET_NAME}
