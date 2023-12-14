@@ -1,3 +1,5 @@
+# 注意：本项目尚在开发中
+
 # 一、构建
 
 ## 1.下载项目
@@ -14,19 +16,22 @@ git clone git@github.com:BombaxCeiba/AutoStarRail.git
 
 以下是项目中CMake变量的定义
 
-| 名称                    | 默认值             | 说明                                        |
-| ----------------------- | ------------------ | ------------------------------------------- |
-| EXPORT_JAVA             | OFF                | 是否导出Java接口                            |
-| EXPORT_CSHARP           | OFF                | 是否导出C#接口                              |
-| EXPORT_PYTHON           | OFF                | 是否导出Python接口                          |
-| ASR_SPDLOG_USE_STD_FMT  | ON                 | 是否将项目自带的spdlog设置为使用标准库的fmt |
-| ASR_BUILD_TEST          | OFF                | 是否构建测试                                |
-| ASR_BUILD_QT5_GUI       | ON                 | 是否构建GUI                                 |
-| USE_LLD                 | OFF                | 是否添加编译选项（非MSVC时）-fuse-ld=lld    |
-| ASR_USE_CCACHE          | OFF                | 是否使用ccache                              |
-| ASR_USE_BUNDLED_BOOST   | OFF                | 是否下载Boost源码编译                       |
-| ASR_USE_BUNDLED_OPENCV | OFF                | 是否下载OpenCV源码编译                      |
-| GITHUB_MIRROR_URL       | https://github.com |                                             |
+| 名称                   | 默认值                    | 说明                                                           |
+| ---------------------- | ------------------------- | -------------------------------------------------------------- |
+| EXPORT_JAVA            | OFF                       | 是否导出Java接口                                               |
+| EXPORT_CSHARP          | OFF                       | 是否导出C#接口                                                 |
+| EXPORT_PYTHON          | OFF                       | 是否导出Python接口                                             |
+| ASR_SPDLOG_USE_STD_FMT | 由ASR_STD_FMT_SUPPORT决定 | 是否将项目自带的spdlog设置为使用标准库的fmt                    |
+| ASR_USE_BUNDLED_FMT    | 由ASR_STD_FMT_SUPPORT决定 | 是否使用下载的fmt，此项为ON时，ASR_SPDLOG_USE_STD_FMT默认为OFF |
+| ASR_BUILD_TEST         | OFF                       | 是否构建测试                                                   |
+| ASR_BUILD_QT5_GUI      | ON                        | 是否构建GUI                                                    |
+| ASR_USE_LLD            | OFF                       | 是否添加编译选项（非MSVC时）-fuse-ld=lld                       |
+| ASR_USE_CCACHE         | OFF                       | 是否使用ccache                                                 |
+| ASR_USE_BUNDLED_BOOST  | OFF                       | 是否下载Boost源码编译                                          |
+| ASR_USE_BUNDLED_EIGEN  | OFF                       | 是否下载Eigen用于编译OpenCV                                    |
+| ASR_USE_BUNDLED_OPENCV | OFF                       | 是否下载OpenCV源码编译                                         |
+| ASR_LLD_EXECUTABLE     | lld                       | lld文件路径，似乎一般也不需要设置                              |
+| GITHUB_MIRROR_URL      | https://github.com        |                                                                |
 
 ## 3.配置SWIG
 
