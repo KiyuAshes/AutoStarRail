@@ -1,6 +1,5 @@
 #include <AutoStarRail/Utils/StringUtils.h>
-#include <boost/cstdint.hpp>
-#include <boost/nowide/config.hpp>
+
 #ifdef ASR_EXPORT_PYTHON
 
 #include "PythonHost.h"
@@ -9,9 +8,18 @@
 #include <AutoStarRail/Core/Exceptions/PythonException.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
+
+ASR_DISABLE_WARNING_BEGIN
+ASR_IGNORE_UNUSED_PARAMETER
+
+// Avoid MSVC Warning C4100
+// This warning exists in some specific versions of Python header files
+// 一些特定版本的Python头文件中存在这一警告
 #include <Python.h>
+
+ASR_DISABLE_WARNING_END
+
 #include <stdexcept>
-#include <string_view>
 #include <tuple>
 #include <utility>
 
@@ -23,6 +31,15 @@ static_assert(
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 ASR_NS_PYTHONHOST_BEGIN
+
+auto CreateForeignLanguageRuntime(
+    [[maybe_unused]] const ForeignLanguageRuntimeFactoryDesc& desc)
+    -> ASR::Utils::Expected<AsrPtr<IForeignLanguageRuntime>>
+{
+    const auto                      p_runtime = new PythonRuntime{};
+    AsrPtr<IForeignLanguageRuntime> result{p_runtime, take_ownership};
+    return result;
+}
 
 PyObjectPtr::PyObjectPtr(
     PyObject* ptr,
@@ -121,17 +138,16 @@ bool IsSubDirectory(T path, T root)
     return false;
 }
 
-auto GetPreferedSeparator() -> const std::u8string&
+auto GetPreferredSeparator() -> const std::u8string&
 {
     static std::u8string result{
-        []
+        []() -> decltype(result)
         {
             std::string                               tmp_result;
             const U_NAMESPACE_QUALIFIER UnicodeString icu_string{
                 std::filesystem::path::preferred_separator};
             icu_string.toUTF8String(tmp_result);
-            std::u8string result{ASR_FULL_RANGE_OF(tmp_result)};
-            return result;
+            return {ASR_FULL_RANGE_OF(tmp_result)};
         }()};
     return result;
 }
@@ -411,7 +427,7 @@ auto PythonRuntime::ResolveClassName(const std::filesystem::path& relative_path)
     for (auto it_next = std::next(relative_path.begin()); it_next != it_end;
          ++it, ++it_next)
     {
-        if (part_string == Details::GetPreferedSeparator())
+        if (part_string == Details::GetPreferredSeparator())
         {
             return tl::make_unexpected(ASR_E_INVALID_PATH);
         }
