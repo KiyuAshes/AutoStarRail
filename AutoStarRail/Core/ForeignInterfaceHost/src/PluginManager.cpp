@@ -19,7 +19,7 @@
 #include <magic_enum.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <string_view>
+#include <optional>
 #include <unordered_set>
 #include <utility>
 
@@ -543,11 +543,11 @@ AsrResult PluginManager::GetInterface(const Plugin& plugin)
     return ASR_E_NO_IMPLEMENTATION;
 }
 
-std::vector<AsrResult> PluginManager::Refresh()
+AsrResult PluginManager::Refresh()
 {
-    auto result = ASR::Utils::MakeEmptyContainer<std::vector<AsrResult>>();
-    constexpr std::size_t POSSIBLE_COUNT_OF_PLUGINS = 50;
-    result.reserve(POSSIBLE_COUNT_OF_PLUGINS);
+    AsrResult result{ASR_E_UNDEFINED_RETURN_VALUE};
+
+    std::optional<Plugin> opt_plugin{};
 
     for (const auto  current_path = std::filesystem::path{"./plugins"};
          const auto& it : std::filesystem::directory_iterator{current_path})
@@ -635,7 +635,6 @@ std::vector<AsrResult> PluginManager::Refresh()
             }
         }
     }
-    return result;
 }
 
 AsrResult PluginManager::GetErrorMessage(

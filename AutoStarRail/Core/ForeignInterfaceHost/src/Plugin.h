@@ -27,19 +27,28 @@ class Plugin
 
     AsrPtr<IForeignLanguageRuntime> p_runtime_;
     CommonPluginPtr                 p_plugin_{};
-    std::unique_ptr<PluginDesc>     desc_;
+    std::unique_ptr<PluginDesc>     up_desc_;
     AsrResult                       load_state_; // NOTE: 4 byte padding here.
-    AsrPtr<IAsrReadOnlyString>      load_error_messaged;
+    AsrPtr<IAsrReadOnlyString>      load_error_message;
 
 public:
     Plugin(
-        AsrPtr<IForeignLanguageRuntime> up_runtime,
+        AsrPtr<IForeignLanguageRuntime> p_runtime,
         AsrPtr<IAsrPlugin>              p_plugin,
         std::unique_ptr<PluginDesc>     up_desc);
     Plugin(
-        AsrPtr<IForeignLanguageRuntime> up_runtime,
+        AsrPtr<IForeignLanguageRuntime> p_runtime,
         AsrPtr<IAsrSwigPlugin>          p_swig_plugin,
         std::unique_ptr<PluginDesc>     up_desc);
+    /**
+     * @brief 出错时使用此构造函数
+     *
+     * @param load_state
+     * @param p_error_message
+     */
+    Plugin(AsrResult load_state, IAsrReadOnlyString* p_error_message);
+
+    explicit operator bool() const noexcept;
 
     ~Plugin();
 };

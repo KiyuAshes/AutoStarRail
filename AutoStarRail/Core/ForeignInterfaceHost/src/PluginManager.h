@@ -117,7 +117,7 @@ public:
      *         ASR_S_FALSE when some plugin have error.\n
      *         ASR_E_INTERNAL_FATAL_ERROR when any plugin have ASR_E_SWIG_INTERNAL_ERROR or even worse.
      */
-    std::vector<AsrResult> Refresh();
+    AsrResult Refresh();
 
     /**
      * @brief Get the Error Explanation from AsrResult.
