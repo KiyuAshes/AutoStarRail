@@ -97,7 +97,10 @@ public:
     ~AsrPtr() noexcept { InternalRelease(); }
     T*   operator->() const noexcept { return ptr_; }
     T&   operator*() const noexcept { return *ptr_; }
-    bool operator==(const AsrPtr<T>& other) const noexcept { return ptr_ == other.ptr_; }
+    bool operator==(const AsrPtr<T>& other) const noexcept
+    {
+        return ptr_ == other.ptr_;
+    }
     explicit operator bool() const noexcept { return Get() != nullptr; }
     template <class Other>
     Other* As(const AsrGuid& id) const
@@ -139,7 +142,10 @@ public:
     {
         std::swap(lhs.ptr_, rhs.ptr_);
     }
-    auto operator<=>(const AsrPtr& other) const noexcept { return other.ptr_ <=> ptr_; };
+    auto operator<=>(const AsrPtr& other) const noexcept
+    {
+        return other.ptr_ <=> ptr_;
+    };
     static AsrPtr Attach(T* p)
     {
         AsrPtr result{nullptr};
@@ -147,6 +153,18 @@ public:
         return result;
     }
 };
+
+template <class T, class... Args>
+auto MakeAsrPtr(Args&&... args)
+{
+    return AsrPtr<T>(new T(std::forward<Args>(args)...), take_ownership);
+}
+
+template <class B, class T, class... Args>
+auto MakeAsrPtr(Args&&... args)
+{
+    return AsrPtr<B>(new T(std::forward<Args>(args)...), take_ownership);
+}
 
 #if __cplusplus >= 201703L
 template <class T>

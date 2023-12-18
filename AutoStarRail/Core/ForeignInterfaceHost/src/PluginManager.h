@@ -96,9 +96,15 @@ public:
 
 class PluginManager
 {
+public:
+    using NamePluginMap =
+        std::map<AsrPtr<IAsrReadOnlyString>, Plugin, AsrStringLess>;
+
 private:
-    std::map<AsrPtr<IAsrReadOnlyString>, Plugin, AsrStringLess>
-                                             plugin_file_paths_{};
+    /**
+     * @brief 注意：如果连名字都没获取到，则以json路径为此处的名称
+     */
+    NamePluginMap                            plugin_file_paths_{};
     InterfaceManager<IAsrTask, IAsrSwigTask> asr_task_interface_manager_;
     std::vector<AsrPtr<IAsrCaptureFactory>>  asr_capture_interfaces_;
     ErrorLensManager                         error_lens_manager_;
@@ -115,7 +121,8 @@ public:
      * @brief try to load all plugin. And get all interface.
      * @return AsrResult ASR_S_OK when all plugin are loaded successfully.\n
      *         ASR_S_FALSE when some plugin have error.\n
-     *         ASR_E_INTERNAL_FATAL_ERROR when any plugin have ASR_E_SWIG_INTERNAL_ERROR or even worse.
+     *         ASR_E_INTERNAL_FATAL_ERROR when any plugin have
+     * ASR_E_SWIG_INTERNAL_ERROR or even worse.
      */
     AsrResult Refresh();
 

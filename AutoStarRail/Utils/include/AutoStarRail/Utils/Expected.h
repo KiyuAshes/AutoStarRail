@@ -35,9 +35,9 @@ struct ErrorAndExplanation
 };
 
 template <class... Args>
-auto MakeUnexpected(Args&&... args) -> tl::unexpected<ErrorAndExplanation>
+auto MakeUnexpected(Args&&... args)
 {
-    return tl::unexpected<ErrorAndExplanation>{std::forward<Args>(args)...};
+    return tl::make_unexpected(std::forward<Args>(args)...);
 }
 
 template <class T>

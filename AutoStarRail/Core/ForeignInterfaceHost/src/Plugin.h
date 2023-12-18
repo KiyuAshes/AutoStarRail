@@ -25,20 +25,17 @@ class Plugin
 {
     friend class PluginManager;
 
-    AsrPtr<IForeignLanguageRuntime> p_runtime_;
+    AsrPtr<IForeignLanguageRuntime> p_runtime_{};
     CommonPluginPtr                 p_plugin_{};
-    std::unique_ptr<PluginDesc>     up_desc_;
-    AsrResult                       load_state_; // NOTE: 4 byte padding here.
-    AsrPtr<IAsrReadOnlyString>      load_error_message;
+    std::unique_ptr<PluginDesc>     up_desc_{};
+    AsrResult                       load_state_{
+        ASR_E_UNDEFINED_RETURN_VALUE}; // NOTE: 4 byte padding here.
+    AsrPtr<IAsrReadOnlyString> load_error_message_{};
 
 public:
     Plugin(
         AsrPtr<IForeignLanguageRuntime> p_runtime,
-        AsrPtr<IAsrPlugin>              p_plugin,
-        std::unique_ptr<PluginDesc>     up_desc);
-    Plugin(
-        AsrPtr<IForeignLanguageRuntime> p_runtime,
-        AsrPtr<IAsrSwigPlugin>          p_swig_plugin,
+        CommonPluginPtr                 p_plugin,
         std::unique_ptr<PluginDesc>     up_desc);
     /**
      * @brief 出错时使用此构造函数
@@ -47,6 +44,7 @@ public:
      * @param p_error_message
      */
     Plugin(AsrResult load_state, IAsrReadOnlyString* p_error_message);
+    Plugin(Plugin&& other) noexcept;
 
     explicit operator bool() const noexcept;
 

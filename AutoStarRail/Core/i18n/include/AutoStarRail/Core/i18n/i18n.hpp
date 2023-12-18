@@ -13,11 +13,7 @@
 #include <unordered_map>
 #include <nlohmann/json.hpp>
 
-ASR_NS_BEGIN
-
 class AsrStringCppImpl;
-
-ASR_NS_END
 
 ASR_CORE_I18N_NS_BEGIN
 

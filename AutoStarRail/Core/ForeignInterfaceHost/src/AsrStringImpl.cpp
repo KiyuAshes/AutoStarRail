@@ -95,7 +95,8 @@ bool Asr::AsrStringLess::operator()(
                static_cast<int32_t>(lhs_size),
                p_rhs,
                static_cast<int32_t>(rhs_size),
-               false) < 0;
+               false)
+           < 0;
 }
 
 void AsrStringCppImpl::InvalidateCache()
@@ -124,6 +125,28 @@ void AsrStringCppImpl::UpdateUtf32Cache()
 }
 
 AsrStringCppImpl::AsrStringCppImpl() = default;
+
+AsrStringCppImpl::AsrStringCppImpl(const std::filesystem::path& path)
+{
+    const auto p_string = path.c_str();
+#ifdef ASR_WINDOWS
+    static_assert(
+        std::is_same_v<
+            std::remove_reference_t<decltype(path)>::value_type,
+            wchar_t>,
+        "Not wchar_t in Windows?");
+    const auto string_size = ::wcslen(p_string);
+    SetW(p_string, string_size);
+#else
+    static_assert(
+        std::is_same_v<
+            std::remove_reference_t<decltype(path)>::value_type,
+            char>,
+        "Not char in Linux?");
+    // assume utf-8 in linux!
+    SetUtf8(p_string);
+#endif // ASR_WINDOWS
+}
 
 AsrStringCppImpl::AsrStringCppImpl(
     const U_NAMESPACE_QUALIFIER UnicodeString& impl)

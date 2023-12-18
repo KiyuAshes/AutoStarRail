@@ -6,6 +6,7 @@
 #include <AutoStarRail/Utils/fmt.h>
 #include <array>
 #include <memory>
+#include <filesystem>
 #include <nlohmann/json_fwd.hpp>
 #include <unicode/unistr.h>
 
@@ -173,6 +174,7 @@ private:
 
 public:
     AsrStringCppImpl();
+    explicit AsrStringCppImpl(const std::filesystem::path& path);
     explicit AsrStringCppImpl(const U_NAMESPACE_QUALIFIER UnicodeString& impl);
     explicit AsrStringCppImpl(
         U_NAMESPACE_QUALIFIER UnicodeString&& impl) noexcept;

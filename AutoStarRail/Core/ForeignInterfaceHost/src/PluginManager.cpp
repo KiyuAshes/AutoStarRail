@@ -2,6 +2,7 @@
 #include "ForeignInterfaceHost.h"
 #include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Core/i18n/AsrResultTranslator.h>
 #include <AutoStarRail/Core/i18n/GlobalLocale.h>
@@ -16,6 +17,7 @@
 #include <fstream>
 #include <functional>
 #include <boost/pfr/core.hpp>
+#include <boost/nowide/quoted.hpp>
 #include <magic_enum.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -543,11 +545,61 @@ AsrResult PluginManager::GetInterface(const Plugin& plugin)
     return ASR_E_NO_IMPLEMENTATION;
 }
 
+ASR_NS_ANONYMOUS_DETAILS_BEGIN
+
+/**
+ * @brief 插件创建失败时，产生这个类，负责生成报错的信息和错误状态的插件
+ */
+struct FailedPluginProxy : public ASR::Utils::NonCopyableAndNonMovable
+{
+    AsrPtr<IAsrReadOnlyString> error_message;
+    AsrPtr<IAsrReadOnlyString> name;
+    AsrResult                  error_code;
+    // TODO:完成实现
+
+    FailedPluginProxy(
+        const std::filesystem::path& metadata_path,
+        AsrResult                    error_code)
+        : error_message{[](AsrResult error_code)
+                        {
+                            AsrPtr<IAsrReadOnlyString> result{};
+                            AsrGetPredefinedErrorMessage(
+                                error_code,
+                                result.Put());
+                            return result;
+                        }(error_code)},
+          name{MakeAsrPtr<IAsrReadOnlyString, ::AsrStringCppImpl>(
+              metadata_path)},
+          error_code{error_code}
+    {
+    }
+
+    FailedPluginProxy(IAsrReadOnlyString* plugin_name, AsrResult error_code)
+        : error_message{[](AsrResult error_code)
+                        {
+                            AsrPtr<IAsrReadOnlyString> result{};
+                            AsrGetPredefinedErrorMessage(
+                                error_code,
+                                result.Put());
+                            return result;
+                        }(error_code)},
+          name{plugin_name, take_ownership}, error_code{error_code}
+    {
+    }
+
+    void AddPluginTo(PluginManager::NamePluginMap& map)
+    {
+        map.emplace(name, Plugin{error_code, error_message.Get()});
+    }
+};
+
+ASR_NS_ANONYMOUS_DETAILS_END
+
 AsrResult PluginManager::Refresh()
 {
-    AsrResult result{ASR_E_UNDEFINED_RETURN_VALUE};
+    AsrResult result{ASR_S_OK};
 
-    std::optional<Plugin> opt_plugin{};
+    NamePluginMap map{};
 
     for (const auto  current_path = std::filesystem::path{"./plugins"};
          const auto& it : std::filesystem::directory_iterator{current_path})
@@ -556,7 +608,7 @@ AsrResult PluginManager::Refresh()
         const auto  extension = it_path.extension();
         if (ASR_UTILS_STRINGUTILS_COMPARE_STRING(extension, "json"))
         {
-            AsrResult plugin_result{ASR_E_UNDEFINED_RETURN_VALUE};
+            AsrResult plugin_create_result{ASR_E_UNDEFINED_RETURN_VALUE};
             std::unique_ptr<PluginDesc> up_plugin_desc{};
 
             try
@@ -569,31 +621,79 @@ AsrResult PluginManager::Refresh()
                             ASR_UTILS_STRINGUTILS_DEFINE_U8STR(ASR_PLATFORM));
                     up_plugin_desc->supported_system.find_first_of(
                         CURRENT_PLATFORM)
-                    != decltype(up_plugin_desc->supported_system)::npos)
+                    == decltype(up_plugin_desc->supported_system)::npos)
                 {
-                    result.push_back(ASR_E_UNSUPPORTED_SYSTEM);
+                    plugin_create_result = ASR_E_UNSUPPORTED_SYSTEM;
+
+                    auto failed_plugin = Details::FailedPluginProxy{
+                        it_path,
+                        plugin_create_result};
+
                     ASR_CORE_LOG_INFO(
-                        "Error when checking system requirement. Error code (" ASR_STR(
-                            ASR_E_UNSUPPORTED_SYSTEM) "): {}",
-                        result.back());
+                        "Error when checking system requirement. Error code = " ASR_STR(
+                            ASR_E_UNSUPPORTED_SYSTEM) ".");
+                    // 此处，plugin_name即为metadata路径，见
+                    // Details::AddFailedPluginAndReturnTmpPluginName
+                    ASR_CORE_LOG_INFO(
+                        "NOTE: plugin meta data file path:\"{}\"",
+                        failed_plugin.name);
+
+                    failed_plugin.AddPluginTo(map);
+                    result = ASR_S_FALSE;
                     continue;
                 }
             }
             catch (const nlohmann::json::exception& ex)
             {
                 ASR_CORE_LOG_EXCEPTION(ex);
-                plugin_result = ASR_E_INVALID_JSON;
+                ASR_CORE_LOG_INFO(
+                    "Error happened when parsing plugin metadata file. Error code = " ASR_STR(
+                        ASR_CORE_LOG_INFO) ".");
+                plugin_create_result = ASR_E_INVALID_JSON;
             }
             catch (const std::ios_base::failure& ex)
             {
                 ASR_CORE_LOG_EXCEPTION(ex);
-                plugin_result = ASR_E_INVALID_FILE;
+                ASR_CORE_LOG_INFO(
+                    "Error happened when parsing plugin metadata file. Error code = " ASR_STR(
+                        ASR_E_INVALID_FILE) ".");
+                plugin_create_result = ASR_E_INVALID_FILE;
             }
 
-            if (plugin_result != ASR_E_UNDEFINED_RETURN_VALUE)
+            if (plugin_create_result != ASR_E_UNDEFINED_RETURN_VALUE)
             {
-                result.push_back(plugin_result);
+                auto failed_plugin =
+                    Details::FailedPluginProxy{it_path, plugin_create_result};
+                ASR_CORE_LOG_INFO(
+                    "NOTE: plugin meta data file path:\"{}\"",
+                    failed_plugin.name);
+
+                failed_plugin.AddPluginTo(map);
+                result = ASR_S_FALSE;
                 continue;
+            }
+
+            AsrPtr<IAsrReadOnlyString> plugin_name{};
+
+            if (auto expected_plugin_name =
+                    ASR::Utils::MakeAsrReadOnlyStringFromUtf8(
+                        up_plugin_desc->name);
+                !expected_plugin_name)
+            {
+                const auto error_code = expected_plugin_name.error();
+                ASR_CORE_LOG_ERROR(
+                    "Can not convert std::string to IAsrReadOnlyString when getting plugin name."
+                    "\nError code = {}",
+                    error_code);
+                auto failed_plugin =
+                    Details::FailedPluginProxy{it_path, error_code};
+                failed_plugin.AddPluginTo(map);
+                result = ASR_S_FALSE;
+                continue;
+            }
+            else
+            {
+                plugin_name = expected_plugin_name.value();
             }
 
             std::filesystem::path plugin_path =
@@ -604,12 +704,22 @@ AsrResult PluginManager::Refresh()
                         up_plugin_desc->plugin_filename_extension)}};
             if (!std::filesystem::exists(plugin_path))
             {
-                result.push_back(ASR_E_FILE_NOT_FOUND);
+                plugin_create_result = ASR_E_FILE_NOT_FOUND;
+
                 ASR_CORE_LOG_ERROR(
-                    "Error when checking plugin file. Expected file path:\"{}\". Error code (" ASR_STR(
-                        ASR_E_FILE_NOT_FOUND) "): {}",
-                    plugin_path.string(),
-                    result.back());
+                    "Error when checking plugin file. Error code = " ASR_STR(
+                        ASR_E_FILE_NOT_FOUND) ".");
+
+                Details::FailedPluginProxy failed_plugin{
+                    plugin_name.Get(),
+                    plugin_create_result};
+
+                ASR_CORE_LOG_INFO(
+                    "Expected file path:\"{}\".",
+                    MakeAsrPtr<IAsrReadOnlyString, AsrStringCppImpl>(it_path));
+
+                failed_plugin.AddPluginTo(map);
+                result = ASR_S_FALSE;
                 continue;
             }
 
@@ -618,23 +728,49 @@ AsrResult PluginManager::Refresh()
             const auto expected_p_runtime = CreateForeignLanguageRuntime(desc);
             if (!expected_p_runtime)
             {
+                plugin_create_result = expected_p_runtime.error();
+
                 ASR_CORE_LOG_ERROR(
                     "Error happened when calling CreateForeignLanguageRuntime.\n"
                     "----ForeignLanguageRuntimeFactoryDesc dump begin----");
                 ASR_CORE_LOG_ERROR("{{\n{}\n}}", *up_plugin_desc);
                 ASR_CORE_LOG_ERROR(
                     "----ForeignLanguageRuntimeFactoryDesc dump end----");
-                result.push_back(expected_p_runtime.error());
+
+                Details::FailedPluginProxy failed_plugin{
+                    plugin_name.Get(),
+                    plugin_create_result};
+                failed_plugin.AddPluginTo(map);
+                result = ASR_S_FALSE;
+                continue;
+            }
+            auto& runtime = expected_p_runtime.value();
+
+            auto expected_p_plugin = runtime->LoadPlugin(plugin_path);
+            if (!expected_p_plugin)
+            {
+                plugin_create_result = expected_p_runtime.error();
+
+                Details::FailedPluginProxy failed_plugin{
+                    plugin_name.Get(),
+                    plugin_create_result};
+                failed_plugin.AddPluginTo(map);
+                result = ASR_S_FALSE;
+                continue;
             }
 
-            if (auto expected_p_plugin =
-                    expected_p_runtime.value()->LoadPlugin(plugin_path);
-                !expected_p_plugin)
-            {
-                result.push_back(expected_p_plugin.error());
-            }
+            map.emplace(
+                plugin_name,
+                Plugin{
+                    runtime,
+                    expected_p_plugin.value(),
+                    std::move(up_plugin_desc)});
         }
     }
+
+    plugin_file_paths_ = std::move(map);
+
+    return result;
 }
 
 AsrResult PluginManager::GetErrorMessage(
