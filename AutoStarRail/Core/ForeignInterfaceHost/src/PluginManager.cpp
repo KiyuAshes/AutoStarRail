@@ -6,6 +6,7 @@
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Core/i18n/AsrResultTranslator.h>
 #include <AutoStarRail/Core/i18n/GlobalLocale.h>
+#include <AutoStarRail/Core/Utils/InternalUtils.h>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
@@ -17,11 +18,9 @@
 #include <fstream>
 #include <functional>
 #include <boost/pfr/core.hpp>
-#include <boost/nowide/quoted.hpp>
 #include <magic_enum.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <optional>
 #include <unordered_set>
 #include <utility>
 
@@ -172,7 +171,7 @@ auto GetPredefinedErrorMessage(
  * @return
  */
 auto GetIidsFrom(IAsrInspectable* pointer)
-    -> Utils::Expected<AsrPtr<IAsrIidVector>>
+    -> ASR::Utils::Expected<AsrPtr<IAsrIidVector>>
 {
     ASR::AsrPtr<IAsrIidVector> p_iid_vector{};
     if (const auto get_iid_result = pointer->GetIids(p_iid_vector.Put());
@@ -676,7 +675,7 @@ AsrResult PluginManager::Refresh()
             AsrPtr<IAsrReadOnlyString> plugin_name{};
 
             if (auto expected_plugin_name =
-                    ASR::Utils::MakeAsrReadOnlyStringFromUtf8(
+                    ASR::Core::Utils::MakeAsrReadOnlyStringFromUtf8(
                         up_plugin_desc->name);
                 !expected_plugin_name)
             {

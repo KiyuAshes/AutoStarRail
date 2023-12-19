@@ -2,7 +2,6 @@
 #define ASR_UTILS_STRINGUTILS_HPP
 
 #include <AutoStarRail/Utils/Config.h>
-#include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/Utils/Expected.h>
 #include <utility>
 #include <string>
@@ -84,10 +83,6 @@ bool Compare(const T& lhs, std::tuple<const char*, const wchar_t*> rhs)
 void ToLowerInPlace(std::string& in_out_str);
 
 void ToLowerInPlace(std::vector<std::string>& in_out_str_vector);
-
-[[nodiscard]]
-auto MakeAsrReadOnlyStringFromUtf8(std::string_view u8_string)
-    -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>;
 
 ASR_UTILS_NS_END
 

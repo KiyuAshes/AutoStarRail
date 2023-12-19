@@ -34,7 +34,7 @@ else()
     message(FATAL_ERROR "Unsupported platform.")
 endif()
 
-# asr_add_core_component(Utils)
+asr_add_core_component(Utils)
 asr_add_core_component(Impl)
 asr_add_core_component(ForeignInterfaceHost)
 asr_add_core_component(GlobalSettingsManager)

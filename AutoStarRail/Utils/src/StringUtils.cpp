@@ -20,21 +20,4 @@ void ToLowerInPlace(std::vector<std::string>& in_out_str_vector)
     }
 }
 
-auto MakeAsrReadOnlyStringFromUtf8(std::string_view u8_string)
-    -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>
-{
-    IAsrReadOnlyString* p_result{};
-    const auto          error_code =
-        ::CreateIAsrReadOnlyStringFromUtf8(u8_string.data(), &p_result);
-
-    if (IsOk(error_code))
-    {
-        AsrPtr<IAsrReadOnlyString> result{};
-        *result.Put() = p_result;
-        return result;
-    }
-
-    return ASR::Utils::MakeUnexpected(error_code);
-}
-
 ASR_UTILS_NS_END

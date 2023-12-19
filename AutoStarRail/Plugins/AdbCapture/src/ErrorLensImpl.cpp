@@ -48,16 +48,7 @@ AsrResult AdbCaptureErrorLens::QueryInterface(
 
 AsrResult AdbCaptureErrorLens::GetSupportedIids(IAsrIidVector** pp_out_iids)
 {
-    const auto result = ::CreateAsrSwigIidVector(iids_);
-    if (ASR::IsOk(result.error_code))
-    {
-        if (pp_out_iids == nullptr)
-        {
-            return ASR_E_INVALID_POINTER;
-        }
-        *pp_out_iids = result.value;
-    }
-    return result.error_code;
+    return ::CreateIAsrIidVector(iids_.data(), iids_.size(), pp_out_iids);
 }
 
 AsrResult AdbCaptureErrorLens::GetErrorMessage(

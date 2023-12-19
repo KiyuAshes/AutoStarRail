@@ -1,4 +1,6 @@
 #include "AsrIidVectorImpl.h"
+#include "AutoStarRail/IAsrInspectable.h"
+
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <algorithm>

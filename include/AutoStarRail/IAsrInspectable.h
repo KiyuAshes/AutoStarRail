@@ -106,7 +106,7 @@ ASR_INTERFACE IAsrSwigInspectable : public IAsrSwigBase
 
 SWIG_IGNORE(CreateIAsrIidVector)
 ASR_C_API AsrResult CreateIAsrIidVector(
-    AsrGuid*        p_iids,
+    const AsrGuid*        p_iids,
     size_t          iid_count,
     IAsrIidVector** pp_out_iid_vector);
 
