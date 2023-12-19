@@ -22,8 +22,8 @@ ASR_DEFINE_GUID(
 SWIG_IGNORE(IAsrIidVector)
 ASR_INTERFACE IAsrIidVector : public IAsrBase
 {
-    ASR_METHOD Size(uint32_t * p_out_size) = 0;
-    ASR_METHOD At(uint32_t index, AsrGuid * p_out_iid) = 0;
+    ASR_METHOD Size(size_t * p_out_size) = 0;
+    ASR_METHOD At(size_t index, AsrGuid * p_out_iid) = 0;
     ASR_METHOD Find(const AsrGuid& p_iid) = 0;
 };
 
@@ -42,7 +42,7 @@ public:
 #endif // SWIG
 
     ASR_API AsrRetUInt Size();
-    ASR_API AsrRetGuid At(uint32_t index);
+    ASR_API AsrRetGuid At(size_t index);
     ASR_API AsrRetBool Find(const AsrGuid* p_iid);
 };
 

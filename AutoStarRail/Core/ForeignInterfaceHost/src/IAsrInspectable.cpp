@@ -1,5 +1,5 @@
 #include <AutoStarRail/IAsrInspectable.h>
-#include <AutoStarRail/Utils/GetIids.hpp>
+#include <utility>
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
@@ -27,7 +27,7 @@ R CallIfNotNull(IAsrIidVector* p_iid_vector, F&& do_if_not_null)
 ASR_NS_ANONYMOUS_DETAILS_END
 
 AsrSwigIidVector::AsrSwigIidVector(ASR::AsrPtr<IAsrIidVector> p_impl)
-    : p_impl_{p_impl}
+    : p_impl_{std::move(p_impl)}
 {
 }
 
@@ -58,14 +58,14 @@ AsrRetUInt AsrSwigIidVector::Size()
         [](IAsrIidVector& iid_vector)
         {
             AsrRetUInt result{};
-            uint32_t   size{};
+            size_t     size{};
             result.error_code = iid_vector.Size(&size);
             result.value = size;
             return result;
         });
 }
 
-AsrRetGuid AsrSwigIidVector::At(uint32_t index)
+AsrRetGuid AsrSwigIidVector::At(size_t index)
 {
     return Details::CallIfNotNull<AsrRetGuid>(
         p_impl_.Get(),

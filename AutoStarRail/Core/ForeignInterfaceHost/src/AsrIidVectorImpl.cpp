@@ -11,7 +11,7 @@ AsrResult AsrIidVectorImpl::QueryInterface(
     return ASR::Utils::QueryInterface<IAsrIidVector>(this, iid, pp_out_object);
 }
 
-AsrResult AsrIidVectorImpl::Size(uint32_t* p_out_size)
+AsrResult AsrIidVectorImpl::Size(size_t* p_out_size)
 {
     const auto size = iids_.size();
     const auto size_32 =
@@ -20,7 +20,7 @@ AsrResult AsrIidVectorImpl::Size(uint32_t* p_out_size)
     return ASR_S_OK;
 }
 
-AsrResult AsrIidVectorImpl::At(uint32_t index, AsrGuid* p_out_iid)
+AsrResult AsrIidVectorImpl::At(size_t index, AsrGuid* p_out_iid)
 {
     if (index < iids_.size())
     {
@@ -46,7 +46,7 @@ AsrResult CreateIAsrIidVector(
     *pp_out_iid_vector = nullptr;
     try
     {
-        // TODO: 在带锁内存池synchronized_pool_resource中分配对象，以尽量避免OOM的情况出现
+        // TODO:在带锁内存池synchronized_pool_resource中分配对象，以尽量避免OOM的情况出现
         auto* const result = new AsrIidVectorImpl{};
         result->AddRef();
         auto& impl = result->GetImpl();

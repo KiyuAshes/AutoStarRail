@@ -198,7 +198,7 @@ auto GetIidsFrom(IAsrInspectable* pointer)
 auto GetIidVectorSize(IAsrIidVector* p_iid_vector)
     -> ASR::Utils::Expected<uint32_t>
 {
-    uint32_t   iid_size{};
+    size_t   iid_size{};
     const auto get_iid_size_result = p_iid_vector->Size(&iid_size);
     if (!IsOk(get_iid_size_result))
     {
@@ -554,7 +554,6 @@ struct FailedPluginProxy : public ASR::Utils::NonCopyableAndNonMovable
     AsrPtr<IAsrReadOnlyString> error_message;
     AsrPtr<IAsrReadOnlyString> name;
     AsrResult                  error_code;
-    // TODO:完成实现
 
     FailedPluginProxy(
         const std::filesystem::path& metadata_path,

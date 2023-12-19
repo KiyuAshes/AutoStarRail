@@ -14,8 +14,8 @@ public:
     ASR_UTILS_IASRBASE_AUTO_IMPL(AsrIidVectorImpl);
     AsrResult QueryInterface(const AsrGuid& iid, void** pp_out_object) override;
     // IAsrIidVector
-    AsrResult Size(uint32_t* p_out_size) override;
-    AsrResult At(uint32_t index, AsrGuid* p_out_iid) override;
+    AsrResult Size(size_t* p_out_size) override;
+    AsrResult At(size_t index, AsrGuid* p_out_iid) override;
     AsrResult Find(const AsrGuid& iid) override;
     // AsrIidVectorImpl
     auto GetImpl() -> decltype(iids_)&;

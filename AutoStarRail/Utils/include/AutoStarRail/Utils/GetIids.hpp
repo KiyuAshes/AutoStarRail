@@ -74,7 +74,7 @@ public:
         return ASR_E_NO_INTERFACE;
     }
     // IAsrIidVector
-    AsrResult Size(uint32_t* p_out_size) override
+    AsrResult Size(size_t* p_out_size) override
     {
         if (p_out_size == nullptr)
         {
@@ -84,7 +84,7 @@ public:
         *p_out_size = size;
         return ASR_S_OK;
     }
-    AsrResult At(uint32_t index, AsrGuid* p_out_iid) override
+    AsrResult At(size_t index, AsrGuid* p_out_iid) override
     {
         if (p_out_iid == nullptr)
         {
