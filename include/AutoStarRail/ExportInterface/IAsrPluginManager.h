@@ -3,8 +3,8 @@
 
 /**
  * @file IAsrPluginManager.h
- * @brief The content in this file will NOT be processed by SWIG.
-    The exported interface in this file should only be used by GUI programs.
+ * @brief The exported interface in this file should only be used by GUI
+ * programs.
  * @version 0.1
  * @date 2023-07-18
  *
@@ -32,6 +32,7 @@ ASR_DEFINE_GUID(
     0xff,
     0x18,
     0xa7);
+SWIG_IGNORE(IAsrPluginInfo)
 ASR_INTERFACE IAsrPluginInfo : public IAsrBase
 {
     ASR_METHOD GetName(IAsrReadOnlyString * *pp_out_name) = 0;
@@ -43,18 +44,56 @@ ASR_INTERFACE IAsrPluginInfo : public IAsrBase
     ASR_METHOD GetPluginIid(AsrGuid * p_out_guid) = 0;
 };
 
+// {138DF2D2-A9E9-4A73-9B4F-AA6C754601CC}
+ASR_DEFINE_GUID(
+    ASR_IID_PLUGIN_INFO_VECTOR,
+    IAsrPluginInfoVector,
+    0x138df2d2,
+    0xa9e9,
+    0x4a73,
+    0x9b,
+    0x4f,
+    0xaa,
+    0x6c,
+    0x75,
+    0x46,
+    0x1,
+    0xcc);
+SWIG_IGNORE(IAsrPluginInfoVector)
+ASR_INTERFACE IAsrPluginInfoVector : public IAsrBase
+{
+    ASR_METHOD Size(size_t * p_out_size) = 0;
+    ASR_METHOD At(size_t index, IAsrPluginInfo * *pp_out_info) = 0;
+};
+
 class AsrSwigPluginInfo
 {
 private:
     ASR::AsrPtr<IAsrPluginInfo> p_plugin_info;
 
 public:
-    AsrRetReadOnlyString GetName();
-    AsrRetReadOnlyString GetDescription();
-    AsrRetReadOnlyString GetAuthor();
-    AsrRetReadOnlyString GetVersion();
-    AsrRetReadOnlyString GetSupportedSystem();
-    AsrRetGuid           GetPluginIid();
+#ifndef SWIG
+    AsrSwigPluginInfo(ASR::AsrPtr<IAsrPluginInfo> p_impl);
+#endif // SWIG
+
+    ASR_API AsrRetReadOnlyString GetName();
+    ASR_API AsrRetReadOnlyString GetDescription();
+    ASR_API AsrRetReadOnlyString GetAuthor();
+    ASR_API AsrRetReadOnlyString GetVersion();
+    ASR_API AsrRetReadOnlyString GetSupportedSystem();
+    ASR_API AsrRetGuid           GetPluginIid();
+};
+
+ASR_RET_TYPE_DECLARE_BEGIN(AsrRetPluginInfo)
+    AsrSwigPluginInfo value;
+ASR_RET_TYPE_DECLARE_END
+
+class AsrSwigPluginInfoVector
+{
+private:
+    ASR::AsrPtr<IAsrPluginInfoVector> p_vector{};
+
+public:
 };
 
 // {B2678FF8-720C-48E6-AC00-77D43D08F580}

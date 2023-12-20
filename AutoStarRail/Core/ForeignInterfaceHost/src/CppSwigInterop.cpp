@@ -5,6 +5,7 @@
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <boost/bimap/bimap.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
+#include "AutoStarRail/ExportInterface/IAsrPluginManager.h"
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
