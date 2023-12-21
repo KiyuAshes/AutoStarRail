@@ -73,6 +73,7 @@ private:
 
 public:
 #ifndef SWIG
+    AsrSwigPluginInfo();
     AsrSwigPluginInfo(ASR::AsrPtr<IAsrPluginInfo> p_impl);
 #endif // SWIG
 
@@ -94,6 +95,8 @@ private:
     ASR::AsrPtr<IAsrPluginInfoVector> p_vector{};
 
 public:
+    AsrRetUInt Size();
+    AsrRetPluginInfo At(size_t index);
 };
 
 // {B2678FF8-720C-48E6-AC00-77D43D08F580}

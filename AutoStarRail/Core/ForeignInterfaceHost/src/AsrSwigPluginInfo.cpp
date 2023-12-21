@@ -2,6 +2,8 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <utility>
 
+AsrSwigPluginInfo::AsrSwigPluginInfo() = default;
+
 AsrSwigPluginInfo::AsrSwigPluginInfo(::Asr::AsrPtr<IAsrPluginInfo> p_impl)
     : p_plugin_info{std::move(p_impl)}
 {
@@ -50,7 +52,6 @@ AsrRetReadOnlyString AsrSwigPluginInfo::GetSupportedSystem()
 AsrRetGuid AsrSwigPluginInfo::GetPluginIid()
 {
     AsrRetGuid result{};
-    AsrGuid    iid{};
     result.error_code = p_plugin_info->GetPluginIid(&result.value);
     return result;
 }
