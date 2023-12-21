@@ -19,14 +19,14 @@ namespace Core
             std::chrono::time_point<std::chrono::system_clock> next_run_time;
             AsrPtr<IAsrTask>                                   p_task;
 
-            bool operator==(const SchedulingUnit& t);
+            bool operator==(const SchedulingUnit& rhs);
         };
 
         SchedulingUnit              current_task;
         std::vector<SchedulingUnit> task_queue;
 
-        void AddTask(SchedulingUnit Task);
-        void DeleteTask(SchedulingUnit Task);
+        void AddTask(SchedulingUnit task);
+        void DeleteTask(SchedulingUnit task);
 
         void RunTaskQueue();
 

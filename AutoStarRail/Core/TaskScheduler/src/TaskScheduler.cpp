@@ -8,31 +8,31 @@ ASR_NS_BEGIN
 
 namespace Core
 {
-    bool TaskScheduler::SchedulingUnit::operator==(const SchedulingUnit& t)
+    bool TaskScheduler::SchedulingUnit::operator==(const SchedulingUnit& rhs)
     {
-        return this->p_task == t.p_task;
+        return this->p_task == rhs.p_task;
     }
 
-    void TaskScheduler::AddTask(SchedulingUnit Task)
+    void TaskScheduler::AddTask(SchedulingUnit task)
     {
-        task_queue.push_back(Task);
+        task_queue.push_back(task);
 
         std::sort(
-            task_queue.begin(),
-            task_queue.end(),
-            [](SchedulingUnit t1, SchedulingUnit t2)
-            { return t1.next_run_time <= t2.next_run_time; });
+            ASR_FULL_RANGE_OF(task_queue),
+            [](const SchedulingUnit& lhs, const SchedulingUnit& rhs)
+            { return lhs.next_run_time <= rhs.next_run_time; });
     }
 
-    void TaskScheduler::DeleteTask(SchedulingUnit Task)
+    void TaskScheduler::DeleteTask(SchedulingUnit task)
     {
-        std::ignore = std::remove(task_queue.begin(), task_queue.end(), Task);
+        task_queue.erase(
+            std::remove(ASR_FULL_RANGE_OF(task_queue), task),
+            task_queue.end());
 
         std::sort(
-            task_queue.begin(),
-            task_queue.end(),
-            [](SchedulingUnit t1, SchedulingUnit t2)
-            { return t1.next_run_time <= t2.next_run_time; });
+            ASR_FULL_RANGE_OF(task_queue),
+            [](const SchedulingUnit& lhs, const SchedulingUnit& rhs)
+            { return lhs.next_run_time <= rhs.next_run_time; });
     }
 
     void TaskScheduler::RunTaskQueue()
