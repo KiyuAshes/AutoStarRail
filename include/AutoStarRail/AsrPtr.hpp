@@ -160,10 +160,10 @@ auto MakeAsrPtr(Args&&... args)
     return AsrPtr<T>(new T(std::forward<Args>(args)...), take_ownership);
 }
 
-template <class B, class T, class... Args>
+template <class Base, class T, class... Args>
 auto MakeAsrPtr(Args&&... args)
 {
-    return AsrPtr<B>(new T(std::forward<Args>(args)...), take_ownership);
+    return AsrPtr<Base>(new T(std::forward<Args>(args)...), take_ownership);
 }
 
 #if __cplusplus >= 201703L

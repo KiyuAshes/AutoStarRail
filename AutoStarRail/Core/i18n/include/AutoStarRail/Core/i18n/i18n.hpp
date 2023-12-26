@@ -17,16 +17,6 @@ class AsrStringCppImpl;
 
 ASR_CORE_I18N_NS_BEGIN
 
-struct AsrReadOnlyStringWrapper
-{
-    mutable AsrPtr<IAsrReadOnlyString> p_impl_;
-    AsrReadOnlyStringWrapper();
-    AsrReadOnlyStringWrapper(const char* p_u8_string);
-    AsrReadOnlyStringWrapper(const char8_t* u8_string);
-    ~AsrReadOnlyStringWrapper();
-    void GetImpl(IAsrReadOnlyString** pp_impl) const;
-};
-
 template <class T, class Item>
 using TranslateItemMap = std::map<T, Item>;
 

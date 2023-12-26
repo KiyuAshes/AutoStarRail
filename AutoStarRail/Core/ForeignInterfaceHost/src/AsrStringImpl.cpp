@@ -71,10 +71,7 @@ std::size_t AsrStringHash::operator()(
     {
         return BkdrHash(p_u16, std::next(p_u16, string_size_int64));
     }
-    else [[unlikely]]
-    {
-        return std::hash<decltype(nullptr)>{}(nullptr);
-    }
+    return std::hash<decltype(nullptr)>{}(nullptr);
 }
 
 ASR_NS_END
@@ -425,9 +422,37 @@ AsrResult AsrStringCppImpl::GetImpl(
     return ASR_S_OK;
 }
 
-void from_json(const nlohmann::json& from, AsrReadOnlyString& to)
+AsrReadOnlyStringWrapper::AsrReadOnlyStringWrapper(const char* p_u8_string)
 {
-    to = {from.get_ref<const std::string&>().data()};
+    ::CreateIAsrReadOnlyStringFromUtf8(p_u8_string, p_impl_.Put());
+}
+
+AsrReadOnlyStringWrapper::AsrReadOnlyStringWrapper(const char8_t* u8_string)
+{
+    ::CreateIAsrReadOnlyStringFromUtf8(
+        reinterpret_cast<const char*>(u8_string),
+        p_impl_.Put());
+}
+
+AsrReadOnlyStringWrapper::AsrReadOnlyStringWrapper(
+    const std::string& std_u8_string)
+{
+    ::CreateIAsrReadOnlyStringFromUtf8(std_u8_string.data(), p_impl_.Put());
+}
+
+void AsrReadOnlyStringWrapper::GetImpl(IAsrReadOnlyString** pp_impl) const
+{
+    p_impl_->AddRef();
+    *pp_impl = p_impl_.Get();
+}
+
+AsrReadOnlyStringWrapper::AsrReadOnlyStringWrapper() = default;
+
+AsrReadOnlyStringWrapper::~AsrReadOnlyStringWrapper() = default;
+
+AsrReadOnlyStringWrapper::operator AsrReadOnlyString() const
+{
+    return AsrReadOnlyString{p_impl_};
 }
 
 ASR_NS_BEGIN

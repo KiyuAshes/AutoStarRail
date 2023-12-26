@@ -108,7 +108,20 @@ namespace Details
 
 ASR_NS_END
 
-void from_json(const nlohmann::json& from, AsrReadOnlyString& to);
+class AsrReadOnlyStringWrapper
+{
+    mutable ASR::AsrPtr<IAsrReadOnlyString> p_impl_;
+
+public:
+     AsrReadOnlyStringWrapper();
+     AsrReadOnlyStringWrapper(const char* p_u8_string);
+     AsrReadOnlyStringWrapper(const char8_t* u8_string);
+     AsrReadOnlyStringWrapper(const std::string& std_u8_string);
+    ~AsrReadOnlyStringWrapper();
+
+    operator AsrReadOnlyString() const;
+    void GetImpl(IAsrReadOnlyString** pp_impl) const;
+};
 
 // {85648BDC-B73A-41F9-AF7A-71C83085C4B0}
 ASR_DEFINE_CLASS_GUID(
@@ -173,7 +186,7 @@ private:
     void UpdateUtf32Cache();
 
 public:
-    AsrStringCppImpl();
+             AsrStringCppImpl();
     explicit AsrStringCppImpl(const std::filesystem::path& path);
     explicit AsrStringCppImpl(const U_NAMESPACE_QUALIFIER UnicodeString& impl);
     explicit AsrStringCppImpl(
