@@ -22,8 +22,6 @@ endif()
 
 add_subdirectory(Core)
 
-include(AsrSetLibPrefix)
-
 add_subdirectory(Plugins)
 
 if(${ASR_BUILD_QT5_GUI})

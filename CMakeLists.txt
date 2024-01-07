@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.21)
 
 project(AutoStarRail LANGUAGES CXX VERSION 0.1)
 
+if(WIN32)
+    set(ASR_LIB_PREFIX "Asr")
+else()
+    set(ASR_LIB_PREFIX "libAsr")
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # fix missing CMAKE_ASM_MASM_COMPILE_OBJECT or CMAKE_ASM_NASM_COMPILE_OBJECT
@@ -59,7 +65,6 @@ set(ASR_DEFAULT_STATIC_LIBRARY_PREFIX_C ${CMAKE_STATIC_LIBRARY_PREFIX_C})
 
 include(AsrUtils)
 
-include(AsrSetLibPrefix)
 include(AsrSetOutputPath)
 
 if (${EXPORT_PYTHON})

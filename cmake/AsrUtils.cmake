@@ -103,7 +103,7 @@ function(asr_add_auto_copy_dll_path DLL_PATH)
     add_custom_command(
         TARGET AsrAutoCopyDll
         POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${${DLL_PATH}} $<TARGET_FILE_DIR:libAsrCore>)
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${${DLL_PATH}} $<TARGET_FILE_DIR:AsrCore>)
 
     if(ASR_BUILD_TEST)
         add_custom_command(

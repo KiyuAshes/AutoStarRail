@@ -1,6 +1,3 @@
-# 清零前缀，后续手动指定
-include(AsrClearLibPrefix)
-
 add_library(AsrCoreObjects OBJECT)
 target_compile_options(AsrCoreObjects PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
@@ -43,8 +40,8 @@ asr_add_core_component(Exceptions)
 asr_add_core_component(i18n)
 asr_add_core_component(TaskScheduler)
 
-add_library(libAsrCore SHARED)
-add_dependencies(libAsrCore AsrCoreObjects)
+add_library(AsrCore SHARED)
+add_dependencies(AsrCore AsrCoreObjects)
 
 add_compile_definitions(ASR_BUILD_SHARED)
 
@@ -59,34 +56,34 @@ set_property(SOURCE ${ASR_SWIG_FILES} PROPERTY CPLUSPLUS ON)
 set_source_files_properties(${ASR_SWIG_FILES} PROPERTIES USE_SWIG_DEPENDENCIES TRUE)
 
 if(${EXPORT_CSHARP})
-    asr_add_swig_export_library(CSharp libAsrCoreCSharpExport "${ASR_SWIG_FILES}")
-    target_link_libraries(libAsrCoreCSharpExport PUBLIC libAsrCore)
-    add_dependencies(libAsrCoreCSharpExport libAsrCore)
+    asr_add_swig_export_library(CSharp AsrCoreCSharpExport "${ASR_SWIG_FILES}")
+    target_link_libraries(AsrCoreCSharpExport PUBLIC AsrCore)
+    add_dependencies(AsrCoreCSharpExport AsrCore)
     list(APPEND ASR_EXPORT_MACRO_LIST ASR_EXPORT_CSHARP)
 endif()
 
 if(${EXPORT_JAVA})
     find_package(JNI REQUIRED)
-    asr_add_swig_export_library(Java libAsrCoreJavaExport "${ASR_SWIG_FILES}")
-    set_property(TARGET libAsrCoreJavaExport PROPERTY SWIG_COMPILE_OPTIONS -package org.asr)
+    asr_add_swig_export_library(Java AsrCoreJavaExport "${ASR_SWIG_FILES}")
+    set_property(TARGET AsrCoreJavaExport PROPERTY SWIG_COMPILE_OPTIONS -package org.asr)
 
     target_link_libraries(AsrCoreObjects PUBLIC JNI::JNI)
 
-    target_link_libraries(libAsrCoreJavaExport PUBLIC libAsrCore)
-    add_dependencies(libAsrCoreJavaExport libAsrCore)
+    target_link_libraries(AsrCoreJavaExport PUBLIC AsrCore)
+    add_dependencies(AsrCoreJavaExport AsrCore)
     list(APPEND ASR_EXPORT_MACRO_LIST ASR_EXPORT_JAVA)
 endif()
 
 if(${EXPORT_PYTHON})
     find_package(Python3 COMPONENTS Development REQUIRED)
-    asr_add_swig_export_library(Python libAsrCorePythonExport "${ASR_SWIG_FILES}")
-    set_property(TARGET libAsrCorePythonExport PROPERTY SWIG_COMPILE_OPTIONS -threads)
+    asr_add_swig_export_library(Python AsrCorePythonExport "${ASR_SWIG_FILES}")
+    set_property(TARGET AsrCorePythonExport PROPERTY SWIG_COMPILE_OPTIONS -threads)
 
     target_include_directories(AsrCoreObjects PUBLIC ${Python3_INCLUDE_DIRS})
     target_link_libraries(AsrCoreObjects PUBLIC ${Python3_LIBRARIES})
 
-    target_link_libraries(libAsrCorePythonExport PUBLIC libAsrCore)
-    add_dependencies(libAsrCorePythonExport libAsrCore)
+    target_link_libraries(AsrCorePythonExport PUBLIC AsrCore)
+    add_dependencies(AsrCorePythonExport AsrCore)
     list(APPEND ASR_EXPORT_MACRO_LIST ASR_EXPORT_PYTHON)
 endif()
 
@@ -118,7 +115,7 @@ target_link_libraries(AsrCoreObjects
     PUBLIC AsrUtils ${ASR_FOREIGN_LANGUAGE_LIB_LIST})
 target_compile_definitions(AsrCoreObjects PUBLIC ${ASR_EXPORT_MACRO_LIST})
 
-target_link_libraries(libAsrCore PUBLIC AsrCoreObjects)
+target_link_libraries(AsrCore PUBLIC AsrCoreObjects)
 
 if(${ASR_BUILD_TEST})
     asr_add_core_test(ForeignInterfaceHost)

@@ -1,4 +1,3 @@
-include(AsrSetLibPrefixAsDefaultValue)
 include(AsrQtUtils)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -16,7 +15,7 @@ endforeach()
 file(GLOB_RECURSE SOURCES Qt5Gui/src/*)
 add_executable(AutoStarRailQt5Gui ${SOURCES} ${QRC_SOURCES})
 target_link_libraries(AutoStarRailQt5Gui PRIVATE
-    libAsrCore
+    AsrCore
     ASR_EX_PRIVATE_LIBS
     ${QRC_SHARED_LIBS}
     Qt::Widgets

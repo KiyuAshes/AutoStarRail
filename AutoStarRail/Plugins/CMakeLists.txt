@@ -14,24 +14,24 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/bin/MinSizeRel
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/lib/MinSizeRel/plugins)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/bin/MinSizeRel/plugins)
 
-asr_add_plugin_library(AdbCapture ASR_EX_PRIVATE_LIBS)
+asr_add_plugin_library(AsrAdbCapture ASR_EX_PRIVATE_LIBS)
 
-target_link_libraries(AdbCapture PRIVATE zlib libAsrCore)
+target_link_libraries(AsrAdbCapture PRIVATE zlib AsrCore)
 
 if (WIN32)
-    target_link_libraries(AdbCapture PRIVATE Ws2_32)
+    target_link_libraries(AsrAdbCapture PRIVATE Ws2_32)
 endif ()
 
-target_include_directories(AdbCapture PRIVATE ${gzip-hpp_SOURCE_DIR}/include)
+target_include_directories(AsrAdbCapture PRIVATE ${gzip-hpp_SOURCE_DIR}/include)
 
 if (ASR_USE_BUNDLED_BOOST)
-    target_link_libraries(AdbCapture PUBLIC
+    target_link_libraries(AsrAdbCapture PUBLIC
             Boost::process
             Boost::container_hash
             Boost::url
             Boost::asio
             Boost::pfr)
 else ()
-    target_include_directories(AdbCapture PUBLIC ${Boost_INCLUDE_DIRS})
-    target_link_libraries(AdbCapture PRIVATE ${Boost_LIBRARIES})
+    target_include_directories(AsrAdbCapture PUBLIC ${Boost_INCLUDE_DIRS})
+    target_link_libraries(AsrAdbCapture PRIVATE ${Boost_LIBRARIES})
 endif ()
