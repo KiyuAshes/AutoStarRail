@@ -3,12 +3,12 @@
 
 #include <AutoStarRail/IAsrInspectable.h>
 
-typedef enum ASR_CLICK_TYPE
+typedef enum AsrClickType
 {
     ASR_CLICK_LEFT = 1,
     ASR_CLICK_RIGHT = 2,
     ASR_CLICK_MIDDLE = 4
-} ASR_CLICK_TYPE;
+} AsrClickType;
 
 typedef struct _asr_Point
 {
