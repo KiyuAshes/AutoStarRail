@@ -66,14 +66,15 @@ ASR_INTERFACE IAsrPluginInfoVector : public IAsrBase
     ASR_METHOD At(size_t index, IAsrPluginInfo * *pp_out_info) = 0;
 };
 
+SWIG_IGNORE(AsrSwigPluginInfo::AsrSwigPluginInfo)
 class AsrSwigPluginInfo
 {
 private:
     ASR::AsrPtr<IAsrPluginInfo> p_plugin_info;
 
 public:
-#ifndef SWIG
     AsrSwigPluginInfo();
+#ifndef SWIG
     AsrSwigPluginInfo(ASR::AsrPtr<IAsrPluginInfo> p_impl);
 #endif // SWIG
 
@@ -116,14 +117,14 @@ ASR_DEFINE_GUID(
     0x80);
 ASR_INTERFACE IAsrPluginManager : public IAsrBase
 {
-    AsrResult GetCount(size_t * p_out_size);
+    ASR_METHOD GetAllPluginInfo(IAsrPluginInfoVector** pp_out_plugin_info_vector);
 };
 
 /**
  * @brief Call this function to load all plugin.
  *
  * @param pp_out_result
- * @return ASR_C_API
+ * @return AsrResult
  */
 ASR_C_API AsrResult LoadPluginAndGetResult(
     IAsrGuidVector*     p_ignore_plugins_guid,

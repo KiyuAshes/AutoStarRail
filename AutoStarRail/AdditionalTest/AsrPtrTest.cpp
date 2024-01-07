@@ -12,9 +12,7 @@ namespace
         std::atomic_int64_t count_{0};
 
     public:
-        TestImpl()
-        {
-        }
+                     TestImpl() {}
         std::int64_t AddRef() override
         {
             count_ += 1;
@@ -30,10 +28,7 @@ namespace
             }
             return count_;
         }
-        std::int64_t GetRefCount() const noexcept
-        {
-            return count_;
-        }
+        std::int64_t GetRefCount() const noexcept { return count_; }
         ASR_METHOD QueryInterface(const AsrGuid& id, void** pp_object) override
         {
             *pp_object = nullptr;
@@ -43,7 +38,7 @@ namespace
 
     AsrResult MakeTestImpl(void** out_ptr)
     {
-        auto result = new TestImpl();
+        auto* result = new TestImpl();
         static_cast<IAsrBase*>(result)->AddRef();
         *out_ptr = result;
         return ASR_S_OK;
@@ -55,7 +50,8 @@ namespace
         {
             ASR::AsrPtr<TestImpl> impl;
 
-            AsrResult result = MakeTestImpl(impl.PutVoid());
+            const AsrResult result = MakeTestImpl(impl.PutVoid());
+            EXPECT_EQ(result, ASR_S_OK);
             p_test_impl = impl.Get();
             EXPECT_EQ(impl->GetRefCount(), 1);
             impl->AddRef();

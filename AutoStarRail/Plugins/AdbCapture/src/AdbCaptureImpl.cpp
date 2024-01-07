@@ -352,7 +352,7 @@ AsrResult AdbCapture::CaptureRawWithGZip()
         Details::ComputeScreenshotSize(
             adb_device_screen_size_.width,
             adb_device_screen_size_.height));
-    gzip::Decompressor decompressor{};
+    const gzip::Decompressor decompressor{};
     // wait for the process to exit.
     context.ioc.run();
 

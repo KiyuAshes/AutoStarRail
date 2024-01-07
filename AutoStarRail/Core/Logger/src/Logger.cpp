@@ -24,7 +24,7 @@ void UseUtf8Console()
         == 0)
     {
         const auto error_code = ::GetLastError();
-        SPDLOG_ERROR("Failed to set console font. GetLastError={}", error_code);
+        SPDLOG_ERROR("Failed to set console font. GetLastError = {}", error_code);
     }
 }
 ASR_NS_ANONYMOUS_DETAILS_END

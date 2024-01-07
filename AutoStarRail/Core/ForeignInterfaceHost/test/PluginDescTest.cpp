@@ -15,7 +15,7 @@ namespace
         T          result = json.template get<T>();
         return result;
     }
-}
+} // Annonymous namespace
 
 TEST(PluginDescTest, FromBasicJson)
 {

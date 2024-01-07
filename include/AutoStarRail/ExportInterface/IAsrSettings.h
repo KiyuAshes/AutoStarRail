@@ -1,10 +1,8 @@
 #ifndef ASR_STEEINGS_H
 #define ASR_STEEINGS_H
 
-#include "AutoStarRail/AsrPtr.hpp"
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/AsrString.hpp>
-#include <memory>
 
 typedef enum AsrType
 {
@@ -64,7 +62,7 @@ ASR_INTERFACE IAsrSwigSettings : public IAsrSwigBase
     virtual AsrRetFloat          GetFloat(const AsrReadOnlyString key) = 0;
 };
 
-extern "C++" ASR_API IAsrSwigSettings* GetIAsrSwigSettings();
+ASR_API IAsrSwigSettings* GetIAsrSwigSettings();
 
 SWIG_IGNORE(GetIAsrSettings)
 ASR_C_API AsrResult GetIAsrSettings(IAsrSettings** pp_settings);
