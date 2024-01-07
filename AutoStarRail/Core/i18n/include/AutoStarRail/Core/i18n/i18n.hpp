@@ -123,7 +123,7 @@ public:
             {
                 T    error_code = string_to_number_converter(error_code_string);
                 auto error_message_string =
-                    error_message.get<AsrReadOnlyStringWrapper>();
+                    error_message.template get<AsrReadOnlyStringWrapper>();
                 tmp_map.emplace(std::make_pair(error_code, error_message));
             }
             translate_resource_[{ASR_FULL_RANGE_OF(locale_name)}] =
