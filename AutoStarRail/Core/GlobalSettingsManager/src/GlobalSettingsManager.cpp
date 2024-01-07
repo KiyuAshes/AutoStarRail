@@ -2,8 +2,8 @@
 #include <AutoStarRail/Core/GlobalSettingsManager/Config.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/ExportInterface/IAsrSettings.h>
+#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
-#include "AutoStarRail/Utils/CommonUtils.hpp"
 #include <nlohmann/json.hpp>
 
 // TODO: support plugin set configuration. See

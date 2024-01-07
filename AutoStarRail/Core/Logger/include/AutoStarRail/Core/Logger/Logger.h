@@ -19,12 +19,12 @@
     SPDLOG_LOGGER_CRITICAL(ASR::Core::g_logger, x)
 
 #define ASR_CORE_LOG_WARN_USING_EXTRA_FUNCTION_NAME(function_name, ...)        \
-    ASR::Core::g_logger(                                                       \
+    ASR::Core::g_logger->log(                                                  \
         ::spdlog::source_loc{__FILE__, __LINE__, function_name},               \
         ::spdlog::level::warn,                                                 \
         __VA_ARGS__)
 #define ASR_CORE_LOG_ERROR_USING_EXTRA_FUNCTION_NAME(function_name, ...)       \
-    ASR::Core::g_logger(                                                       \
+    ASR::Core::g_logger->log(                                                  \
         ::spdlog::source_loc{__FILE__, __LINE__, function_name},               \
         ::spdlog::level::err,                                                  \
         __VA_ARGS__)
@@ -67,7 +67,7 @@ namespace Core
         const char* const func_;
 
     public:
-        TraceScope(const char* const file, int line, const char* const func);
+         TraceScope(const char* const file, int line, const char* const func);
         ~TraceScope();
     };
 

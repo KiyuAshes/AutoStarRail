@@ -393,7 +393,7 @@ set(ASR_NLOHMANN_JSON_VERSION v3.11.3)
 message(STATUS "Downloading and collecting headers in nlohmann json. (VERSION = ${ASR_NLOHMANN_JSON_VERSION})")
 FetchContent_Declare(
         nlohmann_json
-        URL ${GITHUB_MIRROR_URL}/nlohmann/json/releases/download/v3.11.3/include.zip
+        URL ${GITHUB_MIRROR_URL}/nlohmann/json/releases/download/${ASR_NLOHMANN_JSON_VERSION}/include.zip
         URL_HASH SHA256=A22461D13119AC5C78F205D3DF1DB13403E58CE1BB1794EDC9313677313F4A9D)
 
 if (NOT nlohmann_json_POPULATED)
