@@ -1,17 +1,23 @@
 #ifndef ASR_UTILS_UTILS_HPP
 #define ASR_UTILS_UTILS_HPP
 
-#include <utility>
-#include <atomic>
-#include <memory>
 #include <AutoStarRail/Utils/Config.h>
+#include <atomic>
+#include <type_traits>
 
 ASR_UTILS_NS_BEGIN
 
 /**
  * @brief 示例： static_assert(value<false, T>, "你需要的说明");
  */
-template <auto A, typename...> const auto value = A;
+template <auto A, typename...>
+const auto value = A;
+
+#define ASR_UTILS_CHECK_POINTER(pointer)                                       \
+    if (pointer == nullptr) [[unlikely]]                                       \
+    {                                                                          \
+        return ASR_E_INVALID_POINTER;                                          \
+    }
 
 #define ASR_UTILS_IASRBASE_AUTO_IMPL(class_name)                               \
 private:                                                                       \

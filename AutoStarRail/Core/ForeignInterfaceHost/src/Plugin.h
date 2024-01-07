@@ -1,18 +1,14 @@
 #ifndef ASR_CORE_FOREIGNINTERFACEHOST_PLUGIN_H
 #define ASR_CORE_FOREIGNINTERFACEHOST_PLUGIN_H
 
+#include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
-#include <AutoStarRail/Core/Exceptions/InterfaceNotFoundException.h>
 #include <AutoStarRail/AsrPtr.hpp>
-#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/IAsrBase.h>
 #include "ForeignInterfaceHost.h"
 #include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHostEnum.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
-#include <stdexcept>
-#include <memory>
-#include <ctime>
 #include <variant>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
@@ -27,7 +23,7 @@ class Plugin
 
     AsrPtr<IForeignLanguageRuntime> p_runtime_{};
     CommonPluginPtr                 p_plugin_{};
-    std::unique_ptr<PluginDesc>     up_desc_{};
+    std::shared_ptr<PluginDesc>     sp_desc_{};
     AsrResult                       load_state_{
         ASR_E_UNDEFINED_RETURN_VALUE}; // NOTE: 4 byte padding here.
     AsrPtr<IAsrReadOnlyString> load_error_message_{};
@@ -47,6 +43,8 @@ public:
     Plugin(Plugin&& other) noexcept;
 
     explicit operator bool() const noexcept;
+
+    auto GetInfo() const -> AsrPtr<IAsrPluginInfo>;
 
     ~Plugin();
 };

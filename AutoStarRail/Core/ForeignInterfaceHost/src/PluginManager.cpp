@@ -1,12 +1,13 @@
 #include "PluginManager.h"
 #include "ForeignInterfaceHost.h"
+#include "AsrPluginInfoVectorImpl.h"
 #include <AutoStarRail/AsrString.hpp>
-#include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
+#include <AutoStarRail/Core/Utils/InternalUtils.h>
 #include <AutoStarRail/Core/i18n/AsrResultTranslator.h>
 #include <AutoStarRail/Core/i18n/GlobalLocale.h>
-#include <AutoStarRail/Core/Utils/InternalUtils.h>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
@@ -15,9 +16,9 @@
 #include <AutoStarRail/Utils/StreamUtils.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
 #include <AutoStarRail/Utils/UnexpectedEnumException.h>
+#include <boost/pfr/core.hpp>
 #include <fstream>
 #include <functional>
-#include <boost/pfr/core.hpp>
 #include <magic_enum.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -196,9 +197,9 @@ auto GetIidsFrom(IAsrInspectable* pointer)
 
 // TODO: 考虑添加boost::stacktrace模块方便debug
 auto GetIidVectorSize(IAsrIidVector* p_iid_vector)
-    -> ASR::Utils::Expected<uint32_t>
+    -> ASR::Utils::Expected<size_t>
 {
-    size_t   iid_size{};
+    size_t     iid_size{};
     const auto get_iid_size_result = p_iid_vector->Size(&iid_size);
     if (!IsOk(get_iid_size_result))
     {
@@ -237,8 +238,8 @@ auto GetIidFromIidVector(IAsrIidVector* p_iid_vector, uint32_t iid_index)
 
 void LogWarnWhenReceiveUnexpectedAsrOutOfRange(
     IAsrIidVector* p_iid_vector,
-    uint32_t       size,
-    uint32_t       iid_index)
+    size_t       size,
+    size_t       iid_index)
 {
     ASR_CORE_LOG_WARN(
         "Received ASR_E_OUT_OF_RANGE when calling IAsrIidVector::At(). Pointer = {}. Size = {}. Index = {}.",
@@ -766,7 +767,7 @@ AsrResult PluginManager::Refresh()
         }
     }
 
-    plugin_file_paths_ = std::move(map);
+    name_plugin_map_ = std::move(map);
 
     return result;
 }
@@ -804,6 +805,24 @@ auto PluginManager::GetAllCaptureFactory()
     -> std::vector<AsrPtr<IAsrCaptureFactory>>
 {
     return asr_capture_interfaces_;
+}
+
+AsrResult PluginManager::GetAllPluginInfo(
+    IAsrPluginInfoVector** pp_out_plugin_info_vector)
+{
+    if (pp_out_plugin_info_vector == nullptr)
+    {
+        return ASR_E_INVALID_POINTER;
+    }
+
+    const auto p_vector = MakeAsrPtr<AsrPluginInfoVectorImpl>();
+    for(const auto& pair : name_plugin_map_)
+    {
+        const auto& plugin_desc = pair.second;
+        p_vector->AddInfo(plugin_desc.GetInfo());
+    }
+    p_vector.As(pp_out_plugin_info_vector);
+    return ASR_S_OK;
 }
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

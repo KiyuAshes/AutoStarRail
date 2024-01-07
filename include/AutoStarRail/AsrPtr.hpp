@@ -125,6 +125,17 @@ public:
         }
         return ASR_E_NO_INTERFACE;
     }
+    template <class Other>
+    AsrResult As(Other** pp_out_other) const
+    {
+        if (ptr_)
+        {
+            ptr_->QueryInterface(AsrIidOf<Other>(), reinterpret_cast<void**>(pp_out_other));
+            (*pp_out_other)->AddRef();
+            return ASR_S_OK;
+        }
+        return ASR_E_NO_INTERFACE;
+    }
     T* Reset()
     {
         InternalRelease();

@@ -104,7 +104,7 @@ private:
     /**
      * @brief 注意：如果连名字都没获取到，则以json路径为此处的名称
      */
-    NamePluginMap                            plugin_file_paths_{};
+    NamePluginMap                            name_plugin_map_{};
     InterfaceManager<IAsrTask, IAsrSwigTask> asr_task_interface_manager_;
     std::vector<AsrPtr<IAsrCaptureFactory>>  asr_capture_interfaces_;
     ErrorLensManager                         error_lens_manager_;
@@ -140,6 +140,8 @@ public:
         AsrResult            error_code,
         IAsrReadOnlyString** pp_out_error_message);
     auto GetAllCaptureFactory() -> std::vector<AsrPtr<IAsrCaptureFactory>>;
+
+    AsrResult GetAllPluginInfo(IAsrPluginInfoVector** pp_out_plugin_info_vector);
 };
 
 extern PluginManager g_plugin_manager;

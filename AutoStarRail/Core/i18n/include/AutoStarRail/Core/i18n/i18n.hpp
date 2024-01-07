@@ -41,7 +41,7 @@ namespace Details
         else
         {
             static_assert(
-                Utils::value<false, T>,
+                ASR::Utils::value<false, T>,
                 "Incompatible type detected!");
         }
     }
@@ -79,7 +79,7 @@ namespace Details
         else
         {
             static_assert(
-                Utils::value<false, T>,
+                 ASR::Utils::value<false, T>,
                 "Incompatible type detected!");
         }
     }

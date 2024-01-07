@@ -1,6 +1,5 @@
 #include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
-#include <utility>
 
 AsrSwigPluginInfo::AsrSwigPluginInfo() = default;
 
