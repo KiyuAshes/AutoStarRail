@@ -88,6 +88,7 @@ function(asr_add_swig_export_library LANGUAGE RAW_NAME FILES)
         SOURCES ${FILES})
     set_property(TARGET ${RAW_NAME} PROPERTY SWIG_INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/include/)
     add_library(${PROJECT_NAME}::${LANGUAGE}Export ALIAS ${RAW_NAME})
+    target_compile_definitions(${RAW_NAME} PRIVATE -DSWIG_TYPE_TABLE=${RAW_NAME})
 endfunction()
 
 function(asr_check_language_export LANGUAGE EXPORT_LANGUAGES_LIST)
