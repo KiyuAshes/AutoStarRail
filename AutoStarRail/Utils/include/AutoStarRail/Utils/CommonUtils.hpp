@@ -8,6 +8,11 @@
 
 ASR_UTILS_NS_BEGIN
 
+/**
+ * @brief 示例： static_assert(value<false, T>, "你需要的说明");
+ */
+template <auto A, typename...> const auto value = A;
+
 #define ASR_UTILS_IASRBASE_AUTO_IMPL(class_name)                               \
 private:                                                                       \
     ASR::Utils::RefCounter<class_name> ref_counter_;                           \

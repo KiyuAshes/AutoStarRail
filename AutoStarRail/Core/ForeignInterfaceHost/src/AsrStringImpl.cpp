@@ -446,6 +446,17 @@ void AsrReadOnlyStringWrapper::GetImpl(IAsrReadOnlyString** pp_impl) const
     *pp_impl = p_impl_.Get();
 }
 
+void from_json(nlohmann::json input, AsrReadOnlyStringWrapper& output)
+{
+    AsrReadOnlyStringWrapper result{input.get_ref<const std::string&>().data()};
+    output = result;
+}
+
+void from_json(nlohmann::json input, AsrReadOnlyString& output){
+    AsrReadOnlyStringWrapper result{input.get_ref<const std::string&>().data()};
+    output = result;
+}
+
 AsrReadOnlyStringWrapper::AsrReadOnlyStringWrapper() = default;
 
 AsrReadOnlyStringWrapper::~AsrReadOnlyStringWrapper() = default;

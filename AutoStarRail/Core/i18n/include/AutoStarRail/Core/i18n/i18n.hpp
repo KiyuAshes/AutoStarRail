@@ -1,17 +1,19 @@
 #ifndef ASR_CORE_I18N_I18N_H
 #define ASR_CORE_I18N_I18N_H
 
-#include <AutoStarRail/Core/i18n/Config.h>
 #include <AutoStarRail/Core/Exceptions/TypeError.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
+#include <AutoStarRail/Core/Logger/Logger.h>
+#include <AutoStarRail/Core/i18n/Config.h>
 #include <AutoStarRail/ExportInterface/IAsrSettings.h>
+#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/StreamUtils.hpp>
-#include <fstream>
 #include <filesystem>
+#include <fstream>
 #include <map>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
-#include <nlohmann/json.hpp>
 
 class AsrStringCppImpl;
 
@@ -24,7 +26,64 @@ template <class T, class Item>
 using TranslateResources =
     std::unordered_map<std::u8string, TranslateItemMap<T, Item>>;
 
-void from_json(const ::nlohmann::json& input, AsrReadOnlyStringWrapper& output);
+namespace Details
+{
+    template <class T>
+    void CheckInput(const AsrType type)
+    {
+        if constexpr (std::is_same_v<T, std::int32_t>)
+        {
+            if (type != ASR_TYPE_INT)
+            {
+                throw ASR::Core::TypeError{ASR_TYPE_INT, type};
+            }
+        }
+        else
+        {
+            static_assert(
+                Utils::value<false, T>,
+                "Incompatible type detected!");
+        }
+    }
+
+    template <class T>
+    constexpr auto GetConverter()
+    {
+        if constexpr (std::is_same_v<T, std::int32_t>)
+        {
+            return [](const std::string_view view)
+            {
+                char*      p_end{};
+                const auto long_result = std::strtol(view.data(), &p_end, 0);
+                const auto result = static_cast<std::int32_t>(long_result);
+                if (long_result > std::numeric_limits<std::int32_t>::max()
+                    || long_result < std::numeric_limits<std::int32_t>::min())
+                {
+                    ASR_CORE_LOG_WARN_USING_EXTRA_FUNCTION_NAME(
+                        ASR_FUNCTION,
+                        "Overflow detected: expected {}, std::int32_t value is {}.",
+                        long_result,
+                        result);
+                }
+                return result;
+            };
+        }
+        else if constexpr (std::is_same_v<T, long long>)
+        {
+            return [](const std::string_view view)
+            {
+                char* p_end{};
+                return std::strtoll(view.data(), &p_end, 0);
+            };
+        }
+        else
+        {
+            static_assert(
+                Utils::value<false, T>,
+                "Incompatible type detected!");
+        }
+    }
+} // namespace Details
 
 template <class T>
 class I18n
@@ -53,18 +112,22 @@ public:
     {
         const auto type = json.at("type").get<AsrType>();
         // NOTE: If T changes, we need to add code to handle this situation.
-        if constexpr (std::is_same_v<T, int>)
+        Details::CheckInput<T>(type);
+        const auto string_to_number_converter = Details::GetConverter<T>();
+        for (const auto& [locale_name, i18n_resource] :
+             json.at("resource").items())
         {
-            if (type != ASR_TYPE_INT)
+            TranslateItemMap<T, AsrReadOnlyStringWrapper> tmp_map{};
+            for (const auto& [error_code_string, error_message] :
+                 i18n_resource.items())
             {
-                throw ASR::Core::TypeError{ASR_TYPE_INT, type};
+                T    error_code = string_to_number_converter(error_code_string);
+                auto error_message_string =
+                    error_message.get<AsrReadOnlyStringWrapper>();
+                tmp_map.emplace(std::make_pair(error_code, error_message));
             }
-        }
-        for (const auto& [k, v] : json.at("resource").items())
-        {
-            TranslateItemMap<T, AsrReadOnlyStringWrapper> m{};
-            v.get_to(m);
-            translate_resource_[{k.begin(), k.end()}] = m;
+            translate_resource_[{ASR_FULL_RANGE_OF(locale_name)}] =
+                std::move(tmp_map);
         }
         SetDefaultLocale(u8"en");
     }

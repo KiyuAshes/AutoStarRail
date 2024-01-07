@@ -29,4 +29,11 @@ Enum JsonToEnum(const nlohmann::json& json, const char* key)
 
 ASR_UTILS_NS_END
 
+NLOHMANN_JSON_SERIALIZE_ENUM(
+    AsrType,
+    {{ASR_TYPE_INT, "int"},
+     {ASR_TYPE_FLOAT, "float"},
+     {ASR_TYPE_STRING, "string"},
+     {ASR_TYPE_BOOL, "bool"}});
+
 #endif // ASR_UTILS_ENUMTUILS_HPP
