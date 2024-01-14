@@ -5,6 +5,7 @@
 #include <AutoStarRail/AsrGuidHolder.h>
 #include <string.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <new>
 
 #define ASR_RET_TYPE_DECLARE_BEGIN(type_name)                                  \
