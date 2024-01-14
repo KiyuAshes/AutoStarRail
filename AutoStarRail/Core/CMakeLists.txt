@@ -1,6 +1,6 @@
 add_library(AsrCoreObjects OBJECT)
 target_compile_options(AsrCoreObjects PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /MP>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
 )
 set_property(TARGET AsrCoreObjects PROPERTY POSITION_INDEPENDENT_CODE ON)

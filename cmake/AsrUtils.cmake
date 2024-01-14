@@ -5,7 +5,7 @@ function(asr_add_library TYPE SUB_DIRECTORY_NAME PRIVATE_EX_LIBS)
     add_library(${SUB_DIRECTORY_NAME} ${TYPE} ${SOURCES})
     target_include_directories(${SUB_DIRECTORY_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/${SUB_DIRECTORY_NAME}/include)
     target_compile_options(${SUB_DIRECTORY_NAME} PRIVATE
-        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /MP>
         $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
     )
 
@@ -23,7 +23,7 @@ function(asr_add_plugin_library SUB_DIRECTORY_NAME PRIVATE_EX_LIBS)
     add_library(${SUB_DIRECTORY_NAME} SHARED ${SOURCES})
     target_include_directories(${SUB_DIRECTORY_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/${SUB_DIRECTORY_NAME}/include)
     target_compile_options(${SUB_DIRECTORY_NAME} PRIVATE
-        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /MP>
         $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
     )
     target_link_libraries(${SUB_DIRECTORY_NAME} PUBLIC ${PRIVATE_EX_LIBS})
