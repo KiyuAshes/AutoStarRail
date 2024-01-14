@@ -38,6 +38,7 @@ ASR_DEFINE_GUID(
     0x16,
     0x9f,
     0x8e)
+SWIG_IGNORE(IAsrTask)
 ASR_INTERFACE IAsrTask : public IAsrInspectable
 {
     ASR_METHOD Do(

@@ -18,8 +18,8 @@ typedef struct _asr_Point
 
 // {02F6A16A-01FD-4303-886A-9B60373EBE8C}
 ASR_DEFINE_GUID(
-    IAsrInput,
     ASR_IID_INPUT,
+    IAsrInput,
     0x2f6a16a,
     0x1fd,
     0x4303,
@@ -46,8 +46,8 @@ ASR_INTERFACE IAsrInput : public IAsrInspectable
 
 // {DDB17BB3-E6B2-4FD8-8E06-C037EEF18D65}
 ASR_DEFINE_GUID(
-    IAsrTouch,
     ASR_IID_TOUCH,
+    IAsrTouch,
     0xddb17bb3,
     0xe6b2,
     0x4fd8,

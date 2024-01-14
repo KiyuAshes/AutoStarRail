@@ -73,7 +73,7 @@ private:
     ASR::AsrPtr<IAsrPluginInfo> p_plugin_info;
 
 public:
-    AsrSwigPluginInfo();
+    ASR_API AsrSwigPluginInfo();
 #ifndef SWIG
     AsrSwigPluginInfo(ASR::AsrPtr<IAsrPluginInfo> p_impl);
 #endif // SWIG
@@ -96,8 +96,8 @@ private:
     ASR::AsrPtr<IAsrPluginInfoVector> p_vector{};
 
 public:
-    AsrRetUInt Size();
-    AsrRetPluginInfo At(size_t index);
+    ASR_API AsrRetUInt Size();
+    ASR_API AsrRetPluginInfo At(size_t index);
 };
 
 // {B2678FF8-720C-48E6-AC00-77D43D08F580}
@@ -115,6 +115,7 @@ ASR_DEFINE_GUID(
     0x8,
     0xf5,
     0x80);
+SWIG_IGNORE(IAsrPluginManager)
 ASR_INTERFACE IAsrPluginManager : public IAsrBase
 {
     ASR_METHOD GetAllPluginInfo(IAsrPluginInfoVector** pp_out_plugin_info_vector);
@@ -126,6 +127,7 @@ ASR_INTERFACE IAsrPluginManager : public IAsrBase
  * @param pp_out_result
  * @return AsrResult
  */
+SWIG_IGNORE(LoadPluginAndGetResult)
 ASR_C_API AsrResult LoadPluginAndGetResult(
     IAsrGuidVector*     p_ignore_plugins_guid,
     IAsrPluginManager** pp_out_result);

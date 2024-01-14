@@ -20,6 +20,7 @@ ASR_DEFINE_GUID(
     0xca,
     0xc1,
     0x17);
+SWIG_IGNORE(IAsrCaptureManager)
 ASR_INTERFACE IAsrCaptureManager : public IAsrBase
 {
     ASR_METHOD EnumCaptureLoadErrorState(
@@ -56,6 +57,7 @@ ASR_RET_TYPE_DECLARE_END
 ASR_API AsrRetCaptureManager
 CreateAsrCaptureManager(AsrReadOnlyString json_config);
 
+SWIG_IGNORE(CreateIAsrCaptureManager)
 ASR_C_API AsrResult CreateIAsrCaptureManager(
     IAsrReadOnlyString*  p_json_config,
     IAsrCaptureManager** pp_out_capture_manager);

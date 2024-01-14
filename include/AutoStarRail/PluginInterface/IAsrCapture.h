@@ -3,9 +3,7 @@
 
 #include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/IAsrInspectable.h>
-#include <cstddef>
-#include <cstdint>
-#include <memory>
+#include <AutoStarRail/ExportInterface/IAsrImage.h>
 
 ASR_INTERFACE IAsrImage;
 
@@ -91,7 +89,7 @@ ASR_INTERFACE IAsrSwigCaptureFactory : public IAsrSwigInspectable
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetImage)
-    IAsrImage* value;
+    AsrSwigImage value;
 ASR_RET_TYPE_DECLARE_END
 
 // {FC326FB1-9669-4D41-8003-27709071DA10}
@@ -113,48 +111,5 @@ ASR_INTERFACE IAsrSwigCapture : public IAsrSwigInspectable
 {
     virtual AsrRetImage Capture() = 0;
 };
-
-#ifndef SWIG
-
-typedef enum AsrImageFormat
-{
-    ASR_IMAGE_FORMAT_PNG = 0,
-    ASR_IMAGE_FORMAT_RGBA_8888 = 1,
-    ASR_IMAGE_FORMAT_RGBX_8888 = 2,
-    ASR_IMAGE_FORMAT_RGB_888 = 3,
-    ASR_IMAGE_FORMAT_JPG = 4,
-    ASR_IMAGE_FORMAT_FORCE_DWORD = 0x7FFFFFFF
-} AsrImageFormat;
-
-struct AsrImageDesc
-{
-    /**
-     * @brief Pointer to the image data pointer.
-     *
-     */
-    char* p_data;
-    /**
-     * @brief Size of image data in bytes.
-     *
-     */
-    size_t data_size;
-    /**
-     * @brief Supported image format. @see AsrImageFormat
-     *
-     */
-    AsrImageFormat data_format;
-};
-
-/**
- * @brief ASR Core will copy the image data.
- *
- * @param p_desc
- * @param pp_out_image
- * @return ASR_C_API
- */
-ASR_C_API AsrResult
-CreateIAsrImage(AsrImageDesc* p_desc, IAsrImage** pp_out_image);
-
-#endif // SWIG
 
 #endif // ASR_ICAPTURE_H

@@ -16,9 +16,7 @@
 #include "AutoStarRail/AsrString.hpp"
 #include <AutoStarRail/IAsrBase.h>
 
-struct AsrTaskInfo
-{
-};
+ASR_INTERFACE IAsrTask;
 
 // {23B3F3A7-40E4-4A04-B1F0-9F2F15B8775C}
 ASR_DEFINE_GUID(
@@ -35,11 +33,12 @@ ASR_DEFINE_GUID(
     0xb8,
     0x77,
     0x5c);
+SWIG_IGNORE(IAsrTaskManager)
 ASR_INTERFACE IAsrTaskManager : public IAsrBase
 {
     ASR_METHOD SetEnable(const AsrGuid& plugin_id);
 
-    ASR_METHOD EnumTask(size_t index, AsrTaskInfo * p_out_info);
+    ASR_METHOD EnumTask(size_t index, IAsrTask * p_out_info);
 
     ASR_METHOD Resume(IAsrReadOnlyString * *pp_out_error_string);
     ASR_METHOD Pause(IAsrReadOnlyString * *pp_out_error_string);
@@ -49,6 +48,7 @@ ASR_INTERFACE IAsrTaskManager : public IAsrBase
         IAsrReadOnlyString * *pp_out_error_string);
 };
 
+SWIG_IGNORE(CreateIAsrTaskManager)
 ASR_C_API AsrResult CreateIAsrTaskManager(
     IAsrReadOnlyString* p_connection_json,
     IAsrTaskManager**   ppIAsrTaskManager);

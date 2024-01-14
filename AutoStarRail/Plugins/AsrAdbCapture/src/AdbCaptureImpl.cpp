@@ -1,4 +1,5 @@
 #include <AutoStarRail/AsrConfig.h>
+#include <AutoStarRail/ExportInterface/IAsrMemory.h>
 
 ASR_DISABLE_WARNING_BEGIN
 ASR_IGNORE_UNUSED_PARAMETER
@@ -348,10 +349,9 @@ AsrResult AdbCapture::CaptureRawWithGZip()
         Details::PROCESS_TIMEOUT_IN_S,
         std::move(adb_output_buffer)};
     // Initialize the objects that need to be used later.
-    auto decompressed_data = ASR::Utils::MakeContainerOfSize<std::vector<char>>(
-        Details::ComputeScreenshotSize(
-            adb_device_screen_size_.width,
-            adb_device_screen_size_.height));
+    auto decompressed_data = AsrMemory(Details::ComputeScreenshotSize(
+        adb_device_screen_size_.width,
+        adb_device_screen_size_.height));
     const gzip::Decompressor decompressor{};
     // wait for the process to exit.
     context.ioc.run();
@@ -361,26 +361,28 @@ AsrResult AdbCapture::CaptureRawWithGZip()
         context.buffer.data(),
         context.buffer.size());
 
-    const auto header = Details::ResolveHeader(decompressed_data.data());
+    const auto header = Details::ResolveHeader(
+        reinterpret_cast<char*>(decompressed_data.GetData()));
     Details::ComputeDataSizeFromHeader(header)
         .and_then(
             [&decompressed_data, &header](const std::size_t expected_data_size)
-                -> ASR::Utils::Expected<std::size_t>
+                -> ASR::Utils::Expected<void>
             {
-                if (expected_data_size > decompressed_data.size()) [[unlikely]]
+                const auto decompressed_data_size = decompressed_data.GetSize();
+                if (expected_data_size > decompressed_data_size) [[unlikely]]
                 {
                     const auto error_message = ASR::fmt::format(
                         "Received unexpected data size.\n Expected data size: {}.\n Received data size: {}.\n Data format: {}.",
                         expected_data_size,
-                        decompressed_data.size(),
+                        decompressed_data_size,
                         header.f);
                     ASR_LOG_ERROR(error_message.c_str());
                     return tl::make_unexpected(CAPTURE_DATA_TOO_LESS);
                 }
-                return expected_data_size;
+                return {};
             })
         .and_then(
-            [&header](auto) {
+            [&header] {
                 return Details::Convert(
                     static_cast<AdbCaptureFormat>(header.f));
             })
@@ -388,12 +390,28 @@ AsrResult AdbCapture::CaptureRawWithGZip()
             [&decompressed_data](
                 const AsrImageFormat color_format) -> ASR::Utils::Expected<void>
             {
+                decompressed_data.SetBeginOffset(ADB_CAPTURE_HEADER_SIZE);
+
+                // 格式符合预期则直接避免拷贝
+                if (color_format == ASR_IMAGE_FORMAT_RGBA_8888)
+                {
+                    AsrPtr<IAsrImage> p_image{};
+                    const auto        create_image_result =
+                        ::CreateIAsrImageFromRgba8888Data(
+                            decompressed_data.GetImpl(),
+                            p_image.Put());
+                    if (IsOk(create_image_result)) [[likely]]
+                    {
+                        return {};
+                    }
+                    return tl::make_unexpected(create_image_result);
+                }
+
                 AsrImageDesc desc{
-                    .p_data = std::next(
-                        decompressed_data.data(),
-                        ADB_CAPTURE_HEADER_SIZE),
+                    .p_data =
+                        reinterpret_cast<char*>(decompressed_data.GetData()),
                     .data_size =
-                        decompressed_data.size() - ADB_CAPTURE_HEADER_SIZE,
+                        decompressed_data.GetSize() - ADB_CAPTURE_HEADER_SIZE,
                     .data_format = color_format};
 
                 AsrPtr<IAsrImage> p_image{};

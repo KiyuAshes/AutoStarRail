@@ -92,11 +92,20 @@ ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrCaptureManager, IAsrBase);
 // -------------------------------------
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigCaptureManager, IAsrSwigBase);
+
+// ExportInterface/IAsrImage.h
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrImage, IAsrBase);
+// -------------------------------------
+
+// ExportInterface/IAsrMemory.h
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrMemory, IAsrBase)
+
 // ExportInterface/IAsrPluginManager
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrPluginInfo, IAsrBase);
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrPluginInfoVector, IAsrBase);
 // -------------------------------------
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigPluginInfo, IAsrSwigBase);
+
 // ExportInterface/IAsrSettings.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSettings, IAsrBase);
 // -------------------------------------
