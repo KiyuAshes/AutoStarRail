@@ -324,7 +324,7 @@ AsrRetCapture CppToSwig<IAsrCaptureFactory>::CreateInstance(
         return result;
     }
 
-    auto p_result = new CppToSwig<IAsrCapture>{std::move(p_cpp_result)};
+    const auto p_result = new CppToSwig<IAsrCapture>{std::move(p_cpp_result)};
 
     p_result->AddRef();
     result.value = p_result;

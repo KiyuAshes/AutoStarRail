@@ -31,6 +31,7 @@ ASR_DEFINE_GUID(
     0x3e,
     0xbe,
     0x8c);
+SWIG_IGNORE(IAsrInput)
 ASR_INTERFACE IAsrInput : public IAsrInspectable
 {
     /**
@@ -59,6 +60,7 @@ ASR_DEFINE_GUID(
     0xf1,
     0x8d,
     0x65);
+SWIG_IGNORE(IAsrTouch)
 ASR_INTERFACE IAsrTouch : public IAsrInput
 {
     ASR_METHOD Swipe(AsrPoint from, AsrPoint to, const int32_t duration_ms);

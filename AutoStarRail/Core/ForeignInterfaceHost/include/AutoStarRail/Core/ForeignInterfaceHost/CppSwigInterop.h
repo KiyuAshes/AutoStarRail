@@ -73,7 +73,6 @@ struct FunctionArgumentsSeparator
 /**
  * @brief
  * 这个函数适用于仅一个输出参数的情况，注意：在指定了输出参数后，再指定输入参数。
- * @tparam T
  * @tparam OutputArg
  * @tparam InputArgs
  * @param p_swig_object
@@ -340,44 +339,6 @@ AsrResult CommonPluginEnumFeature(
     size_t                 index,
     AsrPluginFeature*      p_out_feature);
 
-// NOTE: template<auto FunctionPointer>
-// 或许可用，但是上面的都是那么写的，就不重构了
-template <
-    class AsrRetT,
-    class CppRetT,
-    class T4Function,
-    T4Function       FunctionPointer,
-    is_asr_interface T,
-    class... InputArgs>
-[[nodiscard]]
-AsrRetT CallCppMethod(T* p_cpp_object, InputArgs&&... input_args)
-{
-    AsrRetT         result{};
-    AsrPtr<CppRetT> p_result;
-
-    result.error_code = (p_cpp_object->*FunctionPointer)(
-        std::forward<InputArgs>(input_args)...,
-        p_result.Put());
-
-    if (!ASR::IsOk(result.error_code))
-    {
-        return result;
-    }
-
-    using ValueType = decltype(result.value);
-    if constexpr (std::is_pointer_v<ValueType>)
-    {
-        p_result->AddRef();
-        result.value = p_result.Get();
-    }
-    else
-    {
-        result.value = {std::move(p_result)};
-    }
-
-    return result;
-}
-
 template <class T>
 class CppToSwig;
 
@@ -484,6 +445,45 @@ public:
         return result;
     }
 };
+
+// NOTE: template<auto FunctionPointer>
+// 或许可用，但是上面的都是那么写的，就不重构了
+template <
+    class AsrRetT,
+    class CppRetT,
+    class T4Function,
+    T4Function       FunctionPointer,
+    is_asr_interface T,
+    class... InputArgs>
+[[nodiscard]]
+AsrRetT CallCppMethod(T* p_cpp_object, InputArgs&&... input_args)
+{
+    AsrRetT         result{};
+    AsrPtr<CppRetT> p_result;
+
+    result.error_code = (p_cpp_object->*FunctionPointer)(
+        std::forward<InputArgs>(input_args)...,
+        p_result.Put());
+
+    if (!ASR::IsOk(result.error_code))
+    {
+        return result;
+    }
+
+    using ValueType = decltype(result.value);
+    // 注意：如出现对象会在SWIG和C++之间反复转换的情况，可能还要处理实现类同时提供C++和SWIG接口的情况
+    if constexpr (std::is_pointer_v<ValueType>)
+    {
+        p_result->AddRef();
+        result.value = p_result.Get();
+    }
+    else
+    {
+        result.value = {std::move(p_result)};
+    }
+
+    return result;
+}
 
 template <is_asr_swig_interface SwigT, is_asr_interface T>
 class CppToSwigInspectable : public CppToSwigBase<SwigT, T>

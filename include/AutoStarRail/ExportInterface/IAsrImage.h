@@ -67,7 +67,7 @@ struct AsrImageDesc
 ASR_C_API AsrResult
 CreateIAsrImage(AsrImageDesc* p_desc, IAsrImage** pp_out_image);
 
-ASR_C_API AsrResult CreateIAsrImageFromRgba8888Data(
+ASR_C_API AsrResult CreateIAsrImageFromRgba8888(
     ASR_INTERFACE IAsrMemory* p_alias_memory,
     IAsrImage**               pp_out_image);
 

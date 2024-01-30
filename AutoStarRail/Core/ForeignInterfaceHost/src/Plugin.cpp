@@ -1,10 +1,9 @@
 #include "Plugin.h"
 
 #include "ForeignInterfaceHost.h"
-#include <utility>
+#include "IAsrPluginManagerImpl.h"
 
-#include <AutoStarRail/Utils/CommonUtils.hpp>
-#include <AutoStarRail/Utils/QueryInterface.hpp>
+#include <utility>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
@@ -29,66 +28,11 @@ Plugin::operator bool() const noexcept { return IsOk(load_state_); }
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
-class AsrPluginInfoImpl final : public IAsrPluginInfo
-{
-    template <auto MemberPointer>
-    ASR_IMPL GetStringImpl(IAsrReadOnlyString** pp_out_string)
-    {
-        ASR_UTILS_CHECK_POINTER(pp_out_string)
-        return ::CreateIAsrReadOnlyStringFromUtf8(
-            (sp_desc_.get()->*MemberPointer).c_str(),
-            pp_out_string);
-    }
-
-public:
-    ASR_UTILS_IASRBASE_AUTO_IMPL(AsrPluginInfoImpl);
-    AsrPluginInfoImpl(std::shared_ptr<PluginDesc> sp_desc)
-        : sp_desc_{std::move(sp_desc)}
-    {
-    }
-
-    ASR_IMPL QueryInterface(const AsrGuid& iid, void** pp_object) override
-    {
-        return ASR::Utils::QueryInterface<IAsrPluginInfo>(this, iid, pp_object);
-    }
-    ASR_IMPL GetName(IAsrReadOnlyString** pp_out_name) override
-    {
-        return GetStringImpl<&PluginDesc::name>(pp_out_name);
-    }
-    ASR_IMPL GetDescription(IAsrReadOnlyString** pp_out_description) override
-    {
-        return GetStringImpl<&PluginDesc::description>(pp_out_description);
-    }
-    ASR_IMPL GetAuthor(IAsrReadOnlyString** pp_out_author) override
-    {
-        return GetStringImpl<&PluginDesc::author>(pp_out_author);
-    }
-    ASR_IMPL GetVersion(IAsrReadOnlyString** pp_out_version) override
-    {
-        return GetStringImpl<&PluginDesc::version>(pp_out_version);
-    }
-    ASR_IMPL GetSupportedSystem(
-        IAsrReadOnlyString** pp_out_supported_system) override
-    {
-        return GetStringImpl<&PluginDesc::supported_system>(
-            pp_out_supported_system);
-    }
-    ASR_IMPL GetPluginIid(AsrGuid* p_out_guid) override
-    {
-        ASR_UTILS_CHECK_POINTER(p_out_guid)
-        *p_out_guid = sp_desc_->guid;
-        return ASR_S_OK;
-    }
-
-private:
-    std::shared_ptr<PluginDesc> sp_desc_;
-};
-
 ASR_NS_ANONYMOUS_DETAILS_END
 
-auto Plugin::GetInfo() const -> AsrPtr<IAsrPluginInfo>
+auto Plugin::GetInfo() const -> AsrPtr<AsrPluginInfoImpl>
 {
-    return MakeAsrPtr<IAsrPluginInfo, Details::AsrPluginInfoImpl>(sp_desc_);
+    return MakeAsrPtr<AsrPluginInfoImpl>(sp_desc_);
 }
 
 Plugin::Plugin(Plugin&& other) noexcept

@@ -119,6 +119,18 @@ QueryInterface(TImpl* p_this, const AsrGuid& iid, void** pp_out_object)
         pp_out_object);
 }
 
+template <
+    class T,
+    class TImpl,
+    class = std::enable_if_t<std::is_base_of_v<IAsrSwigBase, T>>>
+AsrRetSwigBase QueryInterface(TImpl* p_this, const AsrGuid& iid)
+{
+    void*      pointer{};
+    const auto error_code = QueryInterfaceAsLastClassInInheritanceInfo<
+        typename PresetTypeInheritanceInfo<T>::TypeInfo>(p_this, iid, &pointer);
+    return {error_code, AsrSwigBaseWrapper{pointer}};
+}
+
 ASR_UTILS_NS_END
 
 #endif // ASR_UTILS_QUERYINTERFACE_HPP

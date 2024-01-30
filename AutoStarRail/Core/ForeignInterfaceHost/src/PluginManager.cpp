@@ -1,6 +1,7 @@
 #include "PluginManager.h"
 #include "ForeignInterfaceHost.h"
-#include "AsrPluginInfoVectorImpl.h"
+#include "IAsrPluginManagerImpl.h"
+
 #include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>

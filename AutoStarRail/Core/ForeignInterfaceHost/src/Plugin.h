@@ -4,11 +4,12 @@
 #include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHostEnum.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
 #include <AutoStarRail/AsrPtr.hpp>
 #include <AutoStarRail/IAsrBase.h>
 #include "ForeignInterfaceHost.h"
-#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHostEnum.h>
-#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
+#include "IAsrPluginManagerImpl.h"
 #include <variant>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
@@ -44,7 +45,7 @@ public:
 
     explicit operator bool() const noexcept;
 
-    auto GetInfo() const -> AsrPtr<IAsrPluginInfo>;
+    auto GetInfo() const -> AsrPtr<AsrPluginInfoImpl>;
 
     ~Plugin();
 };

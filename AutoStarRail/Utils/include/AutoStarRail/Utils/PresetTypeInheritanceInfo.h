@@ -105,6 +105,7 @@ ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrPluginInfo, IAsrBase);
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrPluginInfoVector, IAsrBase);
 // -------------------------------------
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigPluginInfo, IAsrSwigBase);
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigPluginInfoVector, IAsrSwigBase);
 
 // ExportInterface/IAsrSettings.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSettings, IAsrBase);

@@ -3,7 +3,6 @@
 
 #include <AutoStarRail/IAsrInspectable.h>
 #include <AutoStarRail/AsrString.hpp>
-#include <memory>
 
 // {10963BC9-72FD-4B57-A7BA-98F431C234E4}
 ASR_DEFINE_GUID(

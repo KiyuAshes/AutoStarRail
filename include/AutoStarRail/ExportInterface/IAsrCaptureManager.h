@@ -45,6 +45,7 @@ ASR_INTERFACE IAsrCaptureManager : public IAsrBase
         IAsrReadOnlyString** pp_out_error_explanation) = 0;
 };
 
+ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigCaptureManager)
 ASR_INTERFACE IAsrSwigCaptureManager : public IAsrSwigBase
 {
     virtual AsrRetCapture EnumCaptureInterface(const size_t index) = 0;

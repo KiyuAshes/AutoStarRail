@@ -66,38 +66,56 @@ ASR_INTERFACE IAsrPluginInfoVector : public IAsrBase
     ASR_METHOD At(size_t index, IAsrPluginInfo * *pp_out_info) = 0;
 };
 
-SWIG_IGNORE(AsrSwigPluginInfo::AsrSwigPluginInfo)
-class AsrSwigPluginInfo
+// {CBEBF351-F4EE-4981-A0AB-69EC5562F08D}
+ASR_DEFINE_GUID(
+    ASR_IID_SWIG_PLGUIN_INFO,
+    IAsrSwigPluginInfo,
+    0xcbebf351,
+    0xf4ee,
+    0x4981,
+    0xa0,
+    0xab,
+    0x69,
+    0xec,
+    0x55,
+    0x62,
+    0xf0,
+    0x8d);
+ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigPluginInfo)
+ASR_INTERFACE IAsrSwigPluginInfo : public IAsrSwigBase
 {
-private:
-    ASR::AsrPtr<IAsrPluginInfo> p_plugin_info;
-
-public:
-    ASR_API AsrSwigPluginInfo();
-#ifndef SWIG
-    AsrSwigPluginInfo(ASR::AsrPtr<IAsrPluginInfo> p_impl);
-#endif // SWIG
-
-    ASR_API AsrRetReadOnlyString GetName();
-    ASR_API AsrRetReadOnlyString GetDescription();
-    ASR_API AsrRetReadOnlyString GetAuthor();
-    ASR_API AsrRetReadOnlyString GetVersion();
-    ASR_API AsrRetReadOnlyString GetSupportedSystem();
-    ASR_API AsrRetGuid           GetPluginIid();
+    virtual AsrRetReadOnlyString GetName() = 0;
+    virtual AsrRetReadOnlyString GetDescription() = 0;
+    virtual AsrRetReadOnlyString GetAuthor() = 0;
+    virtual AsrRetReadOnlyString GetVersion() = 0;
+    virtual AsrRetReadOnlyString GetSupportedSystem() = 0;
+    virtual AsrRetGuid           GetPluginIid() = 0;
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetPluginInfo)
-    AsrSwigPluginInfo value;
+    IAsrSwigPluginInfo* value;
 ASR_RET_TYPE_DECLARE_END
 
-class AsrSwigPluginInfoVector
+// {30CCAE61-3884-43F4-AE78-976410156370}
+ASR_DEFINE_GUID(
+    ASR_IID_SWIG_PLUGIN_INFO_VECTOR,
+    IAsrSwigPluginInfoVector,
+    0x30ccae61,
+    0x3884,
+    0x43f4,
+    0xae,
+    0x78,
+    0x97,
+    0x64,
+    0x10,
+    0x15,
+    0x63,
+    0x70);
+ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigPluginInfoVector)
+ASR_INTERFACE IAsrSwigPluginInfoVector : public IAsrSwigBase
 {
-private:
-    ASR::AsrPtr<IAsrPluginInfoVector> p_vector{};
-
-public:
-    ASR_API AsrRetUInt Size();
-    ASR_API AsrRetPluginInfo At(size_t index);
+    virtual AsrRetUInt       Size() = 0;
+    virtual AsrRetPluginInfo At(size_t index) = 0;
 };
 
 // {B2678FF8-720C-48E6-AC00-77D43D08F580}
@@ -118,7 +136,8 @@ ASR_DEFINE_GUID(
 SWIG_IGNORE(IAsrPluginManager)
 ASR_INTERFACE IAsrPluginManager : public IAsrBase
 {
-    ASR_METHOD GetAllPluginInfo(IAsrPluginInfoVector** pp_out_plugin_info_vector);
+    ASR_METHOD GetAllPluginInfo(
+        IAsrPluginInfoVector * *pp_out_plugin_info_vector);
 };
 
 /**

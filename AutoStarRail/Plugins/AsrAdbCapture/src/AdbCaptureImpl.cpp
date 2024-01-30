@@ -397,7 +397,7 @@ AsrResult AdbCapture::CaptureRawWithGZip()
                 {
                     AsrPtr<IAsrImage> p_image{};
                     const auto        create_image_result =
-                        ::CreateIAsrImageFromRgba8888Data(
+                        ::CreateIAsrImageFromRgba8888(
                             decompressed_data.GetImpl(),
                             p_image.Put());
                     if (IsOk(create_image_result)) [[likely]]
