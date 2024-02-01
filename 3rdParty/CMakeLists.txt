@@ -63,7 +63,7 @@ message(STATUS "The third-party libraries listed later are globally shared in th
 
 function(_download_and_config_zlib_ng)
     # 修改此处版本时，需一并修改../cmake/FindZLIB.cmake的第26行
-    set(ASR_ZLIB_NG_VERSION "2.1.4")
+    set(ASR_ZLIB_NG_VERSION "2.1.6")
     message(STATUS "Downloading and configuring zlib-ng (VERSION ${ASR_ZLIB_NG_VERSION})")
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     set(ZLIB_COMPAT ON)
@@ -72,7 +72,7 @@ function(_download_and_config_zlib_ng)
     FetchContent_Declare(
             zlib-ng
             URL "${GITHUB_MIRROR_URL}/zlib-ng/zlib-ng/archive/refs/tags/${ASR_ZLIB_NG_VERSION}.tar.gz"
-            URL_HASH SHA256=A0293475E6A44A3F6C045229FE50F69DC0EEBC62A42405A51F19D46A5541E77A)
+            URL_HASH SHA256=A5D504C0D52E2E2721E7E7D86988DEC2E290D723CED2307145DEDD06AEB6FEF2)
     FetchContent_MakeAvailable(zlib-ng)
 endfunction()
 
