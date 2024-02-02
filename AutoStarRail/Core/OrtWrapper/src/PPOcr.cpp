@@ -1,6 +1,6 @@
-#include <AutoStarRail/Core/Impl/AsrOrt.h>
+#include "AsrOrt.h"
 
-ASR_CORE_IMPL_NS_BEGIN
+ASR_CORE_ORTWRAPPER_NS_BEGIN
 
 class PPOcr : public AsrOrt
 {
@@ -11,4 +11,4 @@ public:
     PPOcr();
 };
 
-ASR_CORE_IMPL_NS_END
+ASR_CORE_ORTWRAPPER_NS_END

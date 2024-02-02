@@ -3,13 +3,13 @@
 
 #include <AutoStarRail/AsrConfig.h>
 
-#define ASR_CORE_IMPL_NS_BEGIN                                                 \
+#define ASR_CORE_ORTWRAPPER_NS_BEGIN                                                 \
     ASR_NS_BEGIN namespace Core                                                \
     {                                                                          \
-        namespace Impl                                                         \
+        namespace OrtWrapper                                                         \
         {
 
-#define ASR_CORE_IMPL_NS_END                                                   \
+#define ASR_CORE_ORTWRAPPER_NS_END                                                   \
     }                                                                          \
     }                                                                          \
     ASR_NS_END

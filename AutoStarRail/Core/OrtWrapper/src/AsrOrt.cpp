@@ -1,8 +1,8 @@
-#include <AutoStarRail/Core/Impl/AsrOrt.h>
+#include "AsrOrt.h"
 #include <AutoStarRail/AsrString.hpp>
 #include <boost/predef/os.h>
 
-ASR_CORE_IMPL_NS_BEGIN
+ASR_CORE_ORTWRAPPER_NS_BEGIN
 
 const ORTCHAR_T* ToOrtChar(AsrReadOnlyString string)
 {
@@ -32,4 +32,4 @@ AsrOrt::AsrOrt(const char* model_name)
 {
 }
 
-ASR_CORE_IMPL_NS_END
+ASR_CORE_ORTWRAPPER_NS_END

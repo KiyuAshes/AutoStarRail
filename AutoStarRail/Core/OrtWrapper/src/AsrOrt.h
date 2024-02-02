@@ -36,10 +36,10 @@
 #undef _stdcall
 #endif
 
-#include <AutoStarRail/Core/Impl/Config.h>
+#include "Config.h"
 #include <AutoStarRail/AsrString.hpp>
 
-ASR_CORE_IMPL_NS_BEGIN
+ASR_CORE_ORTWRAPPER_NS_BEGIN
 
 const ORTCHAR_T* ToOrtChar(AsrReadOnlyString string);
 
@@ -58,6 +58,6 @@ public:
     AsrOrt(const char* model_name);
 };
 
-ASR_CORE_IMPL_NS_END
+ASR_CORE_ORTWRAPPER_NS_END
 
 #endif // ASR_CORE_IMPL_ASRORT_H
