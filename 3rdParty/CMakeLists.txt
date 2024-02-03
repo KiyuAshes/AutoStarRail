@@ -185,7 +185,7 @@ function(_download_and_config_opencv)
     include(AsrResetLibPrefix)
 
     FetchContent_Declare(
-            OpenCV48
+            opencv
             URL ${GITHUB_MIRROR_URL}/opencv/opencv/archive/refs/tags/4.8.1.tar.gz
     )
 
@@ -219,10 +219,21 @@ function(_download_and_config_opencv)
     set(BUILD_TESTS OFF)
     set(BUILD_ZLIB OFF)
 
-    FetchContent_MakeAvailable(OpenCV48)
+    FetchContent_MakeAvailable(opencv)
     list(APPEND ASR_OPENCV_COMPONENTS opencv_core opencv_imgproc)
     set_target_properties(${ASR_OPENCV_COMPONENTS} PROPERTIES PREFIX ${ASR_LIB_PREFIX})
     target_link_libraries(Asr3rdParty INTERFACE ${ASR_OPENCV_COMPONENTS})
+    file(COPY
+            ${opencv_SOURCE_DIR}/include/opencv2/opencv.hpp
+            ${CMAKE_BINARY_DIR}/opencv2/cvconfig.h
+            ${CMAKE_BINARY_DIR}/opencv2/opencv_modules.hpp
+            ${opencv_SOURCE_DIR}/modules/imgcodecs/include/opencv2/imgcodecs.hpp
+            DESTINATION  ${CMAKE_BINARY_DIR}/AsrOpenCV/opencv2)
+    file(COPY
+            ${opencv_SOURCE_DIR}/modules/core/include/opencv2
+            ${opencv_SOURCE_DIR}/modules/imgproc/include/opencv2
+            DESTINATION  ${CMAKE_BINARY_DIR}/AsrOpenCV)
+    target_include_directories(Asr3rdParty INTERFACE ${CMAKE_BINARY_DIR}/AsrOpenCV)
 endfunction()
 
 if (ASR_USE_BUNDLED_OPENCV)
