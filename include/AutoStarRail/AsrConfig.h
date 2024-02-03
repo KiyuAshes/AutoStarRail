@@ -52,15 +52,20 @@
 #define ASR_DISABLE_WARNING_BEGIN ASR_PRAGMA(warning(push))
 
 #define ASR_IGNORE_UNUSED_PARAMETER ASR_PRAGMA(warning(disable : 4100))
+#define ASR_IGNORE_OPENCV_WARNING ASR_PRAGMA(warning(disable : 4100 5054))
 
 #elif defined(__GNUC__)
 #define ASR_DISABLE_WARNING_BEGIN ASR_PRAGMA(GCC diagnostic push)
 
 #define ASR_IGNORE_UNUSED_PARAMETER                                            \
     ASR_PRAGMA(GCC diagnostic ignored "-Wunused-parameter")
+#define ASR_IGNORE_OPENCV_WARNING                                              \
+    ASR_PRAGMA(GCC diagnostic ignored "-Wdeprecated-enum-enum-conversion")
 
 #elif defined(__clang__)
 #define ASR_DISABLE_WARNING_BEGIN ASR_PRAGMA(clang diagnostic push)
+#define ASR_IGNORE_OPENCV_WARNING                                              \
+    ASR_PRAGMA(clang diagnostic ignored "-Wc11-extensions")
 
 #define ASR_IGNORE_UNUSED_PARAMETER                                            \
     ASR_PRAGMA(clang diagnostic ignored "-Wunused-parameter")
