@@ -219,8 +219,13 @@ function(_download_and_config_opencv)
     set(BUILD_TESTS OFF)
     set(BUILD_ZLIB OFF)
 
+    list(APPEND ASR_OPENCV_COMPONENTS opencv_core opencv_imgcodecs opencv_imgproc)
+    foreach (ASR_OCV_LIB ${ASR_OPENCV_COMPONENTS})
+        set(BUILD_${ASR_OCV_LIB} ON)
+    endforeach ()
+
     FetchContent_MakeAvailable(opencv)
-    list(APPEND ASR_OPENCV_COMPONENTS opencv_core opencv_imgproc)
+
     set_target_properties(${ASR_OPENCV_COMPONENTS} PROPERTIES PREFIX ${ASR_LIB_PREFIX})
     target_link_libraries(Asr3rdParty INTERFACE ${ASR_OPENCV_COMPONENTS})
     file(COPY
@@ -231,6 +236,7 @@ function(_download_and_config_opencv)
             DESTINATION  ${CMAKE_BINARY_DIR}/AsrOpenCV/opencv2)
     file(COPY
             ${opencv_SOURCE_DIR}/modules/core/include/opencv2
+            ${opencv_SOURCE_DIR}/modules/imgcodecs/include/opencv2
             ${opencv_SOURCE_DIR}/modules/imgproc/include/opencv2
             DESTINATION  ${CMAKE_BINARY_DIR}/AsrOpenCV)
     target_include_directories(Asr3rdParty INTERFACE ${CMAKE_BINARY_DIR}/AsrOpenCV)
