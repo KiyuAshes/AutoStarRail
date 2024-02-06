@@ -110,7 +110,7 @@ ASR_NS_END
  */
 class AsrReadOnlyString
 {
-     ASR::AsrPtr<IAsrReadOnlyString> p_impl_{
+    ASR::AsrPtr<IAsrReadOnlyString> p_impl_{
         ASR::Details::CreateNullAsrString()};
 
 public:
@@ -162,6 +162,8 @@ public:
         *pp_out_readonly_string = result;
         result->AddRef();
     };
+
+    IAsrReadOnlyString* Get() const noexcept { return p_impl_.Get(); }
 #endif // SWIG
 
 /**

@@ -3,16 +3,20 @@
 #include <AutoStarRail/AsrConfig.h>
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
 #include <AutoStarRail/IAsrBase.h>
-#include <AutoStarRail/Utils/Expected.h>
 #include <AutoStarRail/Utils/GetIids.hpp>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
 #include <AutoStarRail/Utils/fmt.h>
+#include "PluginImpl.h"
 #include <boost/url.hpp>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 
 ASR_NS_BEGIN
+
+AdbCaptureFactoryImpl::AdbCaptureFactoryImpl() { AdbCaptureAddRef(); }
+
+AdbCaptureFactoryImpl::~AdbCaptureFactoryImpl() { AdbCaptureRelease(); }
 
 int64_t AdbCaptureFactoryImpl::AddRef() { return ref_counter_.AddRef(); }
 

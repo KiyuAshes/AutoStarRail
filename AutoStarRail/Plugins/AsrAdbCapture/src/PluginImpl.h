@@ -46,6 +46,10 @@ public:
     AsrResult CanUnloadNow() override;
 };
 
+void AdbCaptureAddRef();
+
+void AdbCaptureRelease();
+
 ASR_NS_END
 
 #endif // ASR_PLUGINS_PLUGINIMPL_H

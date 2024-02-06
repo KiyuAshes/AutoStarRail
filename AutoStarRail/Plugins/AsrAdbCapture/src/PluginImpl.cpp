@@ -3,7 +3,6 @@
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
-#include <AutoStarRail/Utils/GetIids.hpp>
 #define ASR_BUILD_SHARED
 
 #include "PluginImpl.h"
@@ -56,5 +55,16 @@ AsrResult AdbCapturePlugin::CreateFeatureInterface(
         return ASR_E_OUT_OF_RANGE;
     }
 }
+
+static std::atomic_int32_t g_ref_count;
+
+AsrResult AdbCapturePlugin::CanUnloadNow()
+{
+    return g_ref_count == 0 ? ASR_TRUE : ASR_FALSE;
+}
+
+void AdbCaptureAddRef() { g_ref_count++; }
+
+void AdbCaptureRelease() { g_ref_count--; }
 
 ASR_NS_END

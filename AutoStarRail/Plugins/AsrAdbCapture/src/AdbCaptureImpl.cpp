@@ -31,13 +31,13 @@ ASR_DISABLE_WARNING_END
 #include <AutoStarRail/Utils/GetIids.hpp>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/fmt.h>
+#include "PluginImpl.h"
 #include <array>
 #include <boost/asio.hpp>
 #include <boost/pfr.hpp>
 #include <boost/process.hpp>
 #include <boost/process/async_pipe.hpp>
 #include <boost/process/detail/child_decl.hpp>
-#include <cstring>
 #include <sstream>
 #include <system_error>
 
@@ -78,9 +78,9 @@ AdbCapture::AdbCapture(
     const std::filesystem::path& adb_path,
     std::string_view             adb_device_serial)
     : capture_png_command_{ASR::fmt::format(
-        "{} -s {} exec-out screencap -p",
-        adb_path.string(),
-        adb_device_serial)},
+          "{} -s {} exec-out screencap -p",
+          adb_path.string(),
+          adb_device_serial)},
       capture_gzip_raw_command_{ASR::fmt::format(
           R"({} -s {} exec-out "screencap | gzip -1")",
           adb_path.string(),
@@ -100,7 +100,10 @@ AdbCapture::AdbCapture(
 //       nc_address_,
 //       nc_port_)},
 {
+    ASR::AdbCaptureAddRef();
 }
+
+AdbCapture::~AdbCapture() { ASR::AdbCaptureRelease(); }
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
@@ -387,18 +390,22 @@ AsrResult AdbCapture::CaptureRawWithGZip()
                     static_cast<AdbCaptureFormat>(header.f));
             })
         .and_then(
-            [&decompressed_data](
+            [&decompressed_data, &header](
                 const AsrImageFormat color_format) -> ASR::Utils::Expected<void>
             {
+                AsrSize size{
+                    static_cast<int32_t>(header.w),
+                    static_cast<int32_t>(header.h)};
                 decompressed_data.SetBeginOffset(ADB_CAPTURE_HEADER_SIZE);
 
                 // 格式符合预期则直接避免拷贝
-                if (color_format == ASR_IMAGE_FORMAT_RGBA_8888)
+                if (color_format == ASR_IMAGE_FORMAT_RGB_888)
                 {
                     AsrPtr<IAsrImage> p_image{};
                     const auto        create_image_result =
-                        ::CreateIAsrImageFromRgba8888(
-                            decompressed_data.GetImpl(),
+                        ::CreateIAsrImageFromRgb888(
+                            decompressed_data.Get(),
+                            &size,
                             p_image.Put());
                     if (IsOk(create_image_result)) [[likely]]
                     {
@@ -416,7 +423,10 @@ AsrResult AdbCapture::CaptureRawWithGZip()
 
                 AsrPtr<IAsrImage> p_image{};
                 const auto        create_image_result =
-                    ::CreateIAsrImage(&desc, p_image.Put());
+                    ::CreateIAsrImageFromDecodedData(
+                        &desc,
+                        &size,
+                        p_image.Put());
                 if (IsOk(create_image_result)) [[likely]]
                 {
                     return {};

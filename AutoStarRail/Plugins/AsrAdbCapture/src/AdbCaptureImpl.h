@@ -69,7 +69,7 @@ public:
     AdbCapture(
         const std::filesystem::path& adb_path,
         std::string_view             adb_device_serial);
-    ~AdbCapture() = default;
+    ~AdbCapture();
     // IAsrBase
     int64_t   AddRef() override;
     int64_t   Release() override;

@@ -2,7 +2,7 @@
 #define ASR_PLUGINS_ERRORLENSIMPL_H
 
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
-#include "AutoStarRail/Utils/CommonUtils.hpp"
+#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/Expected.h>
 #include <unordered_map>
 #include <string>
@@ -36,6 +36,8 @@ class AdbCaptureErrorLens final : public IAsrErrorLens
         IAsrReadOnlyString**);
 
 public:
+    AdbCaptureErrorLens();
+    ~AdbCaptureErrorLens();
     // IAsrBase
     int64_t   AddRef() override;
     int64_t   Release() override;

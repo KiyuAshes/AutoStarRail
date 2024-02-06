@@ -3,6 +3,7 @@
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/fmt.h>
 #include <boost/container_hash/hash.hpp>
+#include "PluginImpl.h"
 
 std::size_t AsrReadOnlyStringHash::operator()(
     const ASR::AsrPtr<IAsrReadOnlyString>& s) const noexcept
@@ -34,6 +35,10 @@ AsrResult ReturnPointerInMap(T& it, Out** pp_out_object)
 }
 
 ASR_NS_ANONYMOUS_DETAILS_END
+
+AdbCaptureErrorLens::AdbCaptureErrorLens() { ASR::AdbCaptureAddRef(); }
+
+AdbCaptureErrorLens::~AdbCaptureErrorLens() { ASR::AdbCaptureRelease(); }
 
 int64_t AdbCaptureErrorLens::AddRef() { return ref_counter_.AddRef(); }
 

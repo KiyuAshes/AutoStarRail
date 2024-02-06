@@ -28,6 +28,8 @@ private:
     ASR::Utils::RefCounter<AdbCaptureFactoryImpl> ref_counter_{};
 
 public:
+    AdbCaptureFactoryImpl();
+    ~AdbCaptureFactoryImpl();
     // IAsrBase
     int64_t    AddRef() override;
     int64_t    Release() override;
