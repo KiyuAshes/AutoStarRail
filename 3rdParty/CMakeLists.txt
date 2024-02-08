@@ -222,6 +222,7 @@ function(_download_and_config_opencv)
     list(APPEND ASR_OPENCV_COMPONENTS opencv_core opencv_imgcodecs opencv_imgproc)
     foreach (ASR_OCV_LIB ${ASR_OPENCV_COMPONENTS})
         set(BUILD_${ASR_OCV_LIB} ON)
+        asr_add_auto_copy_dll_path("$<TARGET_FILE:${ASR_OCV_LIB}>")
     endforeach ()
 
     FetchContent_MakeAvailable(opencv)
@@ -232,7 +233,6 @@ function(_download_and_config_opencv)
             ${opencv_SOURCE_DIR}/include/opencv2/opencv.hpp
             ${CMAKE_BINARY_DIR}/opencv2/cvconfig.h
             ${CMAKE_BINARY_DIR}/opencv2/opencv_modules.hpp
-            ${opencv_SOURCE_DIR}/modules/imgcodecs/include/opencv2/imgcodecs.hpp
             DESTINATION  ${CMAKE_BINARY_DIR}/AsrOpenCV/opencv2)
     file(COPY
             ${opencv_SOURCE_DIR}/modules/core/include/opencv2
@@ -343,7 +343,7 @@ if (WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         endif ()
     endif ()
 
-    asr_add_auto_copy_dll_path(ASR_BUNDLED_ICU_LIBRARIES)
+    asr_add_auto_copy_dll_path(${ASR_BUNDLED_ICU_LIBRARIES})
 endif ()
 
 find_package(ICU COMPONENTS data i18n uc REQUIRED)
@@ -497,7 +497,7 @@ function(_download_and_config_onnxruntime TARGET_NAME URL)
         list(APPEND ASR_ONNXRUNTIME_DLL_PATH "${${TARGET_NAME}_DLL}")
     endif ()
 
-    asr_add_auto_copy_dll_path(ASR_ONNXRUNTIME_DLL_PATH)
+    asr_add_auto_copy_dll_path(${ASR_ONNXRUNTIME_DLL_PATH})
 endfunction()
 
 if (NOT onnxruntime_FOUND)

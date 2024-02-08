@@ -102,16 +102,16 @@ function(asr_check_language_export LANGUAGE EXPORT_LANGUAGES_LIST)
     endif()
 endfunction()
 
-function(asr_add_auto_copy_dll_path DLL_PATH)
+macro(asr_add_auto_copy_dll_path DLL_PATH)
     add_custom_command(
         TARGET AsrAutoCopyDll
         POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${${DLL_PATH}} $<TARGET_FILE_DIR:AsrCore>)
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DLL_PATH} $<TARGET_FILE_DIR:AsrCore>)
 
     if(ASR_BUILD_TEST)
         add_custom_command(
             TARGET AsrAutoCopyDll
             POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${${DLL_PATH}} ${CMAKE_BINARY_DIR}/Test)
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${DLL_PATH} ${CMAKE_BINARY_DIR}/Test)
     endif()
-endfunction()
+endmacro()
