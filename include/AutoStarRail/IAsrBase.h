@@ -89,6 +89,8 @@
 #define ASR_E_JAVA_ERROR ASR_E_RESERVED - 20
 #define ASR_E_CSHARP_ERROR ASR_E_RESERVED - 21
 #define ASR_E_INTERNAL_FATAL_ERROR ASR_E_RESERVED - 22
+#define ASR_E_INVALID_ENUM ASR_E_RESERVED - 23
+#define ASR_E_INVALID_SIZE ASR_E_RESERVED - 24
 
 #ifdef ASR_WINDOWS
 // MSVC
@@ -157,6 +159,7 @@ inline bool operator==(const AsrGuid& lhs, const AsrGuid& rhs)
 ASR_NS_BEGIN
 
 inline bool IsOk(const AsrResult result) { return result >= 0; }
+inline bool IsFailed(const AsrResult result) {return result < 0; }
 
 ASR_NS_END
 
@@ -181,13 +184,6 @@ ASR_INTERFACE IAsrBase
     virtual int64_t AddRef() = 0;
     virtual int64_t Release() = 0;
     ASR_METHOD      QueryInterface(const AsrGuid& iid, void** pp_object) = 0;
-};
-
-ASR_INTERFACE IAsrGuidVector : public IAsrBase
-{
-    ASR_METHOD At(size_t index, AsrGuid * p_out_guid) = 0;
-    ASR_METHOD Add(AsrGuid * p_guid) = 0;
-    ASR_METHOD DeleteAt(size_t index) = 0;
 };
 
 ASR_C_API AsrResult

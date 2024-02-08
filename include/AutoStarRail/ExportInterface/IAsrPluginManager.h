@@ -15,6 +15,7 @@
 #include <AutoStarRail/AsrExport.h>
 #include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
 #include <cstddef>
 
 // {8179F162-5E1A-4248-AC67-758D2AFF18A7}

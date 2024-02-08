@@ -166,38 +166,7 @@ auto GetPredefinedErrorMessage(
     return tl::make_unexpected(ASR_E_OUT_OF_RANGE);
 }
 
-/**
- * @brief Get the error explanation for the predefined error code.\n
- *  NOTE: When error happened, this function will automatically log.
- * @param pointer
- * @return
- */
-auto GetIidsFrom(IAsrInspectable* pointer)
-    -> ASR::Utils::Expected<AsrPtr<IAsrIidVector>>
-{
-    ASR::AsrPtr<IAsrIidVector> p_iid_vector{};
-    if (const auto get_iid_result = pointer->GetIids(p_iid_vector.Put());
-        !ASR::IsOk(get_iid_result))
-    {
-        ASR_CORE_LOG_ERROR(
-            "Call GetIids failed. Pointer = {}. Error code = {}",
-            static_cast<void*>(pointer),
-            get_iid_result);
-        ASR::AsrPtr<IAsrReadOnlyString> p_get_iid_error_explanation{};
-        ASR::Core::ForeignInterfaceHost::Details::GetPredefinedErrorMessage(
-            get_iid_result,
-            ASR::Core::i18n::GetFallbackLocale().Get());
-        ASR_CORE_LOG_ERROR(
-            "NOTE: The explanation for error code {} is \"{}\".",
-            get_iid_result,
-            p_get_iid_error_explanation);
-        return tl::make_unexpected(get_iid_result);
-    }
-    return p_iid_vector;
-}
-
-// TODO: 考虑添加boost::stacktrace模块方便debug
-auto GetIidVectorSize(IAsrIidVector* p_iid_vector)
+auto GetIidVectorSize(IAsrGuidVector* p_iid_vector)
     -> ASR::Utils::Expected<size_t>
 {
     size_t     iid_size{};
@@ -209,7 +178,7 @@ auto GetIidVectorSize(IAsrIidVector* p_iid_vector)
             get_iid_size_result,
             p_error_message.Put());
         ASR_CORE_LOG_ERROR(
-            "Error happened in class IAsrIidVector. Pointer = {}. Error code = {}. Error message = \"{}\".",
+            "Error happened in class IAsrGuidVector. Pointer = {}. Error code = {}. Error message = \"{}\".",
             static_cast<void*>(p_iid_vector),
             get_iid_size_result,
             p_error_message);
@@ -218,7 +187,7 @@ auto GetIidVectorSize(IAsrIidVector* p_iid_vector)
     return iid_size;
 }
 
-auto GetIidFromIidVector(IAsrIidVector* p_iid_vector, uint32_t iid_index)
+auto GetIidFromIidVector(IAsrGuidVector* p_iid_vector, uint32_t iid_index)
     -> ASR::Utils::Expected<AsrGuid>
 {
     AsrGuid    iid{AsrIidOf<IAsrBase>()};
@@ -228,7 +197,7 @@ auto GetIidFromIidVector(IAsrIidVector* p_iid_vector, uint32_t iid_index)
         AsrPtr<IAsrReadOnlyString> p_error_message{};
         ::AsrGetPredefinedErrorMessage(get_iid_result, p_error_message.Put());
         ASR_CORE_LOG_ERROR(
-            "Error happened in class IAsrIidVector. Pointer = {}. Error code = {}. Error message = \"{}\".",
+            "Error happened in class IAsrGuidVector. Pointer = {}. Error code = {}. Error message = \"{}\".",
             static_cast<void*>(p_iid_vector),
             get_iid_result,
             p_error_message);
@@ -237,46 +206,26 @@ auto GetIidFromIidVector(IAsrIidVector* p_iid_vector, uint32_t iid_index)
     return iid;
 }
 
-void LogWarnWhenReceiveUnexpectedAsrOutOfRange(
-    IAsrIidVector* p_iid_vector,
-    size_t       size,
-    size_t       iid_index)
-{
-    ASR_CORE_LOG_WARN(
-        "Received ASR_E_OUT_OF_RANGE when calling IAsrIidVector::At(). Pointer = {}. Size = {}. Index = {}.",
-        static_cast<void*>(p_iid_vector),
-        size,
-        iid_index);
-}
-
 ASR_NS_ANONYMOUS_DETAILS_END
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
 
 AsrResult AsrGetErrorMessage(
-    IAsrInspectable*     p_error_generator,
+    IAsrTypeInfo*        p_error_generator,
     AsrResult            error_code,
     IAsrReadOnlyString** pp_out_error_explanation)
 {
-    AsrResult result{ASR_E_UNDEFINED_RETURN_VALUE};
-
-    const auto get_iid_result =
-        ASR::Core::ForeignInterfaceHost::Details::GetIidsFrom(
-            p_error_generator);
-    if (get_iid_result)
+    AsrGuid guid;
+    if (const auto get_guid_result = p_error_generator->GetGuid(&guid);
+        ASR::IsFailed(get_guid_result))
     {
-        result =
-            Asr::Core::ForeignInterfaceHost::g_plugin_manager.GetErrorMessage(
-                get_iid_result.value().Get(),
-                error_code,
-                pp_out_error_explanation);
-    }
-    else
-    {
-        result = get_iid_result.error();
+        return get_guid_result;
     }
 
-    return result;
+    return Asr::Core::ForeignInterfaceHost::g_plugin_manager.GetErrorMessage(
+        guid,
+        error_code,
+        pp_out_error_explanation);
 }
 
 AsrResult AsrGetPredefinedErrorMessage(
@@ -300,30 +249,23 @@ AsrResult AsrGetPredefinedErrorMessage(
 }
 
 AsrRetReadOnlyString AsrGetErrorMessage(
-    IAsrSwigInspectable* p_error_generator,
-    AsrResult            error_code)
+    IAsrSwigTypeInfo* p_error_generator,
+    AsrResult         error_code)
 {
-    AsrRetReadOnlyString result{};
-    ASR::Core::ForeignInterfaceHost::SwigToCpp<IAsrSwigInspectable>
-        p_cpp_error_generator{p_error_generator};
+    AsrRetReadOnlyString            result{};
+    ASR::AsrPtr<IAsrReadOnlyString> p_result;
 
-    const auto get_iid_result =
-        ASR::Core::ForeignInterfaceHost::Details::GetIidsFrom(
-            &p_cpp_error_generator);
-    if (get_iid_result)
+    const auto ret_guid = p_error_generator->GetGuid();
+    if (ASR::IsFailed(ret_guid.error_code))
     {
-        ASR::AsrPtr<IAsrReadOnlyString> p_error_message{};
-        result.error_code =
-            Asr::Core::ForeignInterfaceHost::g_plugin_manager.GetErrorMessage(
-                get_iid_result.value().Get(),
-                error_code,
-                p_error_message.Put());
-        result.value = AsrReadOnlyString{p_error_message};
+        result.error_code = ret_guid.error_code;
     }
-    else
-    {
-        result.error_code = get_iid_result.error();
-    }
+    result.error_code =
+        Asr::Core::ForeignInterfaceHost::g_plugin_manager.GetErrorMessage(
+            ret_guid.value,
+            error_code,
+            p_result.Put());
+
     return result;
 }
 
@@ -350,10 +292,10 @@ const std::unordered_set<AsrGuid> g_official_iids{
             // IAsrBase.h
             AsrIidOf<IAsrBase>(),
             AsrIidOf<IAsrSwigBase>(),
-            // IAsrInspectable.h
-            AsrIidOf<IAsrInspectable>(),
-            AsrIidOf<IAsrSwigInspectable>(),
-            AsrIidOf<IAsrIidVector>(),
+            // IAsrTypeInfo.h
+            AsrIidOf<IAsrTypeInfo>(),
+            AsrIidOf<IAsrSwigTypeInfo>(),
+            AsrIidOf<IAsrGuidVector>(),
             // AsrReadOnlyString.hpp
             AsrIidOf<IAsrReadOnlyString>(),
             AsrIidOf<IAsrString>(),
@@ -378,8 +320,8 @@ const std::unordered_set<AsrGuid> g_official_iids{
     }()};
 
 AsrResult ErrorLensManager::Register(
-    IAsrIidVector* p_iid_vector,
-    IAsrErrorLens* p_error_lens)
+    IAsrGuidVector* p_iid_vector,
+    IAsrErrorLens*  p_error_lens)
 {
     const auto get_iid_size_result = Details::GetIidVectorSize(p_iid_vector);
     if (!get_iid_size_result)
@@ -388,7 +330,7 @@ AsrResult ErrorLensManager::Register(
     }
     const auto iid_size = get_iid_size_result.value();
     // try to use all iids to register IAsrErrorLens instance.
-    for (uint32_t i = 0; i < iid_size; ++i)
+    for (size_t i = 0; i < iid_size; ++i)
     {
         const auto get_iid_from_iid_vector_result =
             Details::GetIidFromIidVector(p_iid_vector, i);
@@ -396,8 +338,9 @@ AsrResult ErrorLensManager::Register(
         {
             if (get_iid_size_result.error() == ASR_E_OUT_OF_RANGE)
             {
-                Details::LogWarnWhenReceiveUnexpectedAsrOutOfRange(
-                    p_iid_vector,
+                ASR_CORE_LOG_WARN(
+                    "Received ASR_E_OUT_OF_RANGE when calling IAsrIidVector::At(). Pointer = {}. Size = {}. Index = {}.",
+                    static_cast<void*>(p_iid_vector),
                     iid_size,
                     i);
                 break;
@@ -410,7 +353,8 @@ AsrResult ErrorLensManager::Register(
             if (map_.count(iid) == 1)
             {
                 ASR_CORE_LOG_WARN(
-                    "Trying to register duplicate IAsrErrorLens instance. Pointer = {}. Iid = {}.",
+                    "Trying to register duplicate IAsrErrorLens instance. Operation ignored."
+                    "Pointer = {}. Iid = {}.",
                     static_cast<void*>(p_error_lens),
                     iid);
             }
@@ -422,64 +366,37 @@ AsrResult ErrorLensManager::Register(
 }
 
 AsrResult ErrorLensManager::Register(
-    IAsrIidVector*     p_iids,
-    IAsrSwigErrorLens* p_error_lens)
+    IAsrSwigGuidVector* p_guid_vector,
+    IAsrSwigErrorLens*  p_error_lens)
 {
     AsrPtr<IAsrErrorLens> p_cpp_error_lens{
         new SwigToCpp<IAsrSwigErrorLens>{p_error_lens},
         take_ownership};
-    return Register(p_iids, p_cpp_error_lens.Get());
+    const auto p_cpp_guid_vector =
+        ASR::MakeAsrPtr<IAsrGuidVector, SwigToCpp<IAsrSwigGuidVector>>(
+            p_guid_vector);
+    return Register(p_cpp_guid_vector.Get(), p_cpp_error_lens.Get());
 }
 
 auto ErrorLensManager::GetErrorMessage(
-    IAsrIidVector*      p_iids,
+    const AsrGuid&      iid,
     IAsrReadOnlyString* locale_name,
     AsrResult           error_code) const
     -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>
 {
-    const auto get_iid_result = Details::GetIidVectorSize(p_iids);
-    if (!get_iid_result) [[unlikely]]
+    if (const auto it = map_.find(iid); it != map_.end())
     {
-        return tl::make_unexpected(get_iid_result.error());
-    }
-
-    const auto iid_size = get_iid_result.value();
-    for (uint32_t i = 0; i < iid_size; i++)
-    {
-        const auto get_iid_from_iid_vector_result =
-            Details::GetIidFromIidVector(p_iids, i);
-
-        if (!get_iid_from_iid_vector_result) [[unlikely]]
+        AsrPtr<IAsrReadOnlyString> p_result{};
+        const auto get_error_message_result = it->second->GetErrorMessage(
+            locale_name,
+            error_code,
+            p_result.Put());
+        if (IsOk(get_error_message_result))
         {
-            if (get_iid_result.error() == ASR_E_OUT_OF_RANGE)
-            {
-                Details::LogWarnWhenReceiveUnexpectedAsrOutOfRange(
-                    p_iids,
-                    iid_size,
-                    i);
-            }
-            return tl::make_unexpected(get_iid_from_iid_vector_result.error());
+            return p_result;
         }
 
-        const auto& iid = get_iid_from_iid_vector_result.value();
-        if (g_official_iids.contains(iid))
-        {
-            continue;
-        }
-        if (const auto it = map_.find(iid); it != map_.end())
-        {
-            AsrPtr<IAsrReadOnlyString> p_result{};
-            const auto get_error_message_result = it->second->GetErrorMessage(
-                locale_name,
-                error_code,
-                p_result.Put());
-            if (IsOk(get_error_message_result))
-            {
-                return p_result;
-            }
-
-            return tl::make_unexpected(get_error_message_result);
-        }
+        return tl::make_unexpected(get_error_message_result);
     }
     return tl::make_unexpected(ASR_E_OUT_OF_RANGE);
 }
@@ -506,8 +423,8 @@ AsrResult PluginManager::AddInterface(CommonPluginPtr p_plugin)
         {
         case ASR_PLUGIN_FEATURE_ERROR_LENS:
         {
-            AsrPtr<IAsrIidVector> p_iids{};
-            AsrPtr<IAsrErrorLens> p_error_lens{};
+            AsrPtr<IAsrGuidVector> p_iids{};
+            AsrPtr<IAsrErrorLens>  p_error_lens{};
             std::visit(
                 ASR::Utils::overload_set{
                     [](AsrPtr<IAsrBase>) {},
@@ -774,14 +691,11 @@ AsrResult PluginManager::Refresh()
 }
 
 AsrResult PluginManager::GetErrorMessage(
-    IAsrIidVector*       p_iids,
+    const AsrGuid&       iid,
     AsrResult            error_code,
     IAsrReadOnlyString** pp_out_error_message)
 {
-    if (p_iids == nullptr || pp_out_error_message == nullptr)
-    {
-        return ASR_E_INVALID_POINTER;
-    }
+    ASR_UTILS_CHECK_POINTER(pp_out_error_message)
 
     AsrResult result{ASR_E_UNDEFINED_RETURN_VALUE};
 
@@ -789,7 +703,7 @@ AsrResult PluginManager::GetErrorMessage(
     ::AsrGetDefaultLocale(p_default_locale_name.Put());
 
     error_lens_manager_
-        .GetErrorMessage(p_iids, p_default_locale_name.Get(), error_code)
+        .GetErrorMessage(iid, p_default_locale_name.Get(), error_code)
         .map(
             [&result, pp_out_error_message](const auto& p_error_message)
             {
@@ -817,7 +731,7 @@ AsrResult PluginManager::GetAllPluginInfo(
     }
 
     const auto p_vector = MakeAsrPtr<AsrPluginInfoVectorImpl>();
-    for(const auto& pair : name_plugin_map_)
+    for (const auto& pair : name_plugin_map_)
     {
         const auto& plugin_desc = pair.second;
         p_vector->AddInfo(plugin_desc.GetInfo());

@@ -3,7 +3,6 @@
 #include <AutoStarRail/AsrConfig.h>
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
 #include <AutoStarRail/IAsrBase.h>
-#include <AutoStarRail/Utils/GetIids.hpp>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
 #include <AutoStarRail/Utils/fmt.h>
@@ -79,12 +78,14 @@ AsrResult AdbCaptureFactoryImpl::CreateInstance(
     }
     return result;
 }
-AsrResult AdbCaptureFactoryImpl::GetIids(IAsrIidVector** pp_out_iids)
+
+ASR_IMPL AdbCaptureFactoryImpl::GetGuid(AsrGuid* p_out_guid)
 {
-    return ASR::Utils::GetIids<ASR::Utils::IAsrCaptureFactoryInheritanceInfo>(
-        this,
-        pp_out_iids);
+    *p_out_guid = AsrIidOf<std::remove_pointer_t<decltype(this)>>();
+
+    return ASR_S_OK;
 }
+
 AsrResult AdbCaptureFactoryImpl::GetRuntimeClassName(
     IAsrReadOnlyString** pp_out_class_name)
 {

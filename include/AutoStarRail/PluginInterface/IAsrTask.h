@@ -2,7 +2,7 @@
 #define ASR_ITASK_H
 
 #include <AutoStarRail/AsrString.hpp>
-#include <AutoStarRail/IAsrInspectable.h>
+#include <AutoStarRail/IAsrTypeInfo.h>
 
 struct AsrDate
 {
@@ -39,7 +39,7 @@ ASR_DEFINE_GUID(
     0x9f,
     0x8e)
 SWIG_IGNORE(IAsrTask)
-ASR_INTERFACE IAsrTask : public IAsrInspectable
+ASR_INTERFACE IAsrTask : public IAsrTypeInfo
 {
     ASR_METHOD Do(
         IAsrReadOnlyString * p_connection_json,
@@ -74,7 +74,7 @@ ASR_DEFINE_GUID(
     0xd,
     0xda,
     0x46)
-ASR_INTERFACE IAsrSwigTask : public IAsrSwigInspectable
+ASR_INTERFACE IAsrSwigTask : public IAsrSwigTypeInfo
 {
     virtual AsrResult Do(
         AsrReadOnlyString connection_json,

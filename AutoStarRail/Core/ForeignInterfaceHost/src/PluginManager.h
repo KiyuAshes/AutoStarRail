@@ -4,6 +4,7 @@
 #include "Plugin.h"
 #include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
 #include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
+#include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
@@ -32,11 +33,15 @@ private:
     std::unordered_map<AsrGuid, AsrPtr<IAsrErrorLens>> map_{};
 
 public:
-    AsrResult Register(IAsrIidVector* p_iids, IAsrErrorLens* p_error_lens);
-    AsrResult Register(IAsrIidVector* p_iids, IAsrSwigErrorLens* p_error_lens);
+    AsrResult Register(
+        IAsrGuidVector* p_guid_vector,
+        IAsrErrorLens*  p_error_lens);
+    AsrResult Register(
+        IAsrSwigGuidVector* p_guid_vector,
+        IAsrSwigErrorLens*  p_error_lens);
 
     auto GetErrorMessage(
-        IAsrIidVector*      p_iids,
+        const AsrGuid&      iid,
         IAsrReadOnlyString* locale_name,
         AsrResult           error_code) const
         -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>;
@@ -136,12 +141,13 @@ public:
      * @return AsrResult
      */
     AsrResult GetErrorMessage(
-        IAsrIidVector*       p_iids,
+        const AsrGuid&       iid,
         AsrResult            error_code,
         IAsrReadOnlyString** pp_out_error_message);
     auto GetAllCaptureFactory() -> std::vector<AsrPtr<IAsrCaptureFactory>>;
 
-    AsrResult GetAllPluginInfo(IAsrPluginInfoVector** pp_out_plugin_info_vector);
+    AsrResult GetAllPluginInfo(
+        IAsrPluginInfoVector** pp_out_plugin_info_vector);
 };
 
 extern PluginManager g_plugin_manager;

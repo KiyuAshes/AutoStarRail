@@ -74,7 +74,7 @@ public:
     int64_t   AddRef() override;
     int64_t   Release() override;
     ASR_IMPL QueryInterface(const AsrGuid& iid, void** pp_out_object) override;
-    // IAsrInspectable
+    // IAsrTypeInfo
     ASR_IMPL GetIids(IAsrIidVector** pp_out_iid_vector) override;
     ASR_IMPL GetRuntimeClassName(
         IAsrReadOnlyString** pp_out_class_name) override;

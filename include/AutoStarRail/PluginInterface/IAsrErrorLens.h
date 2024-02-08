@@ -1,7 +1,8 @@
 #ifndef ASR_IERRORLENS_H
 #define ASR_IERRORLENS_H
 
-#include <AutoStarRail/IAsrInspectable.h>
+#include <AutoStarRail/IAsrTypeInfo.h>
+#include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
 #include <AutoStarRail/AsrString.hpp>
 
 // {10963BC9-72FD-4B57-A7BA-98F431C234E4}
@@ -22,7 +23,7 @@ ASR_DEFINE_GUID(
 SWIG_IGNORE(IAsrErrorLens)
 ASR_INTERFACE IAsrErrorLens : public IAsrBase
 {
-    ASR_METHOD GetSupportedIids(IAsrIidVector * *pp_out_iids) = 0;
+    ASR_METHOD GetSupportedIids(IAsrGuidVector * *pp_out_iids) = 0;
     ASR_METHOD GetErrorMessage(
         IAsrReadOnlyString * locale_name,
         AsrResult error_code,
@@ -47,7 +48,7 @@ ASR_DEFINE_GUID(
 ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigErrorLens)
 ASR_INTERFACE IAsrSwigErrorLens : public IAsrSwigBase
 {
-    virtual AsrRetSwigIidVector  GetSupportedIids() = 0;
+    virtual AsrRetSwigGuidVector GetSupportedIids() = 0;
     virtual AsrRetReadOnlyString GetErrorMessage(
         const AsrReadOnlyString locale_name,
         AsrResult               error_code) = 0;
@@ -67,7 +68,7 @@ SWIG_IGNORE(AsrGetErrorMessage)
  * @return AsrResult
  */
 ASR_C_API AsrResult AsrGetErrorMessage(
-    IAsrInspectable*     p_error_generator,
+    IAsrTypeInfo*        p_error_generator,
     AsrResult            error_code,
     IAsrReadOnlyString** pp_out_error_explanation);
 
@@ -84,9 +85,8 @@ ASR_C_API AsrResult AsrGetPredefinedErrorMessage(
  * @param error_code
  * @return AsrRetReadOnlyString
  */
-ASR_API AsrRetReadOnlyString AsrGetErrorMessage(
-    IAsrSwigInspectable* p_error_generator,
-    AsrResult            error_code);
+ASR_API AsrRetReadOnlyString
+AsrGetErrorMessage(IAsrSwigTypeInfo* p_error_generator, AsrResult error_code);
 
 ASR_API AsrRetReadOnlyString AsrGetPredefinedErrorMessage(AsrResult error_code);
 

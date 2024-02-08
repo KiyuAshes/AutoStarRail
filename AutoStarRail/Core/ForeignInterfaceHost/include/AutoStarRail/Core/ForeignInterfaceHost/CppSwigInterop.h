@@ -13,6 +13,7 @@
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
 #include <AutoStarRail/ExportInterface/IAsrImage.h>
+#include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
 #include <AutoStarRail/Utils/Expected.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <cstdint>
@@ -255,11 +256,11 @@ public:
     }
 
 template <is_asr_swig_interface SwigT, is_asr_interface T>
-class SwigToCppInspectable : public SwigToCppBase<SwigT, T>
+class SwigToCppTypeInfo : public SwigToCppBase<SwigT, T>
 {
     static_assert(
-        std::is_base_of_v<IAsrSwigInspectable, SwigT>,
-        "SwigT is not inherit from IAsrSwigInspectable!");
+        std::is_base_of_v<IAsrSwigTypeInfo, SwigT>,
+        "SwigT is not inherit from IAsrSwigTypeInfo!");
 
     using Base = SwigToCppBase<SwigT, T>;
 
@@ -270,16 +271,19 @@ public:
      * @param pp_out_vector
      * @return
      */
-    AsrResult GetIids(IAsrIidVector** pp_out_vector) override{
-        ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
-            Base::p_impl_.Get(),
-            &IAsrSwigInspectable::GetIids,
-            pp_out_vector)} AsrResult
-        GetRuntimeClassName(IAsrReadOnlyString** pp_out_name) override
+    AsrResult GetGuid(AsrGuid* p_out_guid) override
     {
         ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
             Base::p_impl_.Get(),
-            &IAsrSwigInspectable::GetRuntimeClassName,
+            &IAsrSwigTypeInfo::GetGuid,
+            p_out_guid);
+    }
+
+    AsrResult GetRuntimeClassName(IAsrReadOnlyString** pp_out_name) override
+    {
+        ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+            Base::p_impl_.Get(),
+            &IAsrSwigTypeInfo::GetRuntimeClassName,
             pp_out_name)
     }
 };
@@ -293,11 +297,11 @@ public:
 };
 
 template <>
-class SwigToCpp<IAsrSwigInspectable> final
-    : public SwigToCppInspectable<IAsrSwigInspectable, IAsrInspectable>
+class SwigToCpp<IAsrSwigTypeInfo> final
+    : public SwigToCppTypeInfo<IAsrSwigTypeInfo, IAsrTypeInfo>
 {
 public:
-    ASR_USING_BASE_CTOR(SwigToCppInspectable);
+    ASR_USING_BASE_CTOR(SwigToCppTypeInfo);
 };
 
 template <>
@@ -307,7 +311,7 @@ class SwigToCpp<IAsrSwigErrorLens> final
 public:
     ASR_USING_BASE_CTOR(SwigToCppBase);
 
-    AsrResult GetSupportedIids(IAsrIidVector** pp_out_iids) override;
+    AsrResult GetSupportedIids(IAsrGuidVector** pp_out_iids) override;
     AsrResult GetErrorMessage(
         IAsrReadOnlyString*  locale_name,
         AsrResult            error_code,
@@ -316,13 +320,10 @@ public:
 
 template <>
 class SwigToCpp<IAsrSwigTask> final
-    : public SwigToCppBase<IAsrSwigTask, IAsrTask>
+    : public SwigToCppTypeInfo<IAsrSwigTask, IAsrTask>
 {
 public:
-    ASR_USING_BASE_CTOR(SwigToCppBase);
-
-    AsrResult GetIids(IAsrIidVector** pp_out_iid_vector) override;
-    AsrResult GetRuntimeClassName(IAsrReadOnlyString** pp_out_name) override;
+    ASR_USING_BASE_CTOR(SwigToCppTypeInfo);
 
     AsrResult Do(
         IAsrReadOnlyString* p_connection_json,
@@ -332,6 +333,19 @@ public:
     AsrResult GetDescription(IAsrReadOnlyString** pp_out_settings) override;
     AsrResult GetLabel(IAsrReadOnlyString** pp_out_label) override;
     AsrResult GetType(AsrTaskType* p_out_type) override;
+};
+
+template <>
+class SwigToCpp<IAsrSwigGuidVector> final
+    : public SwigToCppBase<IAsrSwigGuidVector, IAsrGuidVector>
+{
+public:
+    ASR_USING_BASE_CTOR(SwigToCppBase);
+
+    ASR_IMPL Size(size_t* p_out_size) override;
+    ASR_IMPL At(size_t index, AsrGuid* p_out_iid) override;
+    ASR_IMPL Find(const AsrGuid& iid) override;
+    ASR_IMPL PushBack(const AsrGuid& iid) override;
 };
 
 AsrResult CommonPluginEnumFeature(
@@ -486,11 +500,11 @@ AsrRetT CallCppMethod(T* p_cpp_object, InputArgs&&... input_args)
 }
 
 template <is_asr_swig_interface SwigT, is_asr_interface T>
-class CppToSwigInspectable : public CppToSwigBase<SwigT, T>
+class CppToSwigTypeInfo : public CppToSwigBase<SwigT, T>
 {
     static_assert(
-        std::is_base_of_v<IAsrInspectable, T>,
-        "T is not inherit from IAsrInspectable!");
+        std::is_base_of_v<IAsrTypeInfo, T>,
+        "T is not inherit from IAsrTypeInfo!");
 
     using Base = CppToSwigBase<SwigT, T>;
 
@@ -502,15 +516,14 @@ public:
         return CallCppMethod<
             AsrRetReadOnlyString,
             IAsrReadOnlyString,
-            ASR_DV_V(&IAsrInspectable::GetRuntimeClassName)>(
-            Base::p_impl_.Get());
+            ASR_DV_V(&IAsrTypeInfo::GetRuntimeClassName)>(Base::p_impl_.Get());
     }
-    auto GetIids() -> AsrRetSwigIidVector final
+    auto GetGuid() -> AsrRetGuid final
     {
-        return CallCppMethod<
-            AsrRetSwigIidVector,
-            IAsrIidVector,
-            ASR_DV_V(&IAsrInspectable::GetIids)>(Base::p_impl_.Get());
+        AsrRetGuid swig_result;
+        swig_result.error_code = Base::p_impl_->GetGuid(&swig_result.value);
+
+        return swig_result;
     }
 };
 
@@ -522,31 +535,44 @@ public:
 };
 
 template <>
-class CppToSwig<IAsrInspectable> final
-    : public CppToSwigInspectable<IAsrSwigInspectable, IAsrInspectable>
+class CppToSwig<IAsrTypeInfo> final
+    : public CppToSwigTypeInfo<IAsrSwigTypeInfo, IAsrTypeInfo>
 {
 public:
-    ASR_USING_BASE_CTOR(CppToSwigInspectable);
+    ASR_USING_BASE_CTOR(CppToSwigTypeInfo);
 };
 
 template <>
 class CppToSwig<IAsrCapture> final
-    : public CppToSwigInspectable<IAsrSwigCapture, IAsrCapture>
+    : public CppToSwigTypeInfo<IAsrSwigCapture, IAsrCapture>
 {
 public:
-    ASR_USING_BASE_CTOR(CppToSwigInspectable);
+    ASR_USING_BASE_CTOR(CppToSwigTypeInfo);
 
     AsrRetImage Capture() override;
 };
 
 template <>
 class CppToSwig<IAsrCaptureFactory> final
-    : public CppToSwigInspectable<IAsrSwigCaptureFactory, IAsrCaptureFactory>
+    : public CppToSwigTypeInfo<IAsrSwigCaptureFactory, IAsrCaptureFactory>
 {
 public:
-    ASR_USING_BASE_CTOR(CppToSwigInspectable);
+    ASR_USING_BASE_CTOR(CppToSwigTypeInfo);
 
     AsrRetCapture CreateInstance(AsrReadOnlyString json_config) override;
+};
+
+template <>
+class CppToSwig<IAsrGuidVector> final
+    : public CppToSwigBase<IAsrSwigGuidVector, IAsrGuidVector>
+{
+public:
+    ASR_USING_BASE_CTOR(CppToSwigBase);
+
+    AsrRetUInt Size() override;
+    AsrRetGuid At(size_t index) override;
+    AsrResult  Find(const AsrGuid& guid) override;
+    AsrResult  PushBack(const AsrGuid& guid) override;
 };
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

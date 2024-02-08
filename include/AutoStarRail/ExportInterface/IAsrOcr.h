@@ -3,14 +3,6 @@
 
 #include <AutoStarRail/IAsrBase.h>
 
-struct AsrRect
-{
-    int32_t x;
-    int32_t y;
-    int32_t width;
-    int32_t height;
-};
-
 SWIG_IGNORE(IAsrOcrResult)
 ASR_INTERFACE IAsrOcrResult : public IAsrBase{};
 

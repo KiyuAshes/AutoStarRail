@@ -27,7 +27,7 @@ const CppSwigMap g_cpp_swig_map = []() -> CppSwigMap
 {
     std::initializer_list<CppSwigMap::value_type> list{
         ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(Base),
-        ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(Inspectable)
+        ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(TypeInfo)
 
     };
     return {list.begin(), list.end()};
@@ -96,7 +96,7 @@ const static std::unordered_map<
     g_cpp_to_swig_factory{
         ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(IAsrSwigBase),
         ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
-            IAsrSwigInspectable),
+            IAsrSwigTypeInfo),
         ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(
             IAsrSwigErrorLens)};
 
@@ -177,12 +177,29 @@ auto CreateSwigToCppObject(const AsrGuid& iid, void* p_cpp_object)
 // -------------------- implementation of SwigToCpp class --------------------
 
 AsrResult SwigToCpp<IAsrSwigErrorLens>::GetSupportedIids(
-    IAsrIidVector** pp_out_iids)
+    IAsrGuidVector** pp_out_iids)
 {
-    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
-        p_impl_.Get(),
-        &IAsrSwigErrorLens::GetSupportedIids,
-        pp_out_iids);
+    try
+    {
+        AsrPtr<IAsrGuidVector> p_guid_vector{};
+        const auto             swig_result = p_impl_->GetSupportedIids();
+        if (ASR::IsFailed(swig_result.error_code))
+        {
+            return swig_result.error_code;
+        }
+
+        auto p_result = new SwigToCpp<IAsrSwigGuidVector>(swig_result.value);
+        p_result->AddRef();
+        swig_result.value->Release();
+        *pp_out_iids = p_result;
+
+        return ASR_S_OK;
+    }
+    catch (const std::exception& ex)
+    {
+        ASR_CORE_LOG_ERROR(ex.what());
+        return ASR_E_SWIG_INTERNAL_ERROR;
+    }
 }
 
 AsrResult SwigToCpp<IAsrSwigErrorLens>::GetErrorMessage(
@@ -196,22 +213,6 @@ AsrResult SwigToCpp<IAsrSwigErrorLens>::GetErrorMessage(
         pp_out_string,
         locale_name,
         error_code);
-}
-
-AsrResult SwigToCpp<IAsrSwigTask>::GetIids(IAsrIidVector** pp_out_iid_vector)
-{
-    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
-        p_impl_.Get(),
-        &IAsrSwigTask::GetIids,
-        pp_out_iid_vector);
-}
-AsrResult SwigToCpp<IAsrSwigTask>::GetRuntimeClassName(
-    IAsrReadOnlyString** pp_out_name)
-{
-    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
-        p_impl_.Get(),
-        &IAsrSwigTask::GetRuntimeClassName,
-        pp_out_name);
 }
 
 AsrResult SwigToCpp<IAsrSwigTask>::Do(
@@ -272,6 +273,49 @@ AsrResult SwigToCpp<IAsrSwigTask>::GetType(AsrTaskType* p_out_type)
         p_out_type);
 }
 
+ASR_IMPL SwigToCpp<IAsrSwigGuidVector>::Size(size_t* p_out_size)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigGuidVector::Size,
+        p_out_size);
+}
+
+ASR_IMPL SwigToCpp<IAsrSwigGuidVector>::At(size_t index, AsrGuid* p_out_iid)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigGuidVector::At,
+        p_out_iid,
+        index);
+}
+
+ASR_IMPL SwigToCpp<IAsrSwigGuidVector>::Find(const AsrGuid& iid)
+{
+    try
+    {
+        return p_impl_->Find(iid);
+    }
+    catch (const std::exception& ex)
+    {
+        ASR_CORE_LOG_ERROR(ex.what());
+        return ASR_E_SWIG_INTERNAL_ERROR;
+    }
+}
+
+ASR_IMPL SwigToCpp<IAsrSwigGuidVector>::PushBack(const AsrGuid& iid)
+{
+    try
+    {
+        return p_impl_->PushBack(iid);
+    }
+    catch (const std::exception& ex)
+    {
+        ASR_CORE_LOG_ERROR(ex.what());
+        return ASR_E_SWIG_INTERNAL_ERROR;
+    }
+}
+
 // TODO: IAsrSwigCaptureFactory CreateInstance
 
 AsrResult CommonPluginEnumFeature(
@@ -330,6 +374,32 @@ AsrRetCapture CppToSwig<IAsrCaptureFactory>::CreateInstance(
     result.value = p_result;
 
     return result;
+}
+
+AsrRetUInt CppToSwig<IAsrGuidVector>::Size()
+{
+    AsrRetUInt swig_result;
+    swig_result.error_code = p_impl_->Size(&swig_result.value);
+
+    return swig_result;
+}
+
+AsrRetGuid CppToSwig<IAsrGuidVector>::At(size_t index)
+{
+    AsrRetGuid swig_result;
+    swig_result.error_code = p_impl_->At(index, &swig_result.value);
+
+    return swig_result;
+}
+
+AsrResult CppToSwig<IAsrGuidVector>::Find(const AsrGuid& guid)
+{
+    return p_impl_->Find(guid);
+}
+
+AsrResult CppToSwig<IAsrGuidVector>::PushBack(const AsrGuid& guid)
+{
+    return p_impl_->PushBack(guid);
 }
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

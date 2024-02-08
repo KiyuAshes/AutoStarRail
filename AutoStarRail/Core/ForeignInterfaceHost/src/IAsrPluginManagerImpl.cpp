@@ -1,5 +1,6 @@
 #include "IAsrPluginManagerImpl.h"
 #include <AutoStarRail/Utils/QueryInterface.hpp>
+#include <AutoStarRail/Core/Logger/Logger.h>
 
 template <auto MemberPointer>
 ASR_IMPL AsrPluginInfoImpl::GetStringImpl(IAsrReadOnlyString** pp_out_string)

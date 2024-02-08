@@ -1,7 +1,7 @@
 #ifndef ASR_IINPUT_H
 #define ASR_IINPUT_H
 
-#include <AutoStarRail/IAsrInspectable.h>
+#include <AutoStarRail/IAsrTypeInfo.h>
 
 typedef enum AsrClickType
 {

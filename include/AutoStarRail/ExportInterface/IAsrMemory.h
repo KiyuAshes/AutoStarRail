@@ -23,8 +23,16 @@ SWIG_IGNORE(IAsrMemory)
 ASR_INTERFACE IAsrMemory : public IAsrBase
 {
     ASR_METHOD GetData(unsigned char** pp_out_data) = 0;
+    ASR_METHOD GetRawData(unsigned char** pp_out_data) = 0;
     ASR_METHOD GetSize(size_t * p_out_size) = 0;
-    ASR_METHOD SetBeginOffset(ptrdiff_t offset) = 0;
+    /**
+     * @brief 如果确定输入的指针不是空指针，则返回值可以忽略
+     * @param p_out_offset
+     * @return
+     */
+    ASR_METHOD GetOffset(ptrdiff_t * p_out_offset) = 0;
+    ASR_METHOD SetOffset(ptrdiff_t offset) = 0;
+    ASR_METHOD Resize(size_t new_size_in_byte) = 0;
 };
 
 SWIG_IGNORE(CreateIAsrMemory)
@@ -41,8 +49,10 @@ public:
     {
         CreateIAsrMemory(size_in_bytes, p_data_.Put());
     }
+
     ~AsrMemory() = default;
 
+    [[nodiscard]]
     unsigned char* GetData() const
     {
         unsigned char* p_data{nullptr};
@@ -50,6 +60,7 @@ public:
         return p_data;
     }
 
+    [[nodiscard]]
     size_t GetSize() const
     {
         size_t size{};
@@ -57,10 +68,7 @@ public:
         return size;
     }
 
-    void SetBeginOffset(const ptrdiff_t offset)
-    {
-        p_data_->SetBeginOffset(offset);
-    }
+    void SetBeginOffset(ptrdiff_t offset) { p_data_->SetOffset(offset); }
 
     // stl-like api
     unsigned char& operator[](size_t size_in_bytes)
@@ -68,15 +76,13 @@ public:
         return *(GetData() + size_in_bytes);
     }
 
-    void resize(size_t new_size)
-    {
-        if (new_size > GetSize())
-        {
-            CreateIAsrMemory(new_size, p_data_.Put());
-        }
-    }
+    void resize(size_t new_size) { p_data_->Resize(new_size); }
 
-    IAsrMemory* GetImpl() const noexcept { return p_data_.Get(); };
+    [[nodiscard]]
+    IAsrMemory* Get() const noexcept
+    {
+        return p_data_.Get();
+    }
 };
 
 #endif // __cplusplus

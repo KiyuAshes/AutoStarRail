@@ -1,5 +1,5 @@
 #include "AsrIidVectorImpl.h"
-#include "AutoStarRail/IAsrInspectable.h"
+#include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <algorithm>
@@ -8,7 +8,7 @@ AsrResult AsrIidVectorImpl::QueryInterface(
     const AsrGuid& iid,
     void**         pp_out_object)
 {
-    return ASR::Utils::QueryInterface<IAsrIidVector>(this, iid, pp_out_object);
+    return ASR::Utils::QueryInterface<IAsrGuidVector>(this, iid, pp_out_object);
 }
 
 AsrResult AsrIidVectorImpl::Size(size_t* p_out_size)
@@ -36,12 +36,25 @@ AsrResult AsrIidVectorImpl::Find(const AsrGuid& iid)
     return it != iids_.end() ? ASR_TRUE : ASR_FALSE;
 }
 
+AsrResult AsrIidVectorImpl::PushBack(const AsrGuid& iid)
+{
+    try
+    {
+        iids_.push_back(iid);
+    }
+    catch (std::bad_alloc&)
+    {
+        return ASR_E_OUT_OF_MEMORY;
+    }
+    return ASR_S_OK;
+}
+
 auto AsrIidVectorImpl::GetImpl() -> decltype(iids_)& { return iids_; }
 
 AsrResult CreateIAsrIidVector(
-    const AsrGuid*  p_iids,
-    size_t          iid_count,
-    IAsrIidVector** pp_out_iid_vector)
+    const AsrGuid*   p_iids,
+    size_t           iid_count,
+    IAsrGuidVector** pp_out_iid_vector)
 {
     *pp_out_iid_vector = nullptr;
     try
@@ -68,12 +81,41 @@ AsrResult CreateIAsrIidVector(
     }
 }
 
-AsrRetSwigIidVector CreateAsrSwigIidVector(const std::vector<AsrGuid>& iids)
+int64_t AsrSwigIidVectorImpl::AddRef() { return impl_.AddRef(); }
+
+int64_t AsrSwigIidVectorImpl::Release() { return impl_.Release(); }
+
+AsrRetSwigBase AsrSwigIidVectorImpl::QueryInterface(const AsrGuid& iid)
 {
-    AsrRetSwigIidVector        result{};
-    ASR::AsrPtr<IAsrIidVector> p_result{};
-    result.error_code =
-        ::CreateIAsrIidVector(iids.data(), iids.size(), p_result.Put());
-    result.value = {std::move(p_result)};
+    return ASR::Utils::QueryInterface<IAsrSwigGuidVector>(this, iid);
+}
+
+AsrRetUInt AsrSwigIidVectorImpl::Size()
+{
+    AsrRetUInt result{};
+    size_t     size;
+
+    result.error_code = impl_.Size(&size);
+    result.value = size;
+
     return result;
+}
+
+AsrRetGuid AsrSwigIidVectorImpl::At(size_t index)
+{
+    AsrRetGuid result{};
+
+    result.error_code = impl_.At(index, &result.value);
+
+    return result;
+}
+
+AsrResult AsrSwigIidVectorImpl::Find(const AsrGuid& guid)
+{
+    return impl_.Find(guid);
+}
+
+AsrResult AsrSwigIidVectorImpl::PushBack(const AsrGuid& guid)
+{
+    return impl_.PushBack(guid);
 }

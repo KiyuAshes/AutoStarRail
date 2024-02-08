@@ -16,6 +16,7 @@ const auto value = A;
 #define ASR_UTILS_CHECK_POINTER(pointer)                                       \
     if (pointer == nullptr) [[unlikely]]                                       \
     {                                                                          \
+        ASR_CORE_LOG_ERROR("Null pointer found! Please check your code.");     \
         return ASR_E_INVALID_POINTER;                                          \
     }
 
@@ -168,9 +169,11 @@ public:
         ref_count_ -= 1;
         if (ref_count_ == 0)
         {
+            ref_count_ = 1;
             delete p_managed_object;
+            return 0;
         }
-        return 0;
+        return ref_count_;
     }
 };
 

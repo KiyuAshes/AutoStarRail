@@ -31,11 +31,11 @@ public:
     AdbCaptureFactoryImpl();
     ~AdbCaptureFactoryImpl();
     // IAsrBase
-    int64_t    AddRef() override;
-    int64_t    Release() override;
-    ASR_METHOD QueryInterface(const AsrGuid& iid, void** pp_object) override;
-    // IAsrInspectable
-    ASR_IMPL GetIids(IAsrIidVector** pp_out_iids) override;
+    int64_t  AddRef() override;
+    int64_t  Release() override;
+    ASR_IMPL QueryInterface(const AsrGuid& iid, void** pp_object) override;
+    // IAsrTypeInfo
+    ASR_IMPL GetGuid(AsrGuid* p_out_guid) override;
     ASR_IMPL GetRuntimeClassName(
         IAsrReadOnlyString** pp_out_class_name) override;
     // IAsrCaptureFactory

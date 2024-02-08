@@ -51,7 +51,7 @@ AsrResult AdbCaptureErrorLens::QueryInterface(
     return ASR::Utils::QueryInterface<IAsrErrorLens>(this, iid, pp_out_object);
 }
 
-AsrResult AdbCaptureErrorLens::GetSupportedIids(IAsrIidVector** pp_out_iids)
+AsrResult AdbCaptureErrorLens::GetSupportedIids(IAsrGuidVector** pp_out_iids)
 {
     return ::CreateIAsrIidVector(iids_.data(), iids_.size(), pp_out_iids);
 }

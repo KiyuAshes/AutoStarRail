@@ -242,7 +242,7 @@ auto LogAndGetErrorMessageWhenGetNameFailed(
     -> ASR::AsrPtr<IAsrReadOnlyString>
 {
     ASR::AsrPtr<IAsrReadOnlyString> result{};
-    ASR::AsrPtr<IAsrInspectable>    p_factory_base{};
+    ASR::AsrPtr<IAsrTypeInfo>    p_factory_base{};
     p_factory.As(p_factory_base);
     if (const auto get_error_message_result = ::AsrGetErrorMessage(
             p_factory_base.Get(),
@@ -264,7 +264,7 @@ void OnCreateCaptureInstanceFailed(
     const ASR::AsrPtr<ASR::CaptureManager>& p_capture_manager)
 {
     std::string                     error_message;
-    ASR::AsrPtr<IAsrInspectable>    p_capture_base{};
+    ASR::AsrPtr<IAsrTypeInfo>    p_capture_base{};
     ASR::AsrPtr<IAsrReadOnlyString> p_error_message{};
     if (const auto get_error_message_result = ::AsrGetErrorMessage(
             p_capture_base.Get(),

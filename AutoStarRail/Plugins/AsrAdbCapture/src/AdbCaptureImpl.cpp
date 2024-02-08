@@ -474,7 +474,7 @@ AsrResult AdbCapture::QueryInterface(const AsrGuid& iid, void** pp_object)
     return ASR::Utils::QueryInterface<IAsrCapture>(this, iid, pp_object);
 }
 
-AsrResult AdbCapture::GetIids(IAsrIidVector** pp_out_iid_vector)
+AsrResult AdbCapture::GetIids(IAsrGuidVector** pp_out_iid_vector)
 {
     return ASR::Utils::
         GetIids<ASR::Utils::IAsrCaptureInheritanceInfo, AdbCapture>(
