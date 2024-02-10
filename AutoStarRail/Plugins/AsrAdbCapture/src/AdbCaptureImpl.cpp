@@ -28,7 +28,6 @@ ASR_DISABLE_WARNING_END
 #include <AutoStarRail/ExportInterface/IAsrImage.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
-#include <AutoStarRail/Utils/GetIids.hpp>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/fmt.h>
 #include "PluginImpl.h"
@@ -474,11 +473,16 @@ AsrResult AdbCapture::QueryInterface(const AsrGuid& iid, void** pp_object)
     return ASR::Utils::QueryInterface<IAsrCapture>(this, iid, pp_object);
 }
 
-AsrResult AdbCapture::GetIids(IAsrGuidVector** pp_out_iid_vector)
+ASR_IMPL AdbCapture::GetGuid(AsrGuid* p_out_guid)
 {
-    return ASR::Utils::
-        GetIids<ASR::Utils::IAsrCaptureInheritanceInfo, AdbCapture>(
-            pp_out_iid_vector);
+    if (p_out_guid == nullptr)
+    {
+        return ASR_E_INVALID_POINTER;
+    }
+
+    *p_out_guid = AsrIidOf<AdbCapture>();
+
+    return ASR_S_OK;
 }
 
 AsrResult AdbCapture::GetRuntimeClassName(

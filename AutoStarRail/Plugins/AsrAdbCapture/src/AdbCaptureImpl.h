@@ -4,7 +4,7 @@
 #include <AutoStarRail/AsrConfig.h>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
-#include "AutoStarRail/Utils/CommonUtils.hpp"
+#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/Expected.h>
 #include <filesystem>
 #include <cstdint>
@@ -45,7 +45,7 @@ private:
     };
 
     AsrResult (AdbCapture::*current_capture_method)() = {nullptr};
-    Type type_{Type::RawWithGZip};
+    Type      type_{Type::RawWithGZip};
 
 public:
     struct Size
@@ -71,11 +71,11 @@ public:
         std::string_view             adb_device_serial);
     ~AdbCapture();
     // IAsrBase
-    int64_t   AddRef() override;
-    int64_t   Release() override;
+    int64_t  AddRef() override;
+    int64_t  Release() override;
     ASR_IMPL QueryInterface(const AsrGuid& iid, void** pp_out_object) override;
     // IAsrTypeInfo
-    ASR_IMPL GetIids(IAsrIidVector** pp_out_iid_vector) override;
+    ASR_IMPL GetGuid(AsrGuid* p_out_guid) override;
     ASR_IMPL GetRuntimeClassName(
         IAsrReadOnlyString** pp_out_class_name) override;
     // IAsrCapture
