@@ -119,18 +119,25 @@ public:
         void* result = nullptr;
         if (ptr_)
         {
-            ptr_->QueryInterface(AsrIidOf<Other>(), &result);
+            const auto query_interface_result =
+                ptr_->QueryInterface(AsrIidOf<Other>(), &result);
+            if (IsFailed(query_interface_result))
+            {
+                return query_interface_result;
+            }
             other = {static_cast<Other*>(result), take_ownership};
             return ASR_S_OK;
         }
-        return ASR_E_NO_INTERFACE;
+        return ASR_E_INVALID_POINTER;
     }
     template <class Other>
     AsrResult As(Other** pp_out_other) const
     {
         if (ptr_)
         {
-            ptr_->QueryInterface(AsrIidOf<Other>(), reinterpret_cast<void**>(pp_out_other));
+            ptr_->QueryInterface(
+                AsrIidOf<Other>(),
+                reinterpret_cast<void**>(pp_out_other));
             (*pp_out_other)->AddRef();
             return ASR_S_OK;
         }
