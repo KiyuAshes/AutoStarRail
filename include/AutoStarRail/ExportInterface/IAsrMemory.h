@@ -36,7 +36,8 @@ ASR_INTERFACE IAsrMemory : public IAsrBase
 };
 
 SWIG_IGNORE(CreateIAsrMemory)
-AsrResult CreateIAsrMemory(size_t size_in_byte, IAsrMemory** pp_out_memory);
+ASR_C_API AsrResult
+CreateIAsrMemory(size_t size_in_byte, IAsrMemory** pp_out_memory);
 
 #ifdef __cplusplus
 

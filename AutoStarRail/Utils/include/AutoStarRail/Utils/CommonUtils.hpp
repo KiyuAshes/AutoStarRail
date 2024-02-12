@@ -28,6 +28,13 @@ public:                                                                        \
     int64_t AddRef() override { return ref_counter_.AddRef(); }                \
     int64_t Release() override { return ref_counter_.Release(this); }
 
+#define ASR_UTILS_GET_RUNTIME_CLASS_NAME_IMPL(class_name, pp_out_class_name)   \
+    static AsrReadOnlyString result{static_cast<const char*>(                  \
+        ASR_UTILS_STRINGUTILS_DEFINE_U8STR(#class_name))};                     \
+                                                                               \
+    result.GetImpl(pp_out_class_name);                                         \
+    return ASR_S_OK
+
 struct NonCopyable
 {
     NonCopyable() = default;

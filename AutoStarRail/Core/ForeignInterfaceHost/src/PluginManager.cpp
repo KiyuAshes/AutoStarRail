@@ -206,6 +206,110 @@ auto GetIidFromIidVector(IAsrGuidVector* p_iid_vector, uint32_t iid_index)
     return iid;
 }
 
+auto CreateInterface(
+    const char*            u8_plugin_name,
+    const CommonPluginPtr& common_p_plugin,
+    AsrPluginFeature       feature) -> std::optional<CommonBasePtr>
+{
+    constexpr auto& CREATE_FEATURE_INTERFACE_FAILED_MESSAGE =
+        "Error happened when calling p_plugin->CreateFeatureInterface."
+        "Error code = {}. Plugin Name = {}.";
+    return std::visit(
+        ASR::Utils::overload_set{
+            [feature, u8_plugin_name](
+                AsrPtr<IAsrPlugin> p_plugin) -> std::optional<CommonBasePtr>
+            {
+                AsrPtr<IAsrBase> result{};
+                if (const auto cfi_result = p_plugin->CreateFeatureInterface(
+                        feature,
+                        result.PutVoid());
+                    IsFailed(cfi_result))
+                {
+                    ASR_CORE_LOG_ERROR(
+                        CREATE_FEATURE_INTERFACE_FAILED_MESSAGE,
+                        cfi_result,
+                        u8_plugin_name);
+                    return {};
+                }
+                return result;
+            },
+            [feature, u8_plugin_name](
+                AsrPtr<IAsrSwigPlugin> p_plugin) -> std::optional<CommonBasePtr>
+            {
+                const auto cfi_result =
+                    p_plugin->CreateFeatureInterface(feature);
+                if (IsFailed(cfi_result.error_code))
+                {
+                    ASR_CORE_LOG_ERROR(
+                        CREATE_FEATURE_INTERFACE_FAILED_MESSAGE,
+                        cfi_result.error_code,
+                        u8_plugin_name);
+                    return {};
+                }
+                AsrPtr<IAsrSwigBase> result{};
+                *result.PutVoid() = cfi_result.value.GetVoid();
+                return result;
+            }},
+        common_p_plugin);
+}
+
+auto QueryErrorLensFrom(
+    const char*          u8_plugin_name,
+    const CommonBasePtr& common_p_base) -> std::optional<AsrPtr<IAsrErrorLens>>
+{
+    constexpr auto& QUERY_ERROR_LENS_FAILED_MESSAGE =
+        "Failed when calling QueryInterface. ErrorCode = {}. Pointer = {}. Plugin name = {}.";
+
+    return std::visit(
+        ASR::Utils::overload_set{
+            [u8_plugin_name](const AsrPtr<IAsrBase>& p_base)
+                -> std::optional<AsrPtr<IAsrErrorLens>>
+            {
+                AsrPtr<IAsrErrorLens> result;
+                if (const auto qi_result = p_base.As(result);
+                    ASR::IsFailed(qi_result))
+                {
+                    ASR_CORE_LOG_ERROR(
+                        QUERY_ERROR_LENS_FAILED_MESSAGE,
+                        qi_result,
+                        static_cast<void*>(p_base.Get()),
+                        u8_plugin_name);
+                    return {};
+                }
+
+                return result;
+            },
+            [u8_plugin_name](const AsrPtr<IAsrSwigBase>& p_base)
+                -> std::optional<AsrPtr<IAsrErrorLens>>
+            {
+                auto qi_result =
+                    p_base->QueryInterface(AsrIidOf<IAsrSwigErrorLens>());
+                if (ASR::IsFailed(qi_result.error_code))
+                {
+                    ASR_CORE_LOG_ERROR(
+                        QUERY_ERROR_LENS_FAILED_MESSAGE,
+                        qi_result.error_code,
+                        static_cast<void*>(p_base.Get()),
+                        u8_plugin_name);
+                    return {};
+                }
+
+                AsrPtr<IAsrErrorLens> result{
+                    new SwigToCpp<IAsrSwigErrorLens>{
+                        static_cast<IAsrSwigErrorLens*>(
+                            qi_result.value.GetVoid())},
+                    take_ownership};
+
+                qi_result.value.Get()->Release();
+
+                return result;
+            }},
+        common_p_base);
+}
+
+constexpr auto& GET_GUID_FAILED_MESSAGE =
+    "Get guid from interface failed. Error code = {}";
+
 ASR_NS_ANONYMOUS_DETAILS_END
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
@@ -261,7 +365,7 @@ AsrRetReadOnlyString AsrGetErrorMessage(
         result.error_code = ret_guid.error_code;
     }
     result.error_code =
-        Asr::Core::ForeignInterfaceHost::g_plugin_manager.GetErrorMessage(
+        ASR::Core::ForeignInterfaceHost::g_plugin_manager.GetErrorMessage(
             ret_guid.value,
             error_code,
             p_result.Put());
@@ -406,9 +510,11 @@ ASR_DEFINE_VARIABLE(g_plugin_manager){};
 const std::unordered_map<AsrPluginFeature, std::function<void*()>>
     g_plugin_object_factory{};
 
-AsrResult PluginManager::AddInterface(CommonPluginPtr p_plugin)
+AsrResult PluginManager::AddInterface(
+    CommonPluginPtr common_p_plugin,
+    const char*     u8_plugin_name)
 {
-    const auto expected_features = Details::GetFeaturesFrom(p_plugin);
+    const auto expected_features = Details::GetFeaturesFrom(common_p_plugin);
     if (!expected_features)
     {
         return expected_features.error();
@@ -417,20 +523,46 @@ AsrResult PluginManager::AddInterface(CommonPluginPtr p_plugin)
          const auto  feature : features)
     {
         // TODO: 根据feature枚举将对应接口添加到对应manager。
-        CommonBasePtr common_p_base{};
+
+        auto opt_common_p_base =
+            Details::CreateInterface(u8_plugin_name, common_p_plugin, feature);
+
+        if (!opt_common_p_base)
+        {
+            continue;
+        }
+
+        InterfaceStaticStorage storage{};
 
         switch (feature)
         {
         case ASR_PLUGIN_FEATURE_ERROR_LENS:
         {
-            AsrPtr<IAsrGuidVector> p_iids{};
-            AsrPtr<IAsrErrorLens>  p_error_lens{};
-            std::visit(
-                ASR::Utils::overload_set{
-                    [](AsrPtr<IAsrBase>) {},
-                    [](AsrPtr<IAsrSwigBase>) {}},
-                common_p_base);
-            error_lens_manager_.Register(p_iids.Get(), p_error_lens.Get());
+            AsrPtr<IAsrGuidVector> p_guid_vector{};
+            // TODO: LOG时包含Plugin本身的名称
+            const auto opt_p_error_lens = Details::QueryErrorLensFrom(
+                u8_plugin_name,
+                opt_common_p_base.value());
+            if (!opt_p_error_lens)
+            {
+                continue;
+            }
+
+            const auto& p_error_lens = opt_p_error_lens.value();
+
+            if (const auto get_iids_result =
+                    p_error_lens->GetSupportedIids(p_guid_vector.Put());
+                ASR::IsFailed(get_iids_result))
+            {
+                ASR_CORE_LOG_ERROR(
+                    "Try to get supported iids failed. Error code = {}. Plugin name = {}.",
+                    get_iids_result,
+                    u8_plugin_name);
+                break;
+            }
+            error_lens_manager_.Register(
+                p_guid_vector.Get(),
+                p_error_lens.Get());
             break;
         }
         default:
@@ -438,6 +570,35 @@ AsrResult PluginManager::AddInterface(CommonPluginPtr p_plugin)
         }
     }
     return ASR_E_NO_IMPLEMENTATION;
+}
+
+void PluginManager::RegisterInterfaceStaticStorage(
+    IAsrTypeInfo*                 p_interface,
+    const InterfaceStaticStorage& storage)
+{
+    AsrGuid guid;
+    if (const auto get_guid_result = p_interface->GetGuid(&guid);
+        IsFailed(get_guid_result))
+    {
+        ASR_CORE_LOG_ERROR(Details::GET_GUID_FAILED_MESSAGE, get_guid_result);
+    }
+
+    guid_storage_map_[guid] = storage;
+}
+
+void PluginManager::RegisterInterfaceStaticStorage(
+    IAsrSwigTypeInfo*             p_swig_interface,
+    const InterfaceStaticStorage& storage)
+{
+    const auto ret_guid = p_swig_interface->GetGuid();
+    if (IsFailed(ret_guid.error_code))
+    {
+        ASR_CORE_LOG_ERROR(
+            Details::GET_GUID_FAILED_MESSAGE,
+            ret_guid.error_code);
+    }
+
+    guid_storage_map_[ret_guid.value] = storage;
 }
 
 std::unique_ptr<PluginDesc> PluginManager::GetPluginDesc(

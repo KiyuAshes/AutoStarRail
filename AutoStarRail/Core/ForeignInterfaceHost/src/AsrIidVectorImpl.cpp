@@ -51,7 +51,7 @@ AsrResult AsrIidVectorImpl::PushBack(const AsrGuid& iid)
 
 auto AsrIidVectorImpl::GetImpl() -> decltype(iids_)& { return iids_; }
 
-AsrResult CreateIAsrIidVector(
+AsrResult CreateIAsrGuidVector(
     const AsrGuid*   p_iids,
     size_t           iid_count,
     IAsrGuidVector** pp_out_iid_vector)
@@ -118,4 +118,20 @@ AsrResult AsrSwigIidVectorImpl::Find(const AsrGuid& guid)
 AsrResult AsrSwigIidVectorImpl::PushBack(const AsrGuid& guid)
 {
     return impl_.PushBack(guid);
+}
+
+AsrRetSwigGuidVector CreateIAsrSwigGuidVector()
+{
+    AsrRetSwigGuidVector result{};
+    try
+    {
+        const auto p_result = new AsrSwigIidVectorImpl{};
+        result.value = p_result;
+        p_result->AddRef();
+    }
+    catch (const std::bad_alloc&)
+    {
+        result.error_code = ASR_E_OUT_OF_MEMORY;
+    }
+    return result;
 }

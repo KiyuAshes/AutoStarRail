@@ -32,7 +32,7 @@ ASR_DEFINE_GUID(
     0xbe,
     0x8c);
 SWIG_IGNORE(IAsrInput)
-ASR_INTERFACE IAsrInput : public IAsrInspectable
+ASR_INTERFACE IAsrInput : public IAsrTypeInfo
 {
     /**
      * @brief If the implementation is a mouse, then the function assumes that

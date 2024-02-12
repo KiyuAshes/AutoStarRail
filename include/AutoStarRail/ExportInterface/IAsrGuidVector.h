@@ -27,6 +27,12 @@ ASR_INTERFACE IAsrGuidVector : public IAsrBase
     ASR_METHOD PushBack(const AsrGuid& iid) = 0;
 };
 
+SWIG_IGNORE(CreateIAsrGuidVector)
+ASR_C_API AsrResult CreateIAsrGuidVector(
+    const AsrGuid*   p_data,
+    size_t           size,
+    IAsrGuidVector** pp_out_guid);
+
 // {E00E7F36-A7BC-4E35-8E98-5C9BB6B1D19B}
 ASR_DEFINE_GUID(
     ASR_IID_GUID_SWIG_VECTOR,
@@ -54,5 +60,7 @@ ASR_INTERFACE IAsrSwigGuidVector : public IAsrSwigBase
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetSwigGuidVector)
     IAsrSwigGuidVector* value{};
 ASR_RET_TYPE_DECLARE_END
+
+ASR_API AsrRetSwigGuidVector CreateIAsrSwigGuidVector();
 
 #endif // ASR_GUIDVECTOR_H

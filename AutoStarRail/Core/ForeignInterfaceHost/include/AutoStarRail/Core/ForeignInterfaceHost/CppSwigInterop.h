@@ -18,6 +18,13 @@
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <cstdint>
 
+ASR_NS_BEGIN
+
+using CommonTypeInfoPtr =
+    std::variant<AsrPtr<IAsrTypeInfo>, AsrPtr<IAsrSwigTypeInfo>>;
+
+ASR_NS_END
+
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 template <class T>
@@ -352,6 +359,8 @@ AsrResult CommonPluginEnumFeature(
     const CommonPluginPtr& p_this,
     size_t                 index,
     AsrPluginFeature*      p_out_feature);
+
+auto CommonGetGuid(const CommonTypeInfoPtr& p_this) -> AsrRetGuid;
 
 template <class T>
 class CppToSwig;

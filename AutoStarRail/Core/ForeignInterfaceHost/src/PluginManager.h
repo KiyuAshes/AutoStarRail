@@ -105,16 +105,36 @@ public:
     using NamePluginMap =
         std::map<AsrPtr<IAsrReadOnlyString>, Plugin, AsrStringLess>;
 
+    /**
+     * @brief READ ONLY struct.
+     */
+    struct InterfaceStaticStorage
+    {
+        std::filesystem::path       path;
+        std::shared_ptr<PluginDesc> sp_desc;
+    };
+    using InterfaceStaticStorageMap =
+        std::unordered_map<AsrGuid, InterfaceStaticStorage>;
+
 private:
     /**
      * @brief 注意：如果连名字都没获取到，则以json路径为此处的名称
      */
     NamePluginMap                            name_plugin_map_{};
+    InterfaceStaticStorageMap                guid_storage_map_{};
     InterfaceManager<IAsrTask, IAsrSwigTask> asr_task_interface_manager_;
     std::vector<AsrPtr<IAsrCaptureFactory>>  asr_capture_interfaces_;
     ErrorLensManager                         error_lens_manager_;
 
-    AsrResult AddInterface(CommonPluginPtr p_plugin);
+    AsrResult AddInterface(
+        CommonPluginPtr             common_p_plugin,
+        const char*                 u8_plugin_name);
+    void RegisterInterfaceStaticStorage(
+        IAsrTypeInfo*                 p_interface,
+        const InterfaceStaticStorage& storage);
+    void RegisterInterfaceStaticStorage(
+        IAsrSwigTypeInfo*             p_swig_interface,
+        const InterfaceStaticStorage& storage);
 
     static std::unique_ptr<PluginDesc> GetPluginDesc(
         const std::filesystem::path& metadata_path);

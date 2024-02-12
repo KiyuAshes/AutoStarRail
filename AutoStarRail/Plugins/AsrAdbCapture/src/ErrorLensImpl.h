@@ -43,7 +43,7 @@ public:
     int64_t   Release() override;
     AsrResult QueryInterface(const AsrGuid& iid, void** pp_out_object) override;
     // IAsrErrorLens
-    AsrResult GetSupportedIids(IAsrIidVector** pp_out_iids) override;
+    AsrResult GetSupportedIids(IAsrGuidVector** pp_out_iids) override;
     AsrResult GetErrorMessage(
         IAsrReadOnlyString*  locale_name,
         AsrResult            error_code,

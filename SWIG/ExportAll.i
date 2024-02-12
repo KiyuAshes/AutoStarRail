@@ -12,7 +12,7 @@
 %{
 #include <AutoStarRail/AsrExport.h>
 #include <AutoStarRail/IAsrBase.h>
-#include <AutoStarRail/IAsrInspectable.h>
+#include <AutoStarRail/IAsrTypeInfo.h>
 #include <AutoStarRail/AsrString.hpp>
 
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
@@ -85,7 +85,7 @@
 
 %include <AutoStarRail/AsrExport.h>
 %include <AutoStarRail/IAsrBase.h>
-%include <AutoStarRail/IAsrInspectable.h>
+%include <AutoStarRail/IAsrTypeInfo.h>
 %include <AutoStarRail/AsrString.hpp>
 
 // 以下文件按照字母顺序排列！ The following files are in alphabetical order!

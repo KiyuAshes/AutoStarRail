@@ -345,6 +345,23 @@ AsrResult CommonPluginEnumFeature(
         p_this);
 }
 
+auto CommonGetGuid(const CommonTypeInfoPtr& p_this) -> AsrRetGuid
+{
+    return std::visit(
+        ASR::Utils::overload_set{
+            [](const AsrPtr<IAsrTypeInfo>& p_type_info)
+            {
+                AsrRetGuid result;
+
+                result.error_code = p_type_info->GetGuid(&result.value);
+
+                return result;
+            },
+            [](const AsrPtr<IAsrSwigTypeInfo>& p_type_info)
+            { return p_type_info->GetGuid(); }},
+        p_this);
+}
+
 AsrRetImage CppToSwig<IAsrCapture>::Capture()
 {
     return CallCppMethod<
