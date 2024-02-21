@@ -59,7 +59,6 @@ AsrResult CreateIAsrGuidVector(
     *pp_out_iid_vector = nullptr;
     try
     {
-        // TODO:在带锁内存池synchronized_pool_resource中分配对象，以尽量避免OOM的情况出现
         auto* const result = new AsrIidVectorImpl{};
         result->AddRef();
         auto& impl = result->GetImpl();
@@ -81,43 +80,29 @@ AsrResult CreateIAsrGuidVector(
     }
 }
 
-int64_t AsrSwigIidVectorImpl::AddRef() { return impl_.AddRef(); }
-
-int64_t AsrSwigIidVectorImpl::Release() { return impl_.Release(); }
-
-AsrRetSwigBase AsrSwigIidVectorImpl::QueryInterface(const AsrGuid& iid)
+AsrRetSwigBase AsrIidVectorImpl::QueryInterface(const AsrGuid& iid)
 {
     return ASR::Utils::QueryInterface<IAsrSwigGuidVector>(this, iid);
 }
 
-AsrRetUInt AsrSwigIidVectorImpl::Size()
+AsrRetUInt AsrIidVectorImpl::Size()
 {
     AsrRetUInt result{};
     size_t     size;
 
-    result.error_code = impl_.Size(&size);
+    result.error_code = Size(&size);
     result.value = size;
 
     return result;
 }
 
-AsrRetGuid AsrSwigIidVectorImpl::At(size_t index)
+AsrRetGuid AsrIidVectorImpl::At(size_t index)
 {
     AsrRetGuid result{};
 
-    result.error_code = impl_.At(index, &result.value);
+    result.error_code = At(index, &result.value);
 
     return result;
-}
-
-AsrResult AsrSwigIidVectorImpl::Find(const AsrGuid& guid)
-{
-    return impl_.Find(guid);
-}
-
-AsrResult AsrSwigIidVectorImpl::PushBack(const AsrGuid& guid)
-{
-    return impl_.PushBack(guid);
 }
 
 AsrRetSwigGuidVector CreateIAsrSwigGuidVector()
@@ -125,7 +110,7 @@ AsrRetSwigGuidVector CreateIAsrSwigGuidVector()
     AsrRetSwigGuidVector result{};
     try
     {
-        const auto p_result = new AsrSwigIidVectorImpl{};
+        const auto p_result = new AsrIidVectorImpl{};
         result.value = p_result;
         p_result->AddRef();
     }

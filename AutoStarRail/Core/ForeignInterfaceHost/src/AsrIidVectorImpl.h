@@ -5,7 +5,7 @@
 #include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <vector>
 
-class AsrIidVectorImpl final : public IAsrGuidVector
+class AsrIidVectorImpl final : public IAsrGuidVector, public IAsrSwigGuidVector
 {
     std::vector<AsrGuid> iids_;
 
@@ -16,26 +16,16 @@ public:
     // IAsrGuidVector
     AsrResult Size(size_t* p_out_size) override;
     AsrResult At(size_t index, AsrGuid* p_out_iid) override;
-    AsrResult Find(const AsrGuid& iid) override;
-    AsrResult PushBack(const AsrGuid& iid) override;
     // AsrIidVectorImpl
     auto GetImpl() -> decltype(iids_)&;
-};
-
-class AsrSwigIidVectorImpl final : public IAsrSwigGuidVector
-{
-    AsrIidVectorImpl impl_{};
-
-public:
     // IAsrSwigBase
-    int64_t        AddRef() override;
-    int64_t        Release() override;
     AsrRetSwigBase QueryInterface(const AsrGuid& iid) override;
     // IAsrSwigGuidVector
     AsrRetUInt Size() override;
     AsrRetGuid At(size_t index) override;
-    AsrResult  Find(const AsrGuid& p_iid) override;
-    AsrResult  PushBack(const AsrGuid& p_iid) override;
+    // IAsrGuidVector AND IAsrSwigGuidVector
+    AsrResult Find(const AsrGuid& iid) override;
+    AsrResult PushBack(const AsrGuid& iid) override;
 };
 
 #endif // ASR_CORE_FOREIGNINTERFACEHOST_ASRIIDVECTOR_H
