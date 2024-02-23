@@ -1,5 +1,5 @@
-#include "PluginManager.h"
-#include "AutoStarRail/Utils/StringUtils.h"
+#include <AutoStarRail/Core/ForeignInterfaceHost/PluginManager.h>
+#include <AutoStarRail/Utils/StringUtils.h>
 #include <AutoStarRail/AsrConfig.h>
 #include <AutoStarRail/AsrPtr.hpp>
 #include <AutoStarRail/AsrString.hpp>

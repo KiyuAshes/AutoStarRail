@@ -215,6 +215,11 @@ AsrResult SwigToCpp<IAsrSwigErrorLens>::GetErrorMessage(
         error_code);
 }
 
+AsrResult SwigToCpp<IAsrSwigTask>::OnRequestExit()
+{
+    return p_impl_->OnRequestExit();
+}
+
 AsrResult SwigToCpp<IAsrSwigTask>::Do(
     IAsrReadOnlyString* p_connection_json,
     IAsrReadOnlyString* p_task_settings_json)

@@ -3,7 +3,7 @@
 ASR_CORE_UTILS_NS_BEGIN
 
 auto MakeAsrReadOnlyStringFromUtf8(std::string_view u8_string)
-    -> Asr::Utils::Expected<Asr::AsrPtr<IAsrReadOnlyString>>
+    -> Asr::Utils::Expected<ASR::AsrPtr<IAsrReadOnlyString>>
 {
     IAsrReadOnlyString* p_result{};
     const auto          error_code =

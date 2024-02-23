@@ -8,6 +8,8 @@
 
 ASR_CORE_UTILS_NS_BEGIN
 
+inline void* VoidP(void* pointer) { return pointer; }
+
 [[nodiscard]]
 auto MakeAsrReadOnlyStringFromUtf8(std::string_view u8_string)
     -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>;

@@ -1,4 +1,4 @@
-#include "IAsrPluginManagerImpl.h"
+#include "../include/AutoStarRail/Core/ForeignInterfaceHost/IAsrPluginManagerImpl.h"
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Core/Logger/Logger.h>
 

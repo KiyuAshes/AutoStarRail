@@ -1,10 +1,9 @@
-#include "PluginManager.h"
-#include "ForeignInterfaceHost.h"
-#include "IAsrPluginManagerImpl.h"
-
 #include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHost.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/IAsrPluginManagerImpl.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/PluginManager.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Core/Utils/InternalUtils.h>
 #include <AutoStarRail/Core/i18n/AsrResultTranslator.h>
@@ -307,8 +306,70 @@ auto QueryErrorLensFrom(
         common_p_base);
 }
 
+auto QueryTypeInfoFrom(
+    const char*          p_plugin_name,
+    const CommonBasePtr& common_p_base) -> std::optional<CommonTypeInfoPtr>
+{
+    constexpr auto& QUERY_TYPE_INFO_FAILED_MESSAGE =
+        "Failed when querying IAsrTypeInfo or IAsrSwigTypeInfo. ErrorCode = {}. Pointer = {}. Plugin name = {}.";
+    return std::visit(
+        ASR::Utils::overload_set{
+            [p_plugin_name](const AsrPtr<IAsrBase>& p_base)
+                -> std::optional<CommonTypeInfoPtr>
+            {
+                AsrPtr<IAsrTypeInfo> result;
+                if (const auto qi_result = p_base.As(result);
+                    IsFailed(qi_result))
+                {
+                    ASR_CORE_LOG_ERROR(
+                        QUERY_TYPE_INFO_FAILED_MESSAGE,
+                        qi_result,
+                        static_cast<void*>(p_base.Get()),
+                        p_plugin_name);
+                    return {};
+                }
+                return result;
+            },
+            [p_plugin_name](const AsrPtr<IAsrSwigBase>& p_base)
+                -> std::optional<CommonTypeInfoPtr>
+            {
+                const auto qi_result =
+                    p_base->QueryInterface(AsrIidOf<IAsrSwigTypeInfo>());
+                if (IsFailed(qi_result.error_code))
+                {
+                    ASR_CORE_LOG_ERROR(
+                        QUERY_TYPE_INFO_FAILED_MESSAGE,
+                        qi_result.error_code,
+                        static_cast<void*>(p_base.Get()),
+                        p_plugin_name);
+                    return {};
+                }
+                AsrPtr<IAsrSwigTypeInfo> result;
+                *result.PutVoid() = qi_result.value.GetVoid();
+                return result;
+            }},
+        common_p_base);
+}
+
 constexpr auto& GET_GUID_FAILED_MESSAGE =
     "Get guid from interface failed. Error code = {}";
+
+auto GetInterfaceStaticStorage(
+    const PluginManager::InterfaceStaticStorageMap& guid_storage_map,
+    const AsrGuid&                                  guid)
+    -> ASR::Utils::Expected<
+        std::reference_wrapper<const PluginManager::InterfaceStaticStorage>>
+{
+    const auto it_storage = guid_storage_map.find(guid);
+    if (it_storage == guid_storage_map.end())
+    {
+        ASR_CORE_LOG_ERROR(
+            "No vaild interface static storage foud. Guid = {}.",
+            guid);
+    }
+
+    return std::cref(it_storage->second);
+}
 
 ASR_NS_ANONYMOUS_DETAILS_END
 
@@ -511,9 +572,12 @@ const std::unordered_map<AsrPluginFeature, std::function<void*()>>
     g_plugin_object_factory{};
 
 AsrResult PluginManager::AddInterface(
-    CommonPluginPtr common_p_plugin,
-    const char*     u8_plugin_name)
+    const Plugin& plugin,
+    const char*   u8_plugin_name)
 {
+    const auto& common_p_plugin = plugin.p_plugin_;
+    const auto& opt_resource_path = plugin.sp_desc_->opt_resource_path;
+
     const auto expected_features = Details::GetFeaturesFrom(common_p_plugin);
     if (!expected_features)
     {
@@ -529,10 +593,39 @@ AsrResult PluginManager::AddInterface(
 
         if (!opt_common_p_base)
         {
+            // NOTE: Error message will be printed by CreateInterface.
             continue;
         }
 
-        InterfaceStaticStorage storage{};
+        if (opt_resource_path)
+        {
+            if (const auto opt_common_p_type_info = Details::QueryTypeInfoFrom(
+                    u8_plugin_name,
+                    opt_common_p_base.value()))
+            {
+                const auto&   relative_path = opt_resource_path.value();
+                std::u8string u8_relative_path{
+                    ASR_FULL_RANGE_OF(relative_path)};
+                InterfaceStaticStorage storage{
+                    {std::filesystem::current_path() / u8_relative_path},
+                    plugin.sp_desc_};
+                std::visit(
+                    ASR::Utils::overload_set{
+                        [this,
+                         &storage](const AsrPtr<IAsrTypeInfo>& p_type_info) {
+                            RegisterInterfaceStaticStorage(
+                                p_type_info.Get(),
+                                storage);
+                        },
+                        [this, &storage](
+                            const AsrPtr<IAsrSwigTypeInfo>& p_type_info) {
+                            RegisterInterfaceStaticStorage(
+                                p_type_info.Get(),
+                                storage);
+                        }},
+                    opt_common_p_type_info.value());
+            }
+        }
 
         switch (feature)
         {
@@ -602,7 +695,8 @@ void PluginManager::RegisterInterfaceStaticStorage(
 }
 
 std::unique_ptr<PluginDesc> PluginManager::GetPluginDesc(
-    const std::filesystem::path& metadata_path)
+    const std::filesystem::path& metadata_path,
+    bool                         is_directory)
 {
     std::unique_ptr<PluginDesc> result{};
     std::ifstream               plugin_config_stream{};
@@ -614,6 +708,11 @@ std::unique_ptr<PluginDesc> PluginManager::GetPluginDesc(
 
     const auto config = nlohmann::json::parse(plugin_config_stream);
     result = std::make_unique<PluginDesc>(config.get<PluginDesc>());
+
+    if (!is_directory)
+    {
+        result->opt_resource_path = {};
+    }
 
     return result;
 }
@@ -682,8 +781,20 @@ AsrResult PluginManager::Refresh()
     for (const auto  current_path = std::filesystem::path{"./plugins"};
          const auto& it : std::filesystem::directory_iterator{current_path})
     {
-        const auto& it_path = it.path();
-        const auto  extension = it_path.extension();
+        std::filesystem::path it_path;
+        if (it.is_directory())
+        {
+            const auto plugin_metadata_name = it.path().filename();
+            it_path =
+                it
+                / std::filesystem::path{
+                    plugin_metadata_name.u8string() + std::u8string{u8".json"}};
+        }
+        else
+        {
+            it_path = it.path();
+        }
+        const auto extension = it_path.extension();
         if (ASR_UTILS_STRINGUTILS_COMPARE_STRING(extension, "json"))
         {
             AsrResult plugin_create_result{ASR_E_UNDEFINED_RETURN_VALUE};
@@ -691,7 +802,8 @@ AsrResult PluginManager::Refresh()
 
             try
             {
-                auto tmp_up_plugin_desc = GetPluginDesc(it_path);
+                auto tmp_up_plugin_desc =
+                    GetPluginDesc(it_path, it.is_directory());
                 up_plugin_desc = std::move(tmp_up_plugin_desc);
 
                 if (const auto* const CURRENT_PLATFORM =
@@ -733,7 +845,7 @@ AsrResult PluginManager::Refresh()
             {
                 ASR_CORE_LOG_EXCEPTION(ex);
                 ASR_CORE_LOG_INFO(
-                    "Error happened when parsing plugin metadata file. Error code = " ASR_STR(
+                    "Error happened when reading plugin metadata file. Error code = " ASR_STR(
                         ASR_E_INVALID_FILE) ".");
                 plugin_create_result = ASR_E_INVALID_FILE;
             }
@@ -899,6 +1011,50 @@ AsrResult PluginManager::GetAllPluginInfo(
     }
     p_vector.As(pp_out_plugin_info_vector);
     return ASR_S_OK;
+}
+
+auto PluginManager::GetInterfaceStaticStorage(IAsrTypeInfo* p_type_info) const
+    -> Asr::Utils::Expected<
+        std::reference_wrapper<const InterfaceStaticStorage>>
+{
+    if (p_type_info == nullptr)
+    {
+        ASR_CORE_LOG_ERROR("Null pointer found. Please check your code.");
+        return tl::make_unexpected(ASR_E_INVALID_POINTER);
+    }
+
+    AsrGuid guid;
+    if (const auto gg_result = p_type_info->GetGuid(&guid); IsFailed(gg_result))
+    {
+        ASR_CORE_LOG_ERROR(
+            "Get GUID failed. Pointer = {}",
+            Utils::VoidP(p_type_info));
+        return tl::make_unexpected(gg_result);
+    }
+
+    return Details::GetInterfaceStaticStorage(guid_storage_map_, guid);
+}
+
+auto PluginManager::GetInterfaceStaticStorage(IAsrSwigTypeInfo* p_type_info)
+    const -> Asr::Utils::Expected<
+        std::reference_wrapper<const InterfaceStaticStorage>>
+{
+    if (p_type_info == nullptr)
+    {
+        ASR_CORE_LOG_ERROR("Null pointer found. Please check your code.");
+        return tl::make_unexpected(ASR_E_INVALID_POINTER);
+    }
+
+    const auto gg_result = p_type_info->GetGuid();
+    if (IsFailed(gg_result.error_code))
+    {
+        ASR_CORE_LOG_ERROR(
+            "Get GUID failed. Pointer = {}",
+            Utils::VoidP(p_type_info));
+        return tl::make_unexpected(gg_result.error_code);
+    }
+
+    return Details::GetInterfaceStaticStorage(guid_storage_map_, gg_result.value);
 }
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

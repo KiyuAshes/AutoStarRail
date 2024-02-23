@@ -2,19 +2,18 @@
 #define ASR_CORE_FOREIGNINTERFACEHOST_PLUGINFILEMANAGER_H
 
 #include "Plugin.h"
-#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
-#include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
-#include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
-#include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
+#include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
+#include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
 #include <AutoStarRail/Utils/Expected.h>
-#include <AutoStarRail/Utils/fmt.h>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <memory>
 #include <vector>
@@ -126,18 +125,17 @@ private:
     std::vector<AsrPtr<IAsrCaptureFactory>>  asr_capture_interfaces_;
     ErrorLensManager                         error_lens_manager_;
 
-    AsrResult AddInterface(
-        CommonPluginPtr             common_p_plugin,
-        const char*                 u8_plugin_name);
-    void RegisterInterfaceStaticStorage(
-        IAsrTypeInfo*                 p_interface,
-        const InterfaceStaticStorage& storage);
+    AsrResult AddInterface(const Plugin& plugin, const char* u8_plugin_name);
+    void      RegisterInterfaceStaticStorage(
+             IAsrTypeInfo*                 p_interface,
+             const InterfaceStaticStorage& storage);
     void RegisterInterfaceStaticStorage(
         IAsrSwigTypeInfo*             p_swig_interface,
         const InterfaceStaticStorage& storage);
 
     static std::unique_ptr<PluginDesc> GetPluginDesc(
-        const std::filesystem::path& metadata_path);
+        const std::filesystem::path& metadata_path,
+        bool                         is_directory);
 
     AsrResult GetInterface(const Plugin& plugin);
 
@@ -154,8 +152,7 @@ public:
     /**
      * @brief Get the Error Explanation from AsrResult.
      *
-     * @param iids
-     * @param locale_name
+     * @param iid guid of plugin
      * @param error_code
      * @param pp_out_error_message
      * @return AsrResult
@@ -168,6 +165,13 @@ public:
 
     AsrResult GetAllPluginInfo(
         IAsrPluginInfoVector** pp_out_plugin_info_vector);
+
+    auto GetInterfaceStaticStorage(IAsrTypeInfo* p_type_info) const
+        -> ASR::Utils::Expected<
+            std::reference_wrapper<const InterfaceStaticStorage>>;
+    auto GetInterfaceStaticStorage(IAsrSwigTypeInfo* p_type_info) const
+        -> ASR::Utils::Expected<
+            std::reference_wrapper<const InterfaceStaticStorage>>;
 };
 
 extern PluginManager g_plugin_manager;

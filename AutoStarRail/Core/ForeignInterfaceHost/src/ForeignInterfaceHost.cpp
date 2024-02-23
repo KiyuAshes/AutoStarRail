@@ -1,4 +1,4 @@
-#include "ForeignInterfaceHost.h"
+#include "../include/AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHost.h"
 #include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/UnexpectedEnumException.h>
 #include <AutoStarRail/Utils/EnumUtils.hpp>
@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <magic_enum_format.hpp>
+#include <AutoStarRail/Utils/StringUtils.h>
 
 template <class T>
 struct ASR_FMT_NS::formatter<std::vector<T>, char>
@@ -256,6 +257,16 @@ void from_json(const nlohmann::json& input, PluginDesc& output)
     input.at("supportedSystem").get_to(output.supported_system);
     input.at("pluginFilenameExtension")
         .get_to(output.plugin_filename_extension);
+    if (const auto it_resource_path = input.find("resourcePath");
+        it_resource_path != input.end())
+    {
+        output.opt_resource_path = it_resource_path->get<std::string>();
+    }
+    else
+    {
+        output.opt_resource_path =
+            ASR_UTILS_STRINGUTILS_DEFINE_U8STR("resource");
+    }
     const auto guid_string = input.at("guid").get<std::string>();
     output.guid = MakeAsrGuid(guid_string);
     input.at("settings").get_to(output.settings);

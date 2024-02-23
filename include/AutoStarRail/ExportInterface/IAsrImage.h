@@ -1,9 +1,9 @@
 #ifndef ASR_IMAGE_H
 #define ASR_IMAGE_H
 
-#include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/AsrPtr.hpp>
 #include <AutoStarRail/AsrString.hpp>
+#include <AutoStarRail/IAsrBase.h>
 
 typedef enum AsrImageFormat
 {
@@ -96,8 +96,9 @@ ASR_C_API AsrResult CreateIAsrImageFromRgb888(
     IAsrImage**               pp_out_image);
 
 ASR_C_API AsrResult AsrPluginLoadImageFromResource(
-    IAsrReadOnlyString* p_relative_path,
-    IAsrImage**         pp_out_image);
+    ASR_INTERFACE IAsrTypeInfo* p_type_info,
+    IAsrReadOnlyString*         p_relative_path,
+    IAsrImage**                 pp_out_image);
 
 #endif // SWIG
 
@@ -116,7 +117,8 @@ ASR_RET_TYPE_DECLARE_BEGIN(AsrRetImage)
     AsrSwigImage value;
 ASR_RET_TYPE_DECLARE_END
 
-ASR_API AsrRetImage
-AsrPluginLoadImageFromResource(AsrReadOnlyString relative_path);
+ASR_API AsrRetImage AsrPluginLoadImageFromResource(
+    ASR_INTERFACE IAsrSwigTypeInfo* p_type_info,
+    AsrReadOnlyString               relative_path);
 
 #endif // ASR_IMAGE_H

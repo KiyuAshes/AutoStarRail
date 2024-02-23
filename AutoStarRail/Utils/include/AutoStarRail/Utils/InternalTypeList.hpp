@@ -2,6 +2,7 @@
 #define ASR_UTILS_INTERNALTYPELIST_H
 
 #include <AutoStarRail/Utils/Config.h>
+#include <cstdint>
 
 ASR_UTILS_NS_BEGIN
 

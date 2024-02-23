@@ -2,7 +2,7 @@
 #define ASR_CORE_FOREIGNINTERFACEHOST_CPPINTERFACE_H
 
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
-#include "Plugin.h"
+#include "../include/AutoStarRail/Core/ForeignInterfaceHost/Plugin.h"
 
 #define ASR_NS_CPPHOST_BEGIN                                                   \
     namespace CppHost                                                          \

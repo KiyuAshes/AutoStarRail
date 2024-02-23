@@ -1,7 +1,7 @@
-#include "Plugin.h"
+#include "../include/AutoStarRail/Core/ForeignInterfaceHost/Plugin.h"
 
-#include "ForeignInterfaceHost.h"
-#include "IAsrPluginManagerImpl.h"
+#include "../include/AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHost.h"
+#include "../include/AutoStarRail/Core/ForeignInterfaceHost/IAsrPluginManagerImpl.h"
 
 #include <utility>
 

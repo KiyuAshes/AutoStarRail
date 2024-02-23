@@ -1,14 +1,18 @@
 #include "Config.h"
+
+#include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/PluginManager.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/ExportInterface/IAsrImage.h>
 #include <AutoStarRail/ExportInterface/IAsrMemory.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/Expected.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
-#include <vector>
+#include <AutoStarRail/Utils/StreamUtils.hpp>
+#include <filesystem>
 #include <fstream>
 #include <utility>
-#include <filesystem>
+#include <vector>
 
 ASR_DISABLE_WARNING_BEGIN
 
@@ -168,22 +172,21 @@ AsrResult CreateIAsrImageFromEncodedData(
     ASR_UTILS_CHECK_POINTER(p_desc)
     ASR_UTILS_CHECK_POINTER(pp_out_image)
 
-    auto& desc = *p_desc;
+    auto& [p_data, data_size, data_format] = *p_desc;
 
-    const auto int_data_size = static_cast<int>(desc.data_size);
-    switch (desc.data_format)
+    const auto int_data_size = static_cast<int>(data_size);
+    switch (data_format)
     {
     case ASR_IMAGE_FORMAT_JPG:
         [[fallthrough]];
     case ASR_IMAGE_FORMAT_PNG:
     {
-        if (desc.data_size == 0)
+        if (data_size == 0)
         {
             return ASR_E_INVALID_SIZE;
         }
 
-        auto mat =
-            cv::imdecode({desc.p_data, int_data_size}, cv::IMREAD_UNCHANGED);
+        auto mat = cv::imdecode({p_data, int_data_size}, cv::IMREAD_UNCHANGED);
         cv::Mat rgb_mat{};
         cv::cvtColor(mat, rgb_mat, cv::COLOR_BGR2RGB);
 
@@ -231,9 +234,9 @@ AsrResult CreateIAsrImageFromDecodedData(
 }
 
 AsrResult CreateIAsrImageFromRgb888(
-    struct IAsrMemory* p_alias_memory,
-    AsrSize*           p_size,
-    IAsrImage**        pp_out_image)
+    IAsrMemory* p_alias_memory,
+    AsrSize*    p_size,
+    IAsrImage** pp_out_image)
 {
     ASR_UTILS_CHECK_POINTER(p_alias_memory)
     ASR_UTILS_CHECK_POINTER(p_size)
@@ -275,16 +278,109 @@ AsrResult CreateIAsrImageFromRgb888(
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
-// TODO: 实现下面函数
-//auto ResourceRelativePathToFullPath(IAsrReadOnlyString* p_read_only_string) {}
+auto ReadFromFile(const std::filesystem::path& full_path) -> cv::Mat
+{
+    std::vector<char> binary;
+    std::ifstream     ifs{};
+
+    ASR::Utils::EnableStreamException(
+        ifs,
+        std::ios::badbit | std::ios::failbit,
+        [&full_path, &binary](auto& stream)
+        {
+            stream.open(full_path, std::ios::binary);
+            // Stop eating new lines in binary mode!
+            stream.unsetf(std::ios::skipws);
+            stream.seekg(0, std::ios::end);
+            const auto size = stream.tellg();
+            stream.seekg(0, std::ios::beg);
+
+            binary.reserve(size);
+            std::copy(
+                std::istream_iterator<char>{stream},
+                std::istream_iterator<char>{},
+                binary.begin());
+        });
+
+    return cv::imdecode(binary, cv::IMREAD_COLOR);
+}
 
 ASR_NS_ANONYMOUS_DETAILS_END
 
-// TODO: 实现下面函数
-//AsrResult AsrPluginLoadImageFromResource(
-//    IAsrReadOnlyString* p_relative_path,
-//    IAsrImage**         pp_out_image)
-//{
-//}
-//
-//AsrRetImage AsrPluginLoadImageFromResource(AsrReadOnlyString relative_path) {}
+AsrResult AsrPluginLoadImageFromResource(
+    IAsrTypeInfo*       p_type_info,
+    IAsrReadOnlyString* p_relative_path,
+    IAsrImage**         pp_out_image)
+{
+    ASR_UTILS_CHECK_POINTER(p_type_info)
+    ASR_UTILS_CHECK_POINTER(p_relative_path)
+    ASR_UTILS_CHECK_POINTER(pp_out_image)
+
+    const auto expected_storge =
+        ASR::Core::ForeignInterfaceHost::g_plugin_manager
+            .GetInterfaceStaticStorage(p_type_info);
+    if (!expected_storge)
+    {
+        const auto error_code = expected_storge.error();
+        ASR_CORE_LOG_ERROR(
+            "Get interface static storage failed. Error code = {}.",
+            error_code);
+        return error_code;
+    }
+
+    const char* p_u8_relative_path{};
+    p_relative_path->GetUtf8(&p_u8_relative_path);
+
+    const auto full_path =
+        expected_storge.value().get().path / p_u8_relative_path;
+
+    try
+    {
+        const auto mat = Details::ReadFromFile(full_path);
+        auto*      p_result = new Asr::Core::OcvWrapper::IAsrImageImpl{mat};
+        *pp_out_image = p_result;
+        p_result->AddRef();
+        return ASR_S_OK;
+    }
+    catch (const std::ios_base::failure& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        ASR_CORE_LOG_ERROR(
+            "Error happened when reading resource file. Error code = " ASR_STR(
+                ASR_E_INVALID_FILE) ".");
+        return ASR_E_INVALID_FILE;
+    }
+    catch (cv::Exception& ex)
+    {
+        ASR_CORE_LOG_ERROR(ex.err);
+        ASR_CORE_LOG_ERROR(
+            "NOTE:\nfile = {}\nline = {}\nfunction = {}",
+            ex.file,
+            ex.line,
+            ex.func);
+        return ASR_E_OPENCV_ERROR;
+    }
+}
+
+AsrRetImage AsrPluginLoadImageFromResource(
+    IAsrSwigTypeInfo* p_type_info,
+    AsrReadOnlyString relative_path)
+{
+    AsrRetImage            result{};
+    ASR::AsrPtr<IAsrImage> p_image;
+
+    Asr::Core::ForeignInterfaceHost::SwigToCpp<IAsrSwigTypeInfo> cpp_type_info{
+        p_type_info};
+
+    result.error_code = AsrPluginLoadImageFromResource(
+        &cpp_type_info,
+        relative_path.Get(),
+        p_image.Put());
+
+    if (ASR::IsOk(result.error_code))
+    {
+        result.value = p_image;
+    }
+
+    return result;
+}

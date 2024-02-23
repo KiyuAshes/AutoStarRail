@@ -41,6 +41,7 @@ ASR_DEFINE_GUID(
 SWIG_IGNORE(IAsrTask)
 ASR_INTERFACE IAsrTask : public IAsrTypeInfo
 {
+    ASR_METHOD OnRequestExit() = 0;
     ASR_METHOD Do(
         IAsrReadOnlyString * p_connection_json,
         IAsrReadOnlyString * p_task_settings_json) = 0;
@@ -76,14 +77,15 @@ ASR_DEFINE_GUID(
     0x46)
 ASR_INTERFACE IAsrSwigTask : public IAsrSwigTypeInfo
 {
+    virtual AsrResult OnRequestExit() = 0;
     virtual AsrResult Do(
         AsrReadOnlyString connection_json,
         AsrReadOnlyString task_settings_json) = 0;
-    virtual AsrRetDate     GetNextExecutionTime() = 0;
-    virtual AsrRetReadOnlyString   GetName() = 0;
-    virtual AsrRetReadOnlyString   GetDescription() = 0;
-    virtual AsrRetReadOnlyString   GetLabel() = 0;
-    virtual AsrRetTaskType GetType() = 0;
+    virtual AsrRetDate           GetNextExecutionTime() = 0;
+    virtual AsrRetReadOnlyString GetName() = 0;
+    virtual AsrRetReadOnlyString GetDescription() = 0;
+    virtual AsrRetReadOnlyString GetLabel() = 0;
+    virtual AsrRetTaskType       GetType() = 0;
 };
 
 #endif // ASR_ITASK_H

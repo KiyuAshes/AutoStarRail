@@ -1,16 +1,16 @@
 #ifndef ASR_CORE_FOREIGNINTERFACEHOST_FOREIGNINTERFACEHOST_H
 #define ASR_CORE_FOREIGNINTERFACEHOST_FOREIGNINTERFACEHOST_H
 
-#include <string>
-#include <vector>
-#include <optional>
-#include <variant>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
-#include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHostEnum.h>
 #include <AutoStarRail/ExportInterface/IAsrSettings.h>
+#include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/Utils/fmt.h>
 #include <nlohmann/json_fwd.hpp>
-#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHostEnum.h>
+#include <optional>
+#include <string>
+#include <variant>
+#include <vector>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
@@ -77,6 +77,7 @@ struct PluginDesc
     std::string                    version;
     std::string                    supported_system;
     std::string                    plugin_filename_extension;
+    std::optional<std::string>     opt_resource_path;
     AsrGuid                        guid;
     std::vector<PluginSettingDesc> settings;
 };

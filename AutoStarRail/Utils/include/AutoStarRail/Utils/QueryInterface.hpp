@@ -3,6 +3,7 @@
 
 #include <AutoStarRail/Utils/Config.h>
 #include <AutoStarRail/Utils/PresetTypeInheritanceInfo.h>
+#include <type_traits>
 
 ASR_UTILS_NS_BEGIN
 

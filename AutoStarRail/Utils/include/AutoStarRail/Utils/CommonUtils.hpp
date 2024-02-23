@@ -16,7 +16,8 @@ const auto value = A;
 #define ASR_UTILS_CHECK_POINTER(pointer)                                       \
     if (pointer == nullptr) [[unlikely]]                                       \
     {                                                                          \
-        ASR_CORE_LOG_ERROR("Null pointer found! Please check your code.");     \
+        ASR_CORE_LOG_ERROR("Null pointer found! Variable name is " #pointer    \
+                           ". Please check your code.");                       \
         return ASR_E_INVALID_POINTER;                                          \
     }
 

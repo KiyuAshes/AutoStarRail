@@ -332,6 +332,7 @@ class SwigToCpp<IAsrSwigTask> final
 public:
     ASR_USING_BASE_CTOR(SwigToCppTypeInfo);
 
+    AsrResult OnRequestExit() override;
     AsrResult Do(
         IAsrReadOnlyString* p_connection_json,
         IAsrReadOnlyString* p_task_settings_json) override;

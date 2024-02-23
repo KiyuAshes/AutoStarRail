@@ -1,16 +1,13 @@
 #ifndef ASR_CORE_FOREIGNINTERFACEHOST_PLUGIN_H
 #define ASR_CORE_FOREIGNINTERFACEHOST_PLUGIN_H
 
-#include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
-#include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
-#include <AutoStarRail/PluginInterface/IAsrPlugin.h>
-#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHostEnum.h>
-#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
-#include <AutoStarRail/AsrPtr.hpp>
-#include <AutoStarRail/IAsrBase.h>
 #include "ForeignInterfaceHost.h"
 #include "IAsrPluginManagerImpl.h"
-#include <variant>
+#include <AutoStarRail/AsrPtr.hpp>
+#include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHostEnum.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
+#include <AutoStarRail/IAsrBase.h>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 

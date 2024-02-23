@@ -3,10 +3,10 @@
 
 #include <AutoStarRail/AsrConfig.h>
 #include <AutoStarRail/AsrGuidHolder.h>
-#include <string.h>
-#include <stdint.h>
-#include <stddef.h>
 #include <new>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
 #define ASR_RET_TYPE_DECLARE_BEGIN(type_name)                                  \
     struct type_name                                                           \
@@ -91,6 +91,8 @@
 #define ASR_E_INTERNAL_FATAL_ERROR ASR_E_RESERVED - 22
 #define ASR_E_INVALID_ENUM ASR_E_RESERVED - 23
 #define ASR_E_INVALID_SIZE ASR_E_RESERVED - 24
+#define ASR_E_OPENCV_ERROR ASR_E_RESERVED - 25
+#define ASR_E_ONNX_RUNTIME_ERROR ASR_E_RESERVED - 26
 
 #ifdef ASR_WINDOWS
 // MSVC
@@ -159,7 +161,7 @@ inline bool operator==(const AsrGuid& lhs, const AsrGuid& rhs)
 ASR_NS_BEGIN
 
 inline bool IsOk(const AsrResult result) { return result >= 0; }
-inline bool IsFailed(const AsrResult result) {return result < 0; }
+inline bool IsFailed(const AsrResult result) { return result < 0; }
 
 ASR_NS_END
 

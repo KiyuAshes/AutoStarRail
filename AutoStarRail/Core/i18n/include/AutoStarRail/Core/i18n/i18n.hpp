@@ -104,7 +104,7 @@ public:
         ASR::Utils::EnableStreamException(
             ifs,
             std::ios::badbit | std::ios::failbit,
-            [&json_path](auto& stream) { stream.open(json_path.c_str()); });
+            [&json_path](auto& stream) { stream.open(json_path); });
         const auto json = ::nlohmann::json::parse(ifs);
         *this = I18n{json};
     }
