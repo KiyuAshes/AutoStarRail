@@ -17,7 +17,7 @@ NamespaceIndentation: All
 FixNamespaceComments: false
 DerivePointerAlignment: false
 PointerAlignment: Left
-SortIncludes: false
+SortIncludes: CaseSensitive
 BreakBeforeBinaryOperators: NonAssignment
 AlwaysBreakTemplateDeclarations: Yes
 BreakAfterAttributes: Always
