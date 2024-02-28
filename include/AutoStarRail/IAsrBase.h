@@ -111,6 +111,7 @@
 #define ASR_INTERFACE struct
 
 #define ASR_METHOD virtual AsrResult ASR_STD_CALL
+#define ASR_METHOD_(x) virtual x ASR_STD_CALL
 #define ASR_IMPL AsrResult
 
 using AsrResult = int32_t;

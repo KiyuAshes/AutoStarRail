@@ -819,12 +819,12 @@ AsrResult PluginManager::Refresh()
                         it_path,
                         plugin_create_result};
 
-                    ASR_CORE_LOG_INFO(
+                    ASR_CORE_LOG_ERROR(
                         "Error when checking system requirement. Error code = " ASR_STR(
                             ASR_E_UNSUPPORTED_SYSTEM) ".");
                     // 此处，plugin_name即为metadata路径，见
                     // Details::AddFailedPluginAndReturnTmpPluginName
-                    ASR_CORE_LOG_INFO(
+                    ASR_CORE_LOG_ERROR(
                         "NOTE: plugin meta data file path:\"{}\"",
                         failed_plugin.name);
 

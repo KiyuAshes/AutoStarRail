@@ -3,7 +3,7 @@
 
 #include <AutoStarRail/AsrPtr.hpp>
 #include <AutoStarRail/AsrString.hpp>
-#include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/ExportInterface/IAsrMemory.h>
 
 typedef enum AsrImageFormat
 {
@@ -21,12 +21,16 @@ struct AsrSize
     int32_t height;
 };
 
+/**
+ * @brief just like cv::Rect
+ *
+ */
 struct AsrRect
 {
-    int32_t left_top_x;
-    int32_t left_top_y;
-    int32_t right_bottom_x;
-    int32_t right_bottom_y;
+    int32_t x;
+    int32_t y;
+    int32_t width;
+    int32_t height;
 };
 
 #ifndef SWIG
@@ -86,13 +90,13 @@ ASR_C_API AsrResult
 CreateIAsrImageFromEncodedData(AsrImageDesc* p_desc, IAsrImage** pp_out_image);
 
 ASR_C_API AsrResult CreateIAsrImageFromDecodedData(
-    AsrImageDesc* p_desc,
-    AsrSize*      p_size,
-    IAsrImage**   pp_out_image);
+    const AsrImageDesc* p_desc,
+    const AsrSize*      p_size,
+    IAsrImage**         pp_out_image);
 
 ASR_C_API AsrResult CreateIAsrImageFromRgb888(
     ASR_INTERFACE IAsrMemory* p_alias_memory,
-    AsrSize*                  p_size,
+    const AsrSize*            p_size,
     IAsrImage**               pp_out_image);
 
 ASR_C_API AsrResult AsrPluginLoadImageFromResource(
@@ -110,11 +114,16 @@ public:
     ASR_API AsrSwigImage();
 #ifndef SWIG
     AsrSwigImage(Asr::AsrPtr<IAsrImage> p_image);
+    IAsrImage* Get() const;
 #endif // SWIG
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetImage)
     AsrSwigImage value;
+ASR_RET_TYPE_DECLARE_END
+
+ASR_RET_TYPE_DECLARE_BEGIN(AsrRetRect)
+    AsrRect value;
 ASR_RET_TYPE_DECLARE_END
 
 ASR_API AsrRetImage AsrPluginLoadImageFromResource(

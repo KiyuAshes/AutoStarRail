@@ -7,6 +7,14 @@
 
 ASR_UTILS_NS_BEGIN
 
+template <class E>
+constexpr auto ToUnderlying(E e) noexcept -> std::underlying_type_t<E>
+{
+    return static_cast<std::underlying_type_t<E>>(e);
+}
+
+inline void* VoidP(void* pointer) { return pointer; }
+
 /**
  * @brief 示例： static_assert(value<false, T>, "你需要的说明");
  */

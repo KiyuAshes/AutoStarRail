@@ -1,11 +1,9 @@
+#include "IAsrImageImpl.h"
 #include "Config.h"
-
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/PluginManager.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/ExportInterface/IAsrImage.h>
-#include <AutoStarRail/ExportInterface/IAsrMemory.h>
-#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/Expected.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/StreamUtils.hpp>
@@ -30,6 +28,8 @@ AsrSwigImage::AsrSwigImage(ASR::AsrPtr<IAsrImage> p_image)
 {
 }
 
+IAsrImage* AsrSwigImage::Get() const { return p_image_.Get(); }
+
 ASR_CORE_OCVWRAPPER_NS_BEGIN
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
@@ -51,117 +51,101 @@ auto ToOcvType(AsrImageFormat format) -> ASR::Utils::Expected<int>
 
 ASR_NS_ANONYMOUS_DETAILS_END
 
-class IAsrImageImpl final : public IAsrImage
+IAsrImageImpl::IAsrImageImpl(
+    int         height,
+    int         width,
+    int         type,
+    void*       p_data,
+    IAsrMemory* p_asr_data)
+    : p_memory_{p_asr_data, take_ownership}, mat_{height, width, type, p_data}
 {
-    AsrPtr<IAsrMemory> p_memory_;
-    cv::Mat            mat_;
+}
 
-    ASR_UTILS_IASRBASE_AUTO_IMPL(IAsrImageImpl);
+IAsrImageImpl::IAsrImageImpl(cv::Mat mat) : p_memory_{}, mat_{std::move(mat)} {}
 
-public:
-    /**
-     * @brief 参数校验由外部完成！
-     * @param height
-     * @param width
-     * @param type
-     * @param p_data
-     * @param p_asr_data
-     */
-    IAsrImageImpl(
-        int         height,
-        int         width,
-        int         type,
-        void*       p_data,
-        IAsrMemory* p_asr_data)
-        : p_memory_{p_asr_data, take_ownership},
-          mat_{height, width, type, p_data}
+AsrResult IAsrImageImpl::QueryInterface(
+    const AsrGuid& iid,
+    void**         pp_out_object)
+{
+    return ASR::Utils::QueryInterface<IAsrImage>(this, iid, pp_out_object);
+}
+
+AsrResult IAsrImageImpl::GetSize(AsrSize* p_out_size)
+{
+    ASR_UTILS_CHECK_POINTER(p_out_size)
+
+    p_out_size->width = mat_.cols;
+    p_out_size->height = mat_.rows;
+
+    return ASR_S_OK;
+}
+
+AsrResult IAsrImageImpl::GetChannelCount(int* p_out_channel_count)
+{
+    ASR_UTILS_CHECK_POINTER(p_out_channel_count)
+
+    *p_out_channel_count = mat_.channels();
+
+    return ASR_S_OK;
+}
+
+AsrResult IAsrImageImpl::Clip(const AsrRect* p_rect, IAsrImage** pp_out_image)
+{
+    ASR_UTILS_CHECK_POINTER(p_rect)
+    ASR_UTILS_CHECK_POINTER(pp_out_image)
+
+    try
     {
-    }
-
-    IAsrImageImpl(cv::Mat mat) : p_memory_{}, mat_{std::move(mat)} {}
-
-    ASR_IMPL QueryInterface(const AsrGuid& iid, void** pp_out_object) override
-    {
-        return ASR::Utils::QueryInterface<IAsrImage>(this, iid, pp_out_object);
-    }
-
-    ASR_IMPL GetSize(AsrSize* p_out_size) override
-    {
-        ASR_UTILS_CHECK_POINTER(p_out_size)
-
-        p_out_size->width = mat_.cols;
-        p_out_size->height = mat_.rows;
-
+        const auto& rect = *p_rect;
+        const auto  clipped_mat = mat_(ASR::Core::OcvWrapper::ToMat(rect));
+        auto        p_result = new IAsrImageImpl{clipped_mat};
+        p_result->p_memory_ = p_memory_;
+        p_result->AddRef();
+        *pp_out_image = p_result;
         return ASR_S_OK;
     }
-
-    ASR_IMPL GetChannelCount(int* p_out_channel_count) override
+    catch (std::bad_alloc&)
     {
-        ASR_UTILS_CHECK_POINTER(p_out_channel_count)
+        return ASR_E_OUT_OF_MEMORY;
+    }
+}
 
-        *p_out_channel_count = mat_.channels();
+AsrResult IAsrImageImpl::GetDataSize(size_t* p_out_size)
+{
+    ASR_UTILS_CHECK_POINTER(p_out_size)
 
-        return ASR_S_OK;
+    size_t result = mat_.total();
+    result *= mat_.elemSize1();
+    *p_out_size = result;
+
+    return ASR_S_OK;
+}
+
+AsrResult IAsrImageImpl::CopyTo(unsigned char* p_out_memory)
+{
+    ASR_UTILS_CHECK_POINTER(p_out_memory)
+
+    try
+    {
+        size_t data_size;
+        GetDataSize(&data_size);
+        const auto int_data_size = static_cast<int>(data_size);
+        mat_.copyTo({p_out_memory, int_data_size});
+    }
+    catch (cv::Exception& ex)
+    {
+        ASR_CORE_LOG_ERROR(ex.err);
+        ASR_CORE_LOG_ERROR(
+            "NOTE:\nfile = {}\nline = {}\nfunction = {}",
+            ex.file,
+            ex.line,
+            ex.func);
     }
 
-    ASR_IMPL Clip(const AsrRect* p_rect, IAsrImage** pp_out_image) override
-    {
-        ASR_UTILS_CHECK_POINTER(p_rect)
-        ASR_UTILS_CHECK_POINTER(pp_out_image)
+    return ASR_S_OK;
+}
 
-        try
-        {
-            const auto& rect = *p_rect;
-            const auto  clipped_mat = mat_(
-                cv::Range(rect.left_top_y, rect.right_bottom_y),
-                cv::Range(rect.left_top_x, rect.right_bottom_x));
-            auto p_result = new IAsrImageImpl{clipped_mat};
-            p_result->p_memory_ = p_memory_;
-            p_result->AddRef();
-            *pp_out_image = p_result;
-            return ASR_S_OK;
-        }
-        catch (std::bad_alloc&)
-        {
-            return ASR_E_OUT_OF_MEMORY;
-        }
-    }
-
-    ASR_IMPL GetDataSize(size_t* p_out_size) override
-    {
-        ASR_UTILS_CHECK_POINTER(p_out_size)
-
-        size_t result = mat_.total();
-        result *= mat_.elemSize1();
-        *p_out_size = result;
-
-        return ASR_S_OK;
-    }
-
-    ASR_IMPL CopyTo(unsigned char* p_out_memory) override
-    {
-        ASR_UTILS_CHECK_POINTER(p_out_memory)
-
-        try
-        {
-            size_t data_size;
-            GetDataSize(&data_size);
-            const auto int_data_size = static_cast<int>(data_size);
-            mat_.copyTo({p_out_memory, int_data_size});
-        }
-        catch (cv::Exception& ex)
-        {
-            ASR_CORE_LOG_ERROR(ex.err);
-            ASR_CORE_LOG_ERROR(
-                "NOTE:\nfile = {}\nline = {}\nfunction = {}",
-                ex.file,
-                ex.line,
-                ex.func);
-        }
-
-        return ASR_S_OK;
-    }
-};
+auto IAsrImageImpl::GetImpl() -> cv::Mat { return mat_; }
 
 ASR_CORE_OCVWRAPPER_NS_END
 
@@ -201,9 +185,9 @@ AsrResult CreateIAsrImageFromEncodedData(
 }
 
 AsrResult CreateIAsrImageFromDecodedData(
-    AsrImageDesc* p_desc,
-    AsrSize*      p_size,
-    IAsrImage**   pp_out_image)
+    const AsrImageDesc* p_desc,
+    const AsrSize*      p_size,
+    IAsrImage**         pp_out_image)
 {
     ASR_UTILS_CHECK_POINTER(p_desc)
     ASR_UTILS_CHECK_POINTER(p_size)
@@ -234,9 +218,9 @@ AsrResult CreateIAsrImageFromDecodedData(
 }
 
 AsrResult CreateIAsrImageFromRgb888(
-    IAsrMemory* p_alias_memory,
-    AsrSize*    p_size,
-    IAsrImage** pp_out_image)
+    IAsrMemory*    p_alias_memory,
+    const AsrSize* p_size,
+    IAsrImage**    pp_out_image)
 {
     ASR_UTILS_CHECK_POINTER(p_alias_memory)
     ASR_UTILS_CHECK_POINTER(p_size)

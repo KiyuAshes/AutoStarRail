@@ -1,8 +1,9 @@
 #ifndef ASR_UTILS_PRESETTYPEINHERITANCEINFO_H
 #define ASR_UTILS_PRESETTYPEINHERITANCEINFO_H
 
-#include <AutoStarRail/Utils/InternalTypeList.hpp>
 #include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/Utils/InternalTypeList.hpp>
+
 
 ASR_UTILS_NS_BEGIN
 
@@ -53,9 +54,7 @@ ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
 // -------------------------------------
 
 // PluginInterface/IAsrCapture.h
-ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
-    IAsrCapture,
-    IAsrBase, IAsrTypeInfo);
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrCapture, IAsrBase, IAsrTypeInfo);
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
     IAsrCaptureFactory,
     IAsrBase,
@@ -88,6 +87,13 @@ ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
     IAsrSwigBase,
     IAsrSwigTypeInfo);
 
+// ExportInterface/AsrCV.h
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrTemplateMatchResult, IAsrBase)
+// -------------------------------------
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
+    IAsrSwigTemplateMatchResult,
+    IAsrSwigBase)
+
 // ExportInterface/IAsrCaptureManager.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrCaptureManager, IAsrBase);
 // -------------------------------------
@@ -105,7 +111,9 @@ ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrPluginInfo, IAsrBase);
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrPluginInfoVector, IAsrBase);
 // -------------------------------------
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigPluginInfo, IAsrSwigBase);
-ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigPluginInfoVector, IAsrSwigBase);
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
+    IAsrSwigPluginInfoVector,
+    IAsrSwigBase);
 
 // ExportInterface/IAsrSettings.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSettings, IAsrBase);
