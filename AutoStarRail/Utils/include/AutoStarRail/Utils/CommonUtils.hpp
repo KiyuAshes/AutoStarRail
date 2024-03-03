@@ -3,6 +3,7 @@
 
 #include <AutoStarRail/Utils/Config.h>
 #include <atomic>
+#include <cstring>
 #include <type_traits>
 
 ASR_UTILS_NS_BEGIN
