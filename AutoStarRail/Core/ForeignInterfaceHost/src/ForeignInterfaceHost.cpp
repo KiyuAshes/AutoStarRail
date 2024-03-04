@@ -1,4 +1,4 @@
-#include "../include/AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHost.h"
+#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHost.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/UnexpectedEnumException.h>
 #include <AutoStarRail/Utils/EnumUtils.hpp>

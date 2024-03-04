@@ -1,4 +1,5 @@
 #include <AutoStarRail/AsrString.hpp>
+#include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHost.h>
@@ -22,7 +23,6 @@
 #include <magic_enum.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <unordered_set>
 #include <utility>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
@@ -165,46 +165,6 @@ auto GetPredefinedErrorMessage(
     return tl::make_unexpected(ASR_E_OUT_OF_RANGE);
 }
 
-auto GetIidVectorSize(IAsrGuidVector* p_iid_vector)
-    -> ASR::Utils::Expected<size_t>
-{
-    size_t     iid_size{};
-    const auto get_iid_size_result = p_iid_vector->Size(&iid_size);
-    if (!IsOk(get_iid_size_result))
-    {
-        AsrPtr<IAsrReadOnlyString> p_error_message{};
-        ::AsrGetPredefinedErrorMessage(
-            get_iid_size_result,
-            p_error_message.Put());
-        ASR_CORE_LOG_ERROR(
-            "Error happened in class IAsrGuidVector. Pointer = {}. Error code = {}. Error message = \"{}\".",
-            static_cast<void*>(p_iid_vector),
-            get_iid_size_result,
-            p_error_message);
-        return tl::make_unexpected(get_iid_size_result);
-    }
-    return iid_size;
-}
-
-auto GetIidFromIidVector(IAsrGuidVector* p_iid_vector, uint32_t iid_index)
-    -> ASR::Utils::Expected<AsrGuid>
-{
-    AsrGuid    iid{AsrIidOf<IAsrBase>()};
-    const auto get_iid_result = p_iid_vector->At(iid_index, &iid);
-    if (!IsOk(get_iid_result))
-    {
-        AsrPtr<IAsrReadOnlyString> p_error_message{};
-        ::AsrGetPredefinedErrorMessage(get_iid_result, p_error_message.Put());
-        ASR_CORE_LOG_ERROR(
-            "Error happened in class IAsrGuidVector. Pointer = {}. Error code = {}. Error message = \"{}\".",
-            static_cast<void*>(p_iid_vector),
-            get_iid_result,
-            p_error_message);
-        return tl::make_unexpected(get_iid_result);
-    }
-    return iid;
-}
-
 auto CreateInterface(
     const char*            u8_plugin_name,
     const CommonPluginPtr& common_p_plugin,
@@ -250,60 +210,6 @@ auto CreateInterface(
                 return result;
             }},
         common_p_plugin);
-}
-
-auto QueryErrorLensFrom(
-    const char*          u8_plugin_name,
-    const CommonBasePtr& common_p_base) -> std::optional<AsrPtr<IAsrErrorLens>>
-{
-    constexpr auto& QUERY_ERROR_LENS_FAILED_MESSAGE =
-        "Failed when calling QueryInterface. ErrorCode = {}. Pointer = {}. Plugin name = {}.";
-
-    return std::visit(
-        ASR::Utils::overload_set{
-            [u8_plugin_name](const AsrPtr<IAsrBase>& p_base)
-                -> std::optional<AsrPtr<IAsrErrorLens>>
-            {
-                AsrPtr<IAsrErrorLens> result;
-                if (const auto qi_result = p_base.As(result);
-                    ASR::IsFailed(qi_result))
-                {
-                    ASR_CORE_LOG_ERROR(
-                        QUERY_ERROR_LENS_FAILED_MESSAGE,
-                        qi_result,
-                        static_cast<void*>(p_base.Get()),
-                        u8_plugin_name);
-                    return {};
-                }
-
-                return result;
-            },
-            [u8_plugin_name](const AsrPtr<IAsrSwigBase>& p_base)
-                -> std::optional<AsrPtr<IAsrErrorLens>>
-            {
-                auto qi_result =
-                    p_base->QueryInterface(AsrIidOf<IAsrSwigErrorLens>());
-                if (ASR::IsFailed(qi_result.error_code))
-                {
-                    ASR_CORE_LOG_ERROR(
-                        QUERY_ERROR_LENS_FAILED_MESSAGE,
-                        qi_result.error_code,
-                        static_cast<void*>(p_base.Get()),
-                        u8_plugin_name);
-                    return {};
-                }
-
-                AsrPtr<IAsrErrorLens> result{
-                    new SwigToCpp<IAsrSwigErrorLens>{
-                        static_cast<IAsrSwigErrorLens*>(
-                            qi_result.value.GetVoid())},
-                    take_ownership};
-
-                qi_result.value.Get()->Release();
-
-                return result;
-            }},
-        common_p_base);
 }
 
 auto QueryTypeInfoFrom(
@@ -449,127 +355,246 @@ AsrRetReadOnlyString AsrGetPredefinedErrorMessage(AsrResult error_code)
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
-// TODO:检查添加的iid是否覆盖了所有预定义的接口，需要包含C++和SWIG版本的
-const std::unordered_set<AsrGuid> g_official_iids{
-    []()
-    {
-        std::unordered_set<AsrGuid> result{{
-            // IAsrBase.h
-            AsrIidOf<IAsrBase>(),
-            AsrIidOf<IAsrSwigBase>(),
-            // IAsrTypeInfo.h
-            AsrIidOf<IAsrTypeInfo>(),
-            AsrIidOf<IAsrSwigTypeInfo>(),
-            AsrIidOf<IAsrGuidVector>(),
-            // AsrReadOnlyString.hpp
-            AsrIidOf<IAsrReadOnlyString>(),
-            AsrIidOf<IAsrString>(),
-            // PluginInterface/IAsrCapture.h
-            AsrIidOf<IAsrCapture>(),
-            AsrIidOf<IAsrSwigCapture>(),
-            AsrIidOf<IAsrCaptureFactory>(),
-            AsrIidOf<IAsrSwigCaptureFactory>(),
-            // PluginInterface/IAsrErrorLens.h
-            AsrIidOf<IAsrErrorLens>(),
-            AsrIidOf<IAsrSwigErrorLens>(),
-            // PluginInterface/IAsrInput.h
-            // PluginInterface/IAsrPlugin.h
-            AsrIidOf<IAsrPlugin>(),
-            AsrIidOf<IAsrSwigPlugin>(),
-            // PluginInterface/IAsrTask.h
-            AsrIidOf<IAsrTask>(),
-            AsrIidOf<IAsrSwigTask>()
-            // ExportInterface
-        }};
-        return result;
-    }()};
+ASR_DEFINE_VARIABLE(g_plugin_manager){};
 
-AsrResult ErrorLensManager::Register(
-    IAsrGuidVector* p_iid_vector,
-    IAsrErrorLens*  p_error_lens)
+ASR_NS_ANONYMOUS_DETAILS_BEGIN
+
+/**
+ *
+ * @tparam T The type of interface
+ * @tparam SwigT The type of swig interface
+ * @tparam N auto padding
+ * @param error_message Error message. Param will pass error_code, p_base and
+ * plugin_name
+ * @param u8_plugin_name The plugin_name
+ * @param common_p_base The p_base
+ * @return Expected
+ */
+template <class T, class SwigT, size_t N>
+auto QueryInterfaceFrom(
+    const char (&error_message)[N],
+    const char*          u8_plugin_name,
+    const CommonBasePtr& common_p_base) -> ASR::Utils::Expected<AsrPtr<T>>
 {
-    const auto get_iid_size_result = Details::GetIidVectorSize(p_iid_vector);
-    if (!get_iid_size_result)
-    {
-        return get_iid_size_result.error();
-    }
-    const auto iid_size = get_iid_size_result.value();
-    // try to use all iids to register IAsrErrorLens instance.
-    for (size_t i = 0; i < iid_size; ++i)
-    {
-        const auto get_iid_from_iid_vector_result =
-            Details::GetIidFromIidVector(p_iid_vector, i);
-        if (!get_iid_from_iid_vector_result)
-        {
-            if (get_iid_size_result.error() == ASR_E_OUT_OF_RANGE)
+    using RetType = ASR::Utils::Expected<AsrPtr<T>>;
+
+    return std::visit(
+        ASR::Utils::overload_set{
+            [&error_message,
+             u8_plugin_name](const AsrPtr<IAsrBase>& p_base) -> RetType
             {
-                ASR_CORE_LOG_WARN(
-                    "Received ASR_E_OUT_OF_RANGE when calling IAsrIidVector::At(). Pointer = {}. Size = {}. Index = {}.",
-                    static_cast<void*>(p_iid_vector),
-                    iid_size,
-                    i);
-                break;
-            }
-            return get_iid_from_iid_vector_result.error();
-        }
-        const auto& iid = get_iid_from_iid_vector_result.value();
-        if (g_official_iids.find(iid) != g_official_iids.end())
-        {
-            if (map_.count(iid) == 1)
+                AsrPtr<T> result;
+                if (const auto qi_result = p_base.As(result);
+                    ASR::IsFailed(qi_result))
+                {
+                    ASR_CORE_LOG_ERROR(
+                        error_message,
+                        qi_result,
+                        static_cast<void*>(p_base.Get()),
+                        u8_plugin_name);
+                    return tl::make_unexpected(qi_result);
+                }
+
+                return result;
+            },
+            [&error_message,
+             u8_plugin_name](const AsrPtr<IAsrSwigBase>& p_base) -> RetType
             {
-                ASR_CORE_LOG_WARN(
-                    "Trying to register duplicate IAsrErrorLens instance. Operation ignored."
-                    "Pointer = {}. Iid = {}.",
-                    static_cast<void*>(p_error_lens),
-                    iid);
-            }
-            // register IAsrErrorLens instance.
-            map_[iid] = {p_error_lens, take_ownership};
-        }
+                auto qi_result = p_base->QueryInterface(AsrIidOf<SwigT>());
+                if (ASR::IsFailed(qi_result.error_code))
+                {
+                    ASR_CORE_LOG_ERROR(
+                        error_message,
+                        qi_result.error_code,
+                        static_cast<void*>(p_base.Get()),
+                        u8_plugin_name);
+                    return tl::make_unexpected(qi_result.error_code);
+                }
+
+                auto result = MakeAsrPtr<SwigToCpp<SwigT>>(
+                    static_cast<IAsrSwigErrorLens*>(qi_result.value.GetVoid()));
+
+                qi_result.value.Get()->Release();
+
+                return result;
+            }},
+        common_p_base);
+}
+
+auto QueryErrorLensFrom(
+    const char*          u8_plugin_name,
+    const CommonBasePtr& common_p_base)
+    -> ASR::Utils::Expected<AsrPtr<IAsrErrorLens>>
+{
+    using RetType = ASR::Utils::Expected<AsrPtr<IAsrErrorLens>>;
+
+    constexpr const auto& QUERY_ERROR_LENS_FAILED_MESSAGE =
+        "Failed when calling QueryInterface. ErrorCode = {}. Pointer = {}. Plugin name = {}.";
+
+    return std::visit(
+        ASR::Utils::overload_set{
+            [u8_plugin_name](const AsrPtr<IAsrBase>& p_base) -> RetType
+            {
+                AsrPtr<IAsrErrorLens> result;
+                if (const auto qi_result = p_base.As(result);
+                    ASR::IsFailed(qi_result))
+                {
+                    ASR_CORE_LOG_ERROR(
+                        QUERY_ERROR_LENS_FAILED_MESSAGE,
+                        qi_result,
+                        static_cast<void*>(p_base.Get()),
+                        u8_plugin_name);
+                    return tl::make_unexpected(qi_result);
+                }
+
+                return result;
+            },
+            [u8_plugin_name](const AsrPtr<IAsrSwigBase>& p_base) -> RetType
+            {
+                auto qi_result =
+                    p_base->QueryInterface(AsrIidOf<IAsrSwigErrorLens>());
+                if (ASR::IsFailed(qi_result.error_code))
+                {
+                    ASR_CORE_LOG_ERROR(
+                        QUERY_ERROR_LENS_FAILED_MESSAGE,
+                        qi_result.error_code,
+                        static_cast<void*>(p_base.Get()),
+                        u8_plugin_name);
+                    return tl::make_unexpected(qi_result.error_code);
+                }
+
+                AsrPtr<IAsrErrorLens> result{
+                    new SwigToCpp<IAsrSwigErrorLens>{
+                        static_cast<IAsrSwigErrorLens*>(
+                            qi_result.value.GetVoid())},
+                    take_ownership};
+
+                qi_result.value.Get()->Release();
+
+                return result;
+            }},
+        common_p_base);
+}
+
+struct GetInterfaceFromPluginParam
+{
+    const char*          u8_plugin_name;
+    const CommonBasePtr& p_base;
+};
+
+template <class T>
+auto RegisterErrorLensFromPlugin(
+    T&                          error_lens_manager,
+    GetInterfaceFromPluginParam param) -> AsrResult
+{
+    const auto& [u8_plugin_name, common_p_base] = param;
+
+    AsrPtr<IAsrGuidVector> p_guid_vector{};
+    const auto             exptected_p_error_lens =
+        QueryErrorLensFrom(u8_plugin_name, common_p_base);
+    if (!exptected_p_error_lens)
+    {
+        return exptected_p_error_lens.error();
     }
+
+    const auto& p_error_lens = exptected_p_error_lens.value();
+
+    if (const auto get_iids_result =
+            p_error_lens->GetSupportedIids(p_guid_vector.Put());
+        ASR::IsFailed(get_iids_result))
+    {
+        ASR_CORE_LOG_ERROR(
+            "Try to get supported iids failed. Error code = {}. Plugin name = {}.",
+            get_iids_result,
+            u8_plugin_name);
+        return get_iids_result;
+    }
+    error_lens_manager.Register(p_guid_vector.Get(), p_error_lens.Get());
     return ASR_S_OK;
 }
 
-AsrResult ErrorLensManager::Register(
-    IAsrSwigGuidVector* p_guid_vector,
-    IAsrSwigErrorLens*  p_error_lens)
+template <class T>
+auto RegisterTaskFromPlugin(T& task_manager, GetInterfaceFromPluginParam param)
+    -> AsrResult
 {
-    AsrPtr<IAsrErrorLens> p_cpp_error_lens{
-        new SwigToCpp<IAsrSwigErrorLens>{p_error_lens},
-        take_ownership};
-    const auto p_cpp_guid_vector =
-        ASR::MakeAsrPtr<IAsrGuidVector, SwigToCpp<IAsrSwigGuidVector>>(
-            p_guid_vector);
-    return Register(p_cpp_guid_vector.Get(), p_cpp_error_lens.Get());
-}
+    const auto& [u8_plugin_name, common_p_base] = param;
 
-auto ErrorLensManager::GetErrorMessage(
-    const AsrGuid&      iid,
-    IAsrReadOnlyString* locale_name,
-    AsrResult           error_code) const
-    -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>
-{
-    if (const auto it = map_.find(iid); it != map_.end())
+    using CommonTaskPointer =
+        std::variant<AsrPtr<IAsrTask>, AsrPtr<IAsrSwigTask>>;
+    using ExpectedCommonTaskPointer = ASR::Utils::Expected<CommonTaskPointer>;
+
+    ExpectedCommonTaskPointer expected_common_p_task = std::visit(
+        ASR::Utils::overload_set{
+            [](const AsrPtr<IAsrBase>& p_base) -> ExpectedCommonTaskPointer
+            {
+                AsrPtr<IAsrTask> p_task{};
+                if (const auto qi_result = p_base.As(p_task);
+                    IsFailed(qi_result))
+                {
+                    return tl::make_unexpected(qi_result);
+                }
+                return p_task;
+            },
+            [](const AsrPtr<IAsrSwigBase>& p_base) -> ExpectedCommonTaskPointer
+            {
+                const auto qi_result =
+                    p_base->QueryInterface(AsrIidOf<IAsrSwigTask>());
+                if (IsFailed(qi_result.error_code))
+                {
+                    return tl::make_unexpected(qi_result.error_code);
+                }
+                return AsrPtr{
+                    static_cast<IAsrSwigTask*>(qi_result.value.GetVoid()),
+                    take_ownership};
+            }},
+        common_p_base);
+    if (!expected_common_p_task)
     {
-        AsrPtr<IAsrReadOnlyString> p_result{};
-        const auto get_error_message_result = it->second->GetErrorMessage(
-            locale_name,
-            error_code,
-            p_result.Put());
-        if (IsOk(get_error_message_result))
-        {
-            return p_result;
-        }
-
-        return tl::make_unexpected(get_error_message_result);
+        return expected_common_p_task.error();
     }
-    return tl::make_unexpected(ASR_E_OUT_OF_RANGE);
+
+    return std::visit(
+        ASR::Utils::overload_set{
+            [u8_plugin_name, &task_manager](const AsrPtr<IAsrTask>& p_task)
+            {
+                const auto guid = Utils::GetGuidFrom(
+                    p_task.Get(),
+                    [u8_plugin_name](const auto gg_result)
+                    {
+                        ASR_CORE_LOG_ERROR(
+                            "Get guid in IAsrTask object failed."
+                            "Plugin name = {}. Error Code = {}.",
+                            u8_plugin_name,
+                            gg_result);
+                    });
+                return task_manager.Register(p_task.Get(), guid);
+            },
+            [u8_plugin_name, &task_manager](const AsrPtr<IAsrSwigTask>& p_task)
+            {
+                const auto guid = Utils::GetGuidFrom(
+                    p_task.Get(),
+                    [u8_plugin_name](const auto gg_result)
+                    {
+                        ASR_CORE_LOG_ERROR(
+                            "Get guid in IAsrSwigTask object failed."
+                            "Plugin name = {}. Error Code = {}.",
+                            u8_plugin_name,
+                            gg_result);
+                    });
+                return task_manager.Register(p_task.Get(), guid);
+            }},
+        expected_common_p_task.value());
 }
 
-ASR_DEFINE_VARIABLE(g_plugin_manager){};
+//template <class T>
+//auto RegisterCaptureFactoryFromPlugin(
+//    T&                          capture_manager,
+//    GetInterfaceFromPluginParam param) -> AsrResult
+//{
+//
+//}
 
-const std::unordered_map<AsrPluginFeature, std::function<void*()>>
-    g_plugin_object_factory{};
+ASR_NS_ANONYMOUS_DETAILS_END
 
 AsrResult PluginManager::AddInterface(
     const Plugin& plugin,
@@ -588,7 +613,7 @@ AsrResult PluginManager::AddInterface(
     {
         // TODO: 根据feature枚举将对应接口添加到对应manager。
 
-        auto opt_common_p_base =
+        const auto opt_common_p_base =
             Details::CreateInterface(u8_plugin_name, common_p_plugin, feature);
 
         if (!opt_common_p_base)
@@ -631,31 +656,37 @@ AsrResult PluginManager::AddInterface(
         {
         case ASR_PLUGIN_FEATURE_ERROR_LENS:
         {
-            AsrPtr<IAsrGuidVector> p_guid_vector{};
-            // TODO: LOG时包含Plugin本身的名称
-            const auto opt_p_error_lens = Details::QueryErrorLensFrom(
-                u8_plugin_name,
-                opt_common_p_base.value());
-            if (!opt_p_error_lens)
-            {
-                continue;
-            }
-
-            const auto& p_error_lens = opt_p_error_lens.value();
-
-            if (const auto get_iids_result =
-                    p_error_lens->GetSupportedIids(p_guid_vector.Put());
-                ASR::IsFailed(get_iids_result))
+            if (const auto relfp_result = Details::RegisterErrorLensFromPlugin(
+                    error_lens_manager_,
+                    {u8_plugin_name, opt_common_p_base.value()});
+                IsFailed(relfp_result))
             {
                 ASR_CORE_LOG_ERROR(
-                    "Try to get supported iids failed. Error code = {}. Plugin name = {}.",
-                    get_iids_result,
-                    u8_plugin_name);
-                break;
+                    "Can not get error lens interface from plugin {}."
+                    " Error code = {}.",
+                    u8_plugin_name,
+                    relfp_result);
             }
-            error_lens_manager_.Register(
-                p_guid_vector.Get(),
-                p_error_lens.Get());
+            break;
+        }
+        case ASR_PLUGIN_FEATURE_TASK:
+        {
+            if (const auto rtfp_result = Details::RegisterTaskFromPlugin(
+                    asr_task_interface_manager_,
+                    {u8_plugin_name, opt_common_p_base.value()});
+                IsFailed(rtfp_result))
+            {
+                ASR_CORE_LOG_ERROR(
+                    "Can not get task interface from plugin {}."
+                    "Error code = {}.",
+                    u8_plugin_name,
+                    rtfp_result);
+            }
+            break;
+        }
+        case ASR_PLUGIN_FEATURE_CAPTURE_FACTORY:
+        {
+
             break;
         }
         default:
@@ -992,7 +1023,14 @@ AsrResult PluginManager::GetErrorMessage(
 auto PluginManager::GetAllCaptureFactory()
     -> std::vector<AsrPtr<IAsrCaptureFactory>>
 {
-    return asr_capture_interfaces_;
+    auto result = ASR::Utils::MakeEmptyContainer<
+        std::vector<AsrPtr<IAsrCaptureFactory>>>();
+    result.reserve(guid_capture_factory_map_.size());
+    for (const auto& guid_capture_factory : guid_capture_factory_map_)
+    {
+        result.push_back(guid_capture_factory.second);
+    }
+    return result;
 }
 
 AsrResult PluginManager::GetAllPluginInfo(
@@ -1037,7 +1075,7 @@ auto PluginManager::GetInterfaceStaticStorage(IAsrTypeInfo* p_type_info) const
 
 auto PluginManager::GetInterfaceStaticStorage(IAsrSwigTypeInfo* p_type_info)
     const -> Asr::Utils::Expected<
-        std::reference_wrapper<const InterfaceStaticStorage>>
+              std::reference_wrapper<const InterfaceStaticStorage>>
 {
     if (p_type_info == nullptr)
     {
@@ -1054,7 +1092,9 @@ auto PluginManager::GetInterfaceStaticStorage(IAsrSwigTypeInfo* p_type_info)
         return tl::make_unexpected(gg_result.error_code);
     }
 
-    return Details::GetInterfaceStaticStorage(guid_storage_map_, gg_result.value);
+    return Details::GetInterfaceStaticStorage(
+        guid_storage_map_,
+        gg_result.value);
 }
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

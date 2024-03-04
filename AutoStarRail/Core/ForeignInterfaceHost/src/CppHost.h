@@ -2,7 +2,7 @@
 #define ASR_CORE_FOREIGNINTERFACEHOST_CPPINTERFACE_H
 
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
-#include "../include/AutoStarRail/Core/ForeignInterfaceHost/Plugin.h"
+#include <AutoStarRail/Core/ForeignInterfaceHost/Plugin.h>
 
 #define ASR_NS_CPPHOST_BEGIN                                                   \
     namespace CppHost                                                          \
@@ -14,8 +14,7 @@ ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 ASR_NS_CPPHOST_BEGIN
 
-auto CreateForeignLanguageRuntime(
-    const ForeignLanguageRuntimeFactoryDesc& desc)
+auto CreateForeignLanguageRuntime(const ForeignLanguageRuntimeFactoryDesc& desc)
     -> ASR::Utils::Expected<AsrPtr<IForeignLanguageRuntime>>;
 
 ASR_NS_CPPHOST_END

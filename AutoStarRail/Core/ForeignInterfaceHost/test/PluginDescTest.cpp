@@ -1,10 +1,10 @@
+#include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHost.h>
+#include <AutoStarRail/ExportInterface/IAsrSettings.h>
+#include <cstring>
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
-#include "../include/AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHost.h"
-#include "../include/AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h"
-#include "AutoStarRail/ExportInterface/IAsrSettings.h"
 #include <regex>
-#include <cstring>
 
 namespace
 {
