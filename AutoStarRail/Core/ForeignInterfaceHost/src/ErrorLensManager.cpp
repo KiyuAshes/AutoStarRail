@@ -24,7 +24,6 @@ const std::unordered_set<AsrGuid> g_official_iids{
             AsrIidOf<IAsrCapture>(),
             AsrIidOf<IAsrSwigCapture>(),
             AsrIidOf<IAsrCaptureFactory>(),
-            AsrIidOf<IAsrSwigCaptureFactory>(),
             // PluginInterface/IAsrErrorLens.h
             AsrIidOf<IAsrErrorLens>(),
             AsrIidOf<IAsrSwigErrorLens>(),

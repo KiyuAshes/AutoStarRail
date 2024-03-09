@@ -586,13 +586,34 @@ auto RegisterTaskFromPlugin(T& task_manager, GetInterfaceFromPluginParam param)
         expected_common_p_task.value());
 }
 
-// template <class T>
-// auto RegisterCaptureFactoryFromPlugin(
-//     T&                          capture_manager,
-//     GetInterfaceFromPluginParam param) -> AsrResult
-//{
-//
-// }
+template <class T>
+auto RegisterCaptureFactoryFromPlugin(
+    T&                          capture_factory_vector,
+    GetInterfaceFromPluginParam param) -> AsrResult
+{
+    const auto& [u8_plugin_name, common_p_base] = param;
+
+    const auto pp_base = std::get_if<AsrPtr<IAsrBase>>(&common_p_base);
+    if (pp_base == nullptr) [[unlikely]]
+    {
+        ASR_CORE_LOG_ERROR(
+            "Variable common_p_base does NOT contain AsrPtr<IAsrBase> object. Plugin name = {}.",
+            u8_plugin_name);
+        return ASR_E_INTERNAL_FATAL_ERROR;
+    }
+    const auto&                p_base = *pp_base;
+    AsrPtr<IAsrCaptureFactory> p_result{};
+    if (const auto qi_result = p_base.As(p_result); IsFailed(qi_result))
+    {
+        ASR_CORE_LOG_ERROR(
+            "Can not convert interface to IAsrCaptureFactory. Plugin name = {}. Error code = {}.",
+            u8_plugin_name,
+            qi_result);
+        return qi_result;
+    }
+    capture_factory_vector.emplace_back();
+    return ASR_S_OK;
+}
 
 ASR_NS_ANONYMOUS_DETAILS_END
 
@@ -611,8 +632,6 @@ AsrResult PluginManager::AddInterface(
     for (const auto& features = expected_features.value();
          const auto  feature : features)
     {
-        // TODO: 根据feature枚举将对应接口添加到对应manager。
-
         const auto opt_common_p_base =
             Details::CreateInterface(u8_plugin_name, common_p_plugin, feature);
 
@@ -662,8 +681,8 @@ AsrResult PluginManager::AddInterface(
                 IsFailed(relfp_result))
             {
                 ASR_CORE_LOG_ERROR(
-                    "Can not get error lens interface from plugin {}."
-                    " Error code = {}.",
+                    "Can not get error lens interface from plugin {}. "
+                    "Error code = {}.",
                     u8_plugin_name,
                     relfp_result);
             }
@@ -677,7 +696,7 @@ AsrResult PluginManager::AddInterface(
                 IsFailed(rtfp_result))
             {
                 ASR_CORE_LOG_ERROR(
-                    "Can not get task interface from plugin {}."
+                    "Can not get task interface from plugin {}. "
                     "Error code = {}.",
                     u8_plugin_name,
                     rtfp_result);
@@ -686,7 +705,18 @@ AsrResult PluginManager::AddInterface(
         }
         case ASR_PLUGIN_FEATURE_CAPTURE_FACTORY:
         {
-
+            if (const auto rcffp_result =
+                    Details::RegisterCaptureFactoryFromPlugin(
+                        capture_factory_vector_,
+                        {u8_plugin_name, opt_common_p_base.value()});
+                IsFailed(rcffp_result))
+            {
+                ASR_CORE_LOG_ERROR(
+                    "Can not get capture factory interface from plugin {}. "
+                    "Error code = {}.",
+                    u8_plugin_name,
+                    rcffp_result);
+            }
             break;
         }
         default:

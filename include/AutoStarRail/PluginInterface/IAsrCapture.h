@@ -58,35 +58,10 @@ ASR_INTERFACE IAsrCaptureFactory : public IAsrTypeInfo
         IAsrCapture * *pp_out_object) = 0;
 };
 
-ASR_INTERFACE IAsrSwigCaptureFactory;
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetCaptureFactory)
-    IAsrSwigCaptureFactory* value;
-ASR_RET_TYPE_DECLARE_END
-
 ASR_INTERFACE IAsrSwigCapture;
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetCapture)
     IAsrSwigCapture* value;
 ASR_RET_TYPE_DECLARE_END
-
-// {D8DA99C7-98A6-4AA3-A7F4-0FAE0919D286}
-ASR_DEFINE_GUID(
-    ASR_IID_SWIG_CAPTURE_FACTORY,
-    IAsrSwigCaptureFactory,
-    0xd8da99c7,
-    0x98a6,
-    0x4aa3,
-    0xa7,
-    0xf4,
-    0xf,
-    0xae,
-    0x9,
-    0x19,
-    0xd2,
-    0x86)
-ASR_INTERFACE IAsrSwigCaptureFactory : public IAsrSwigTypeInfo
-{
-    virtual AsrRetCapture CreateInstance(AsrReadOnlyString json_config) = 0;
-};
 
 // {FC326FB1-9669-4D41-8003-27709071DA10}
 ASR_DEFINE_GUID(
@@ -103,6 +78,7 @@ ASR_DEFINE_GUID(
     0x71,
     0xda,
     0x10);
+ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigCapture)
 ASR_INTERFACE IAsrSwigCapture : public IAsrSwigTypeInfo
 {
     virtual AsrRetImage Capture() = 0;

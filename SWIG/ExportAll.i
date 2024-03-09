@@ -6,8 +6,6 @@
 %include <std_string.i>
 %include <std_vector.i>
 %include <wchar.i>
-%include <std_wstring.i>
-%include <std_shared_ptr.i>
 
 %{
 #include <AutoStarRail/AsrExport.h>

@@ -561,16 +561,6 @@ public:
 };
 
 template <>
-class CppToSwig<IAsrCaptureFactory> final
-    : public CppToSwigTypeInfo<IAsrSwigCaptureFactory, IAsrCaptureFactory>
-{
-public:
-    ASR_USING_BASE_CTOR(CppToSwigTypeInfo);
-
-    AsrRetCapture CreateInstance(AsrReadOnlyString json_config) override;
-};
-
-template <>
 class CppToSwig<IAsrGuidVector> final
     : public CppToSwigBase<IAsrSwigGuidVector, IAsrGuidVector>
 {

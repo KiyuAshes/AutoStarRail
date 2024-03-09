@@ -47,7 +47,7 @@ auto GetGuidFrom(T* p_object, Callable on_error) -> AsrGuid
 }
 
 template <class T, class Callable>
-auto GetRuntimeClassName(T* p_object, Callable on_error)
+auto GetRuntimeClassNameFrom(T* p_object, Callable on_error)
     -> AsrPtr<IAsrReadOnlyString>
 {
     if constexpr (ASR::Core::ForeignInterfaceHost::is_asr_swig_interface<T>)

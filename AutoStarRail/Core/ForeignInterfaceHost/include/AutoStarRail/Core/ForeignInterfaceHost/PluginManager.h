@@ -8,12 +8,7 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/ErrorLensManager.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/TaskManager.h>
-#include <AutoStarRail/ExportInterface/IAsrCaptureManager.h>
-#include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
-#include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
-#include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
-#include <AutoStarRail/PluginInterface/IAsrTask.h>
 #include <AutoStarRail/Utils/Expected.h>
 #include <filesystem>
 #include <functional>

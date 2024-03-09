@@ -358,29 +358,6 @@ AsrRetImage CppToSwig<IAsrCapture>::Capture()
         ASR_DV_V(&IAsrCapture::Capture)>(p_impl_.Get());
 }
 
-AsrRetCapture CppToSwig<IAsrCaptureFactory>::CreateInstance(
-    AsrReadOnlyString json_config)
-{
-    AsrRetCapture       result{};
-    AsrPtr<IAsrCapture> p_cpp_result;
-
-    result.error_code = p_impl_->CreateInstance(
-        static_cast<IAsrReadOnlyString*>(json_config),
-        p_cpp_result.Put());
-
-    if (!IsOk(result.error_code))
-    {
-        return result;
-    }
-
-    const auto p_result = new CppToSwig<IAsrCapture>{std::move(p_cpp_result)};
-
-    p_result->AddRef();
-    result.value = p_result;
-
-    return result;
-}
-
 AsrRetUInt CppToSwig<IAsrGuidVector>::Size()
 {
     AsrRetUInt swig_result;

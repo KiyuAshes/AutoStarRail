@@ -15,8 +15,7 @@
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
-IAsrCaptureManagerImpl::IAsrCaptureManagerImpl(
-    Asr::Core::ForeignInterfaceHost::CaptureManagerImpl& impl)
+IAsrCaptureManagerImpl::IAsrCaptureManagerImpl(CaptureManagerImpl& impl)
     : impl_{impl}
 {
 }
@@ -376,7 +375,7 @@ auto CreateAsrCaptureManagerImpl(IAsrReadOnlyString* p_json_config)
         } context{result, p_capture_manager, p_factory};
 
         const auto nullable_capture_factory_name =
-            ASR::Core::Utils::GetRuntimeClassName(
+            ASR::Core::Utils::GetRuntimeClassNameFrom(
                 p_factory.Get(),
                 [&context](const auto error_code)
                 {
@@ -414,7 +413,7 @@ auto CreateAsrCaptureManagerImpl(IAsrReadOnlyString* p_json_config)
             continue;
         }
 
-        const auto nullable_capture_name = ASR::Core::Utils::GetRuntimeClassName(
+        const auto nullable_capture_name = ASR::Core::Utils::GetRuntimeClassNameFrom(
             p_instance.Get(),
             [&context](const auto error_code)
             {
@@ -441,6 +440,8 @@ AsrResult CreateIAsrCaptureManager(
 {
     ASR_UTILS_CHECK_POINTER(p_json_config)
 
+    IAsrCaptureManager* p_result;
+
     auto [error_code, p_capture_manager_impl] =
         Details::CreateAsrCaptureManagerImpl(p_json_config);
 
@@ -451,14 +452,13 @@ AsrResult CreateIAsrCaptureManager(
 
     ASR_UTILS_CHECK_POINTER(pp_out_capture_manager)
 
-    IAsrCaptureManager* p_result =
-        static_cast<decltype(p_result)>(*p_capture_manager_impl);
+    p_result = static_cast<decltype(p_result)>(*p_capture_manager_impl);
     p_result->AddRef();
     *pp_out_capture_manager = p_result;
     return error_code;
 }
 
-AsrRetCaptureManager CreateIAsrSwigCaptureManager(AsrReadOnlyString json_config)
+AsrRetCaptureManager CreateIAsrCaptureManager(AsrReadOnlyString json_config)
 {
     AsrRetCaptureManager result{};
     auto* const          p_json_config = json_config.Get();
