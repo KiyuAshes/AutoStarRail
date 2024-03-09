@@ -1,11 +1,11 @@
 #include <AutoStarRail/AsrPtr.hpp>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
+#include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <boost/bimap/bimap.hpp>
 #include <boost/bimap/unordered_set_of.hpp>
-#include "AutoStarRail/ExportInterface/IAsrPluginManager.h"
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
@@ -347,23 +347,6 @@ AsrResult CommonPluginEnumFeature(
                 }
                 return result.error_code;
             }},
-        p_this);
-}
-
-auto CommonGetGuid(const CommonTypeInfoPtr& p_this) -> AsrRetGuid
-{
-    return std::visit(
-        ASR::Utils::overload_set{
-            [](const AsrPtr<IAsrTypeInfo>& p_type_info)
-            {
-                AsrRetGuid result;
-
-                result.error_code = p_type_info->GetGuid(&result.value);
-
-                return result;
-            },
-            [](const AsrPtr<IAsrSwigTypeInfo>& p_type_info)
-            { return p_type_info->GetGuid(); }},
         p_this);
 }
 

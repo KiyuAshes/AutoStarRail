@@ -1,9 +1,9 @@
 #ifndef ASR_ASRCAPTUREMANAGER_H
 #define ASR_ASRCAPTUREMANAGER_H
 
-#include "AutoStarRail/AsrString.hpp"
-#include <AutoStarRail/PluginInterface/IAsrCapture.h>
+#include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/PluginInterface/IAsrCapture.h>
 
 // {9ED8685E-050E-4FF5-9E6C-2A2C25CAC117}
 ASR_DEFINE_GUID(
@@ -45,6 +45,21 @@ ASR_INTERFACE IAsrCaptureManager : public IAsrBase
         IAsrReadOnlyString** pp_out_error_explanation) = 0;
 };
 
+// {47556B91-FDC0-4AE7-B912-DC48AA917928}
+ASR_DEFINE_GUID(
+    ASR_IID_SWIG_CAPTURE_MANAGER,
+    IAsrSwigCaptureManager,
+    0x47556b91,
+    0xfdc0,
+    0x4ae7,
+    0xb9,
+    0x12,
+    0xdc,
+    0x48,
+    0xaa,
+    0x91,
+    0x79,
+    0x28);
 ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigCaptureManager)
 ASR_INTERFACE IAsrSwigCaptureManager : public IAsrSwigBase
 {
@@ -62,5 +77,8 @@ SWIG_IGNORE(CreateIAsrCaptureManager)
 ASR_C_API AsrResult CreateIAsrCaptureManager(
     IAsrReadOnlyString*  p_json_config,
     IAsrCaptureManager** pp_out_capture_manager);
+
+ASR_API AsrRetCaptureManager
+CreateIAsrCaptureManager(AsrReadOnlyString json_config);
 
 #endif // ASR_ASRCAPTUREMANAGER_H

@@ -2,15 +2,14 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
-#include <AutoStarRail/Utils/CommonUtils.hpp>
-#include <magic_enum_format.hpp>
-#include <unicode/unistr.h>
-#include <unicode/uversion.h>
-#include <unicode/ustring.h>
-#include <new>
 #include <algorithm>
 #include <cstring>
+#include <magic_enum_format.hpp>
+#include <new>
 #include <nlohmann/json.hpp>
+#include <unicode/unistr.h>
+#include <unicode/ustring.h>
+#include <unicode/uversion.h>
 
 bool operator==(AsrReadOnlyString lhs, AsrReadOnlyString rhs)
 {
@@ -25,6 +24,12 @@ auto(ASR_FMT_NS::formatter<ASR::AsrPtr<IAsrReadOnlyString>, char>::format)(
     format_context&                        ctx) const ->
     typename std::remove_reference_t<decltype(ctx)>::iterator
 {
+    if (!p_string) [[unlikely]]
+    {
+        ASR_CORE_LOG_ERROR("Null ASR::AsrPtr<IAsrReadOnlyString> found!");
+        return ctx.out();
+    }
+
     const char* p_string_data{nullptr};
     const auto  result = p_string->GetUtf8(&p_string_data);
     if (ASR::IsOk(result))
@@ -42,6 +47,11 @@ auto(ASR_FMT_NS::formatter<AsrReadOnlyString, char>::format)(
     format_context&          ctx) const ->
     typename std::remove_reference_t<decltype(ctx)>::iterator
 {
+    if (!asr_string.Get()) [[unlikely]]
+    {
+        ASR_CORE_LOG_ERROR("Null AsrString found!");
+        return ctx.out();
+    }
     return ASR_FMT_NS::format_to(ctx.out(), "{}", asr_string.GetUtf8());
 }
 
@@ -452,7 +462,8 @@ void from_json(nlohmann::json input, AsrReadOnlyStringWrapper& output)
     output = result;
 }
 
-void from_json(nlohmann::json input, AsrReadOnlyString& output){
+void from_json(nlohmann::json input, AsrReadOnlyString& output)
+{
     AsrReadOnlyStringWrapper result{input.get_ref<const std::string&>().data()};
     output = result;
 }

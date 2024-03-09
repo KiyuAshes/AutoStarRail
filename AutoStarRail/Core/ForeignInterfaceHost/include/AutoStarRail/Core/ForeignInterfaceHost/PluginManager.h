@@ -5,7 +5,10 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
-#include <AutoStarRail/Core/Logger/Logger.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/ErrorLensManager.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/TaskManager.h>
+#include <AutoStarRail/ExportInterface/IAsrCaptureManager.h>
 #include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
 #include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
@@ -20,42 +23,15 @@
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
-struct PluginLoadError
-{
-    AsrResult   error_code;
-    std::string error_message;
-};
-
-class ErrorLensManager
-{
-private:
-    std::unordered_map<AsrGuid, AsrPtr<IAsrErrorLens>> map_{};
-
-public:
-    AsrResult Register(
-        IAsrGuidVector* p_guid_vector,
-        IAsrErrorLens*  p_error_lens);
-    AsrResult Register(
-        IAsrSwigGuidVector* p_guid_vector,
-        IAsrSwigErrorLens*  p_error_lens);
-
-    auto GetErrorMessage(
-        const AsrGuid&      iid,
-        IAsrReadOnlyString* locale_name,
-        AsrResult           error_code) const
-        -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>;
-};
-
 template <class T, class SwigT>
 class InterfaceManager
 {
 private:
     struct PluginInterface
     {
-        AsrPtr<T>              cpp_interface;
-        std::shared_ptr<SwigT> swig_interface;
+        AsrPtr<T>     cpp_interface;
+        AsrPtr<SwigT> swig_interface;
     };
-
     using GuidInterfaceMap = std::map<AsrGuid, PluginInterface>;
 
     GuidInterfaceMap map_;
@@ -68,7 +44,7 @@ private:
             plugin_item != map_.end())
         {
             ASR_CORE_LOG_WARN(
-                "Duplicate interface registration for plugin: {}",
+                "Duplicate interface registration for plugin guid: {}.",
                 plugin_guid);
         }
         map_[plugin_guid] = plugin_interface;
@@ -77,24 +53,47 @@ private:
 public:
     InterfaceManager() = default;
 
-    AsrResult AddInterface(AsrPtr<T> p_interface, const AsrGuid& plugin_guid)
+    AsrResult Register(AsrPtr<T> p_interface, const AsrGuid& interface_guid)
     {
         PluginInterface plugin_interface;
-        plugin_interface.cpp_interface = p_interface;
-        plugin_interface.swig_interface = CppToSwig<T>(p_interface);
 
-        return InternalAddInterface(plugin_interface, plugin_guid);
+        try
+        {
+            plugin_interface.swig_interface =
+                MakeAsrPtr<CppToSwig<T>>(p_interface);
+        }
+        catch (const std::bad_alloc&)
+        {
+            return ASR_E_OUT_OF_MEMORY;
+        }
+
+        plugin_interface.cpp_interface = std::move(p_interface);
+
+        InternalAddInterface(plugin_interface, interface_guid);
+
+        return ASR_S_OK;
     }
 
-    AsrResult AddInterface(
-        std::shared_ptr<SwigT> sp_interface,
-        const AsrGuid&         plugin_guid)
+    AsrResult Register(AsrPtr<SwigT> p_interface, const AsrGuid& interface_guid)
     {
-        PluginInterface plugin_interface;
-        plugin_interface.cpp_interface = SwigToCpp<SwigT>(sp_interface);
-        plugin_interface.swig_interface = sp_interface;
+        PluginInterface  plugin_interface;
+        SwigToCpp<SwigT> p_cpp_interface;
 
-        return InternalAddInterface(plugin_interface, plugin_guid);
+        try
+        {
+            plugin_interface.cpp_interface =
+                MakeAsrPtr<SwigToCpp<SwigT>>(p_interface);
+        }
+        catch (const std::bad_alloc&)
+        {
+            return ASR_E_OUT_OF_MEMORY;
+        }
+
+        plugin_interface.swig_interface = std::move(p_interface);
+
+        InternalAddInterface(plugin_interface, interface_guid);
+
+        return ASR_S_OK;
     }
 };
 
@@ -119,11 +118,11 @@ private:
     /**
      * @brief 注意：如果连名字都没获取到，则以json路径为此处的名称
      */
-    NamePluginMap                            name_plugin_map_{};
-    InterfaceStaticStorageMap                guid_storage_map_{};
-    InterfaceManager<IAsrTask, IAsrSwigTask> asr_task_interface_manager_;
-    std::vector<AsrPtr<IAsrCaptureFactory>>  asr_capture_interfaces_;
-    ErrorLensManager                         error_lens_manager_;
+    NamePluginMap                           name_plugin_map_{};
+    InterfaceStaticStorageMap               guid_storage_map_{};
+    TaskManager                             asr_task_interface_manager_;
+    std::vector<AsrPtr<IAsrCaptureFactory>> capture_factory_vector_{};
+    ErrorLensManager                        error_lens_manager_;
 
     AsrResult AddInterface(const Plugin& plugin, const char* u8_plugin_name);
     void      RegisterInterfaceStaticStorage(
@@ -161,7 +160,6 @@ public:
         const AsrGuid&       iid,
         AsrResult            error_code,
         IAsrReadOnlyString** pp_out_error_message);
-    auto GetAllCaptureFactory() -> std::vector<AsrPtr<IAsrCaptureFactory>>;
 
     AsrResult GetAllPluginInfo(
         IAsrPluginInfoVector** pp_out_plugin_info_vector);
@@ -172,6 +170,9 @@ public:
     auto GetInterfaceStaticStorage(IAsrSwigTypeInfo* p_type_info) const
         -> ASR::Utils::Expected<
             std::reference_wrapper<const InterfaceStaticStorage>>;
+
+    auto GetAllCaptureFactory() const noexcept
+        -> const std::vector<AsrPtr<IAsrCaptureFactory>>&;
 };
 
 extern PluginManager g_plugin_manager;

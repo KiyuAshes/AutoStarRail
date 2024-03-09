@@ -8,7 +8,14 @@
     {
 
 #define ASR_UTILS_NS_END                                                       \
-    ASR_NS_END                                                                 \
-    }
+    }                                                                          \
+    namespace Core                                                             \
+    {                                                                          \
+        namespace Utils                                                        \
+        {                                                                      \
+            using namespace ASR::Utils;                                        \
+        }                                                                      \
+    }                                                                          \
+    ASR_NS_END
 
 #endif // ASR_UTILS_CONFIG_H

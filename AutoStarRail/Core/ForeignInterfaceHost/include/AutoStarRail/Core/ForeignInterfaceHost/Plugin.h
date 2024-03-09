@@ -42,7 +42,7 @@ public:
 
     explicit operator bool() const noexcept;
 
-    auto GetInfo() const -> AsrPtr<AsrPluginInfoImpl>;
+    auto GetInfo() const -> std::unique_ptr<AsrPluginInfoImpl>;
 
     ~Plugin();
 };

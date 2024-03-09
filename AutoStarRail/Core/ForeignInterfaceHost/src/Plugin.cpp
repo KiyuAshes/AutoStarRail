@@ -27,9 +27,9 @@ ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
 ASR_NS_ANONYMOUS_DETAILS_END
 
-auto Plugin::GetInfo() const -> AsrPtr<AsrPluginInfoImpl>
+auto Plugin::GetInfo() const -> std::unique_ptr<AsrPluginInfoImpl>
 {
-    return MakeAsrPtr<AsrPluginInfoImpl>(sp_desc_);
+    return std::make_unique<AsrPluginInfoImpl>(sp_desc_);
 }
 
 Plugin::Plugin(Plugin&& other) noexcept

@@ -361,8 +361,6 @@ AsrResult CommonPluginEnumFeature(
     size_t                 index,
     AsrPluginFeature*      p_out_feature);
 
-auto CommonGetGuid(const CommonTypeInfoPtr& p_this) -> AsrRetGuid;
-
 template <class T>
 class CppToSwig;
 

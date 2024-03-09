@@ -586,13 +586,13 @@ auto RegisterTaskFromPlugin(T& task_manager, GetInterfaceFromPluginParam param)
         expected_common_p_task.value());
 }
 
-//template <class T>
-//auto RegisterCaptureFactoryFromPlugin(
-//    T&                          capture_manager,
-//    GetInterfaceFromPluginParam param) -> AsrResult
+// template <class T>
+// auto RegisterCaptureFactoryFromPlugin(
+//     T&                          capture_manager,
+//     GetInterfaceFromPluginParam param) -> AsrResult
 //{
 //
-//}
+// }
 
 ASR_NS_ANONYMOUS_DETAILS_END
 
@@ -1020,26 +1020,10 @@ AsrResult PluginManager::GetErrorMessage(
     return result;
 }
 
-auto PluginManager::GetAllCaptureFactory()
-    -> std::vector<AsrPtr<IAsrCaptureFactory>>
-{
-    auto result = ASR::Utils::MakeEmptyContainer<
-        std::vector<AsrPtr<IAsrCaptureFactory>>>();
-    result.reserve(guid_capture_factory_map_.size());
-    for (const auto& guid_capture_factory : guid_capture_factory_map_)
-    {
-        result.push_back(guid_capture_factory.second);
-    }
-    return result;
-}
-
 AsrResult PluginManager::GetAllPluginInfo(
     IAsrPluginInfoVector** pp_out_plugin_info_vector)
 {
-    if (pp_out_plugin_info_vector == nullptr)
-    {
-        return ASR_E_INVALID_POINTER;
-    }
+    ASR_UTILS_CHECK_POINTER(pp_out_plugin_info_vector)
 
     const auto p_vector = MakeAsrPtr<AsrPluginInfoVectorImpl>();
     for (const auto& pair : name_plugin_map_)
@@ -1047,7 +1031,11 @@ AsrResult PluginManager::GetAllPluginInfo(
         const auto& plugin_desc = pair.second;
         p_vector->AddInfo(plugin_desc.GetInfo());
     }
-    p_vector.As(pp_out_plugin_info_vector);
+
+    auto& p_out_plugin_info_vector = *pp_out_plugin_info_vector;
+    p_out_plugin_info_vector = *p_vector.Get();
+    p_out_plugin_info_vector->AddRef();
+
     return ASR_S_OK;
 }
 
@@ -1075,7 +1063,7 @@ auto PluginManager::GetInterfaceStaticStorage(IAsrTypeInfo* p_type_info) const
 
 auto PluginManager::GetInterfaceStaticStorage(IAsrSwigTypeInfo* p_type_info)
     const -> Asr::Utils::Expected<
-              std::reference_wrapper<const InterfaceStaticStorage>>
+        std::reference_wrapper<const InterfaceStaticStorage>>
 {
     if (p_type_info == nullptr)
     {
@@ -1095,6 +1083,12 @@ auto PluginManager::GetInterfaceStaticStorage(IAsrSwigTypeInfo* p_type_info)
     return Details::GetInterfaceStaticStorage(
         guid_storage_map_,
         gg_result.value);
+}
+
+auto PluginManager::GetAllCaptureFactory() const noexcept
+    -> const std::vector<AsrPtr<IAsrCaptureFactory>>&
+{
+    return capture_factory_vector_;
 }
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
