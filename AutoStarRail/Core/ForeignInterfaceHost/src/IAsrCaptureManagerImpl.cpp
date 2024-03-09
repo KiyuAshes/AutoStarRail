@@ -441,8 +441,6 @@ AsrResult CreateIAsrCaptureManager(
 {
     ASR_UTILS_CHECK_POINTER(p_json_config)
 
-    IAsrCaptureManager* p_result;
-
     auto [error_code, p_capture_manager_impl] =
         Details::CreateAsrCaptureManagerImpl(p_json_config);
 
@@ -453,13 +451,14 @@ AsrResult CreateIAsrCaptureManager(
 
     ASR_UTILS_CHECK_POINTER(pp_out_capture_manager)
 
-    p_result = static_cast<decltype(p_result)>(*p_capture_manager_impl);
+    IAsrCaptureManager* p_result =
+        static_cast<decltype(p_result)>(*p_capture_manager_impl);
     p_result->AddRef();
     *pp_out_capture_manager = p_result;
     return error_code;
 }
 
-AsrRetCaptureManager CreateIAsrCaptureManager(AsrReadOnlyString json_config)
+AsrRetCaptureManager CreateIAsrSwigCaptureManager(AsrReadOnlyString json_config)
 {
     AsrRetCaptureManager result{};
     auto* const          p_json_config = json_config.Get();

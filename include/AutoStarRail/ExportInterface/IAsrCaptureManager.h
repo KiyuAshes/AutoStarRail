@@ -70,15 +70,12 @@ ASR_RET_TYPE_DECLARE_BEGIN(AsrRetCaptureManager)
     IAsrSwigCaptureManager* value;
 ASR_RET_TYPE_DECLARE_END
 
-ASR_API AsrRetCaptureManager
-CreateAsrCaptureManager(AsrReadOnlyString json_config);
-
 SWIG_IGNORE(CreateIAsrCaptureManager)
 ASR_C_API AsrResult CreateIAsrCaptureManager(
     IAsrReadOnlyString*  p_json_config,
     IAsrCaptureManager** pp_out_capture_manager);
 
 ASR_API AsrRetCaptureManager
-CreateIAsrCaptureManager(AsrReadOnlyString json_config);
+CreateIAsrSwigCaptureManager(AsrReadOnlyString json_config);
 
 #endif // ASR_ASRCAPTUREMANAGER_H
