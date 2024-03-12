@@ -141,7 +141,7 @@ public:
      *         ASR_E_INTERNAL_FATAL_ERROR when any plugin have
      * ASR_E_SWIG_INTERNAL_ERROR or even worse.
      */
-    AsrResult Refresh();
+    AsrResult Refresh(IAsrGuidVector* p_ignored_guid_vector);
 
     /**
      * @brief Get the Error Explanation from AsrResult.

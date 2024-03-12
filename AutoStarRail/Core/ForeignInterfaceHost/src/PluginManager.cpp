@@ -23,6 +23,7 @@
 #include <magic_enum.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <unordered_set>
 #include <utility>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
@@ -372,7 +373,7 @@ ASR_NS_ANONYMOUS_DETAILS_BEGIN
  */
 template <class T, class SwigT, size_t N>
 auto QueryInterfaceFrom(
-    const char (&error_message)[N],
+    const char           (&error_message)[N],
     const char*          u8_plugin_name,
     const CommonBasePtr& common_p_base) -> ASR::Utils::Expected<AsrPtr<T>>
 {
@@ -833,9 +834,37 @@ struct FailedPluginProxy : public ASR::Utils::NonCopyableAndNonMovable
 
 ASR_NS_ANONYMOUS_DETAILS_END
 
-AsrResult PluginManager::Refresh()
+AsrResult PluginManager::Refresh(IAsrGuidVector* p_ignored_guid_vector)
 {
     AsrResult result{ASR_S_OK};
+
+    const auto ignored_guid_set = [p_ignored_guid_vector]
+    {
+        std::unordered_set<AsrGuid> lambda_result{};
+        size_t                      i{0};
+        AsrGuid                     guid;
+        while (true)
+        {
+            const auto error_code = IsOk(p_ignored_guid_vector->At(i, &guid));
+            if (IsOk(error_code))
+            {
+                ++i;
+                lambda_result.emplace(guid);
+                continue;
+            }
+
+            if (error_code != ASR_E_OUT_OF_RANGE)
+            {
+                ASR_CORE_LOG_ERROR(
+                    "Unexpected error happend when reading ignored guid."
+                    "Error code = {}.",
+                    error_code);
+            }
+
+            break;
+        }
+        return lambda_result;
+    }();
 
     NamePluginMap map{};
 
@@ -866,6 +895,11 @@ AsrResult PluginManager::Refresh()
                 auto tmp_up_plugin_desc =
                     GetPluginDesc(it_path, it.is_directory());
                 up_plugin_desc = std::move(tmp_up_plugin_desc);
+
+                if (ignored_guid_set.contains(up_plugin_desc->guid))
+                {
+                    continue;
+                }
 
                 if (const auto* const CURRENT_PLATFORM =
                         static_cast<const char*>(
@@ -1122,3 +1156,11 @@ auto PluginManager::GetAllCaptureFactory() const noexcept
 }
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
+
+AsrResult LoadPluginAndGetResult(
+    IAsrGuidVector*     p_ignore_plugins_guid,
+    IAsrPluginManager** pp_out_result);
+{
+    (void)p_ignore_plugins_guid;
+    (void)pp_out_result;
+}
