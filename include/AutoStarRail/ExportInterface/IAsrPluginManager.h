@@ -138,7 +138,7 @@ SWIG_IGNORE(IAsrPluginManager)
 ASR_INTERFACE IAsrPluginManager : public IAsrBase
 {
     ASR_METHOD GetAllPluginInfo(
-        IAsrPluginInfoVector * *pp_out_plugin_info_vector);
+        IAsrPluginInfoVector * *pp_out_plugin_info_vector) = 0;
 };
 
 /**

@@ -618,6 +618,27 @@ auto RegisterCaptureFactoryFromPlugin(
 
 ASR_NS_ANONYMOUS_DETAILS_END
 
+IAsrPluginManagerImpl::IAsrPluginManagerImpl(PluginManager& impl) : impl_{impl}
+{
+}
+
+int64_t IAsrPluginManagerImpl::AddRef() { return impl_.AddRef(); }
+
+int64_t IAsrPluginManagerImpl::Release() { return impl_.Release(); }
+
+AsrResult IAsrPluginManagerImpl::QueryInterface(
+    const AsrGuid& iid,
+    void**         pp_object)
+{
+    return Utils::QueryInterface<IAsrPluginManager>(this, iid, pp_object);
+}
+
+AsrResult IAsrPluginManagerImpl::GetAllPluginInfo(
+    IAsrPluginInfoVector** pp_out_plugin_info_vector)
+{
+    return impl_.GetAllPluginInfo(pp_out_plugin_info_vector);
+}
+
 AsrResult PluginManager::AddInterface(
     const Plugin& plugin,
     const char*   u8_plugin_name)
@@ -834,6 +855,18 @@ struct FailedPluginProxy : public ASR::Utils::NonCopyableAndNonMovable
 
 ASR_NS_ANONYMOUS_DETAILS_END
 
+int64_t PluginManager::AddRef()
+{
+    ++ref_counter_;
+    return ref_counter_;
+}
+
+int64_t PluginManager::Release()
+{
+    --ref_counter_;
+    return ref_counter_;
+}
+
 AsrResult PluginManager::Refresh(IAsrGuidVector* p_ignored_guid_vector)
 {
     AsrResult result{ASR_S_OK};
@@ -845,7 +878,7 @@ AsrResult PluginManager::Refresh(IAsrGuidVector* p_ignored_guid_vector)
         AsrGuid                     guid;
         while (true)
         {
-            const auto error_code = IsOk(p_ignored_guid_vector->At(i, &guid));
+            const auto error_code = p_ignored_guid_vector->At(i, &guid);
             if (IsOk(error_code))
             {
                 ++i;
@@ -1104,7 +1137,7 @@ AsrResult PluginManager::GetAllPluginInfo(
 }
 
 auto PluginManager::GetInterfaceStaticStorage(IAsrTypeInfo* p_type_info) const
-    -> Asr::Utils::Expected<
+    -> ASR::Utils::Expected<
         std::reference_wrapper<const InterfaceStaticStorage>>
 {
     if (p_type_info == nullptr)
@@ -1155,12 +1188,29 @@ auto PluginManager::GetAllCaptureFactory() const noexcept
     return capture_factory_vector_;
 }
 
+PluginManager::operator IAsrPluginManagerImpl*() noexcept
+{
+    return &cpp_projection_;
+}
+
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
 
 AsrResult LoadPluginAndGetResult(
     IAsrGuidVector*     p_ignore_plugins_guid,
-    IAsrPluginManager** pp_out_result);
+    IAsrPluginManager** pp_out_result)
 {
-    (void)p_ignore_plugins_guid;
-    (void)pp_out_result;
+    ASR_UTILS_CHECK_POINTER(p_ignore_plugins_guid)
+    ASR_UTILS_CHECK_POINTER(pp_out_result)
+
+    static size_t initialize_counter{0};
+    ++initialize_counter;
+    if (initialize_counter > 1)
+    {
+        ASR_CORE_LOG_ERROR(
+            "The plugin should be loaded only once while the program is running");
+    }
+    auto& plugin_manager = ASR::Core::ForeignInterfaceHost::g_plugin_manager;
+    const auto result = plugin_manager.Refresh(p_ignore_plugins_guid);
+    *pp_out_result = plugin_manager;
+    return result;
 }

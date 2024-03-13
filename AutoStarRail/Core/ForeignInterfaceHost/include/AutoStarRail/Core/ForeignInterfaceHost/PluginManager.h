@@ -92,9 +92,30 @@ public:
     }
 };
 
+class PluginManager;
+
+class IAsrPluginManagerImpl : public IAsrPluginManager
+{
+    PluginManager& impl_;
+
+public:
+    IAsrPluginManagerImpl(PluginManager& impl);
+    // IAsrBase
+    int64_t   AddRef() override;
+    int64_t   Release() override;
+    AsrResult QueryInterface(const AsrGuid& iid, void** pp_object) override;
+    // IAsrPluginManager
+    AsrResult GetAllPluginInfo(
+        IAsrPluginInfoVector** pp_out_plugin_info_vector) override;
+};
+
 class PluginManager
 {
 public:
+    /**
+     * @brief 引用计数对于单例没有意义，因此不使用原子变量
+     */
+    int64_t ref_counter_{};
     using NamePluginMap =
         std::map<AsrPtr<IAsrReadOnlyString>, Plugin, AsrStringLess>;
 
@@ -119,6 +140,8 @@ private:
     std::vector<AsrPtr<IAsrCaptureFactory>> capture_factory_vector_{};
     ErrorLensManager                        error_lens_manager_;
 
+    IAsrPluginManagerImpl cpp_projection_{*this};
+
     AsrResult AddInterface(const Plugin& plugin, const char* u8_plugin_name);
     void      RegisterInterfaceStaticStorage(
              IAsrTypeInfo*                 p_interface,
@@ -134,6 +157,8 @@ private:
     AsrResult GetInterface(const Plugin& plugin);
 
 public:
+    int64_t AddRef();
+    int64_t Release();
     /**
      * @brief try to load all plugin. And get all interface.
      * @return AsrResult ASR_S_OK when all plugin are loaded successfully.\n
@@ -168,6 +193,8 @@ public:
 
     auto GetAllCaptureFactory() const noexcept
         -> const std::vector<AsrPtr<IAsrCaptureFactory>>&;
+
+    operator IAsrPluginManagerImpl*() noexcept;
 };
 
 extern PluginManager g_plugin_manager;

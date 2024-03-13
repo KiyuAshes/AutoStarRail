@@ -101,7 +101,7 @@ AsrResult QueryInterfaceAsLastClassInInheritanceInfo(
 }
 
 /**
- * @brief 用于兼容老代码
+ * @brief 不需要TImpl类能被Query出来时，使用这个函数
  * @tparam T
  * @tparam TImpl
  * @param p_this
