@@ -458,7 +458,7 @@ AsrResult CreateIAsrCaptureManager(
     return error_code;
 }
 
-AsrRetCaptureManager CreateIAsrCaptureManager(AsrReadOnlyString json_config)
+AsrRetCaptureManager CreateIAsrSwigCaptureManager(AsrReadOnlyString json_config)
 {
     AsrRetCaptureManager result{};
     auto* const          p_json_config = json_config.Get();
