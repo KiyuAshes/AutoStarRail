@@ -1,5 +1,5 @@
-#ifndef ASR_PLUGINS_ERRORLENSIMPL_H
-#define ASR_PLUGINS_ERRORLENSIMPL_H
+#ifndef ASR_PLUGINS_ASRADBCAPTURE_ERRORLENSIMPL_H
+#define ASR_PLUGINS_ASRADBCAPTURE_ERRORLENSIMPL_H
 
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
@@ -57,4 +57,4 @@ public:
 
 ASR_NS_END
 
-#endif // ASR_PLUGINS_ERRORLENSIMPL_H
+#endif // ASR_PLUGINS_ASRADBCAPTURE_ERRORLENSIMPL_H

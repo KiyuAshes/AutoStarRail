@@ -16,6 +16,11 @@ typedef struct _asr_Point
     int32_t y;
 } AsrPoint;
 
+// {B03F0BB5-B328-45C4-99D1-04DBC7FC5BA7}
+ASR_DEFINE_GUID(ASR_IID_TOUCH_FACTORY,IAsrTouchFactory,
+0xb03f0bb5, 0xb328, 0x45c4, 0x99, 0xd1, 0x4, 0xdb, 0xc7, 0xfc, 0x5b, 0xa7);
+ASR_INTERFACE IAsrTouchFactory : public IAsrTypeInfo{};
+
 // {02F6A16A-01FD-4303-886A-9B60373EBE8C}
 ASR_DEFINE_GUID(
     ASR_IID_INPUT,

@@ -1,5 +1,5 @@
-#ifndef ASR_PLUGINS_PLUGINIMPL_H
-#define ASR_PLUGINS_PLUGINIMPL_H
+#ifndef ASR_PLUGINS_ASRADBCAPTURE_PLUGINIMPL_H
+#define ASR_PLUGINS_ASRADBCAPTURE_PLUGINIMPL_H
 
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
@@ -52,4 +52,4 @@ void AdbCaptureRelease();
 
 ASR_NS_END
 
-#endif // ASR_PLUGINS_PLUGINIMPL_H
+#endif // ASR_PLUGINS_ASRADBCAPTURE_PLUGINIMPL_H
