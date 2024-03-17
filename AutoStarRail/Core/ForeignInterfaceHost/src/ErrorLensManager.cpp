@@ -41,7 +41,7 @@ const std::unordered_set<AsrGuid> g_official_iids{
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
-auto GetIidVectorSize(IAsrGuidVector* p_iid_vector)
+auto GetIidVectorSize(IAsrReadOnlyGuidVector* p_iid_vector)
     -> ASR::Utils::Expected<size_t>
 {
     size_t     iid_size{};
@@ -62,7 +62,7 @@ auto GetIidVectorSize(IAsrGuidVector* p_iid_vector)
     return iid_size;
 }
 
-auto GetIidFromIidVector(IAsrGuidVector* p_iid_vector, size_t iid_index)
+auto GetIidFromIidVector(IAsrReadOnlyGuidVector* p_iid_vector, size_t iid_index)
     -> ASR::Utils::Expected<AsrGuid>
 {
     AsrGuid    iid{AsrIidOf<IAsrBase>()};
@@ -84,8 +84,8 @@ auto GetIidFromIidVector(IAsrGuidVector* p_iid_vector, size_t iid_index)
 ASR_NS_ANONYMOUS_DETAILS_END
 
 AsrResult ErrorLensManager::Register(
-    IAsrGuidVector* p_iid_vector,
-    IAsrErrorLens*  p_error_lens)
+    IAsrReadOnlyGuidVector* p_iid_vector,
+    IAsrErrorLens*          p_error_lens)
 {
     const auto get_iid_size_result = Details::GetIidVectorSize(p_iid_vector);
     if (!get_iid_size_result)
@@ -131,14 +131,14 @@ AsrResult ErrorLensManager::Register(
 }
 
 AsrResult ErrorLensManager::Register(
-    IAsrSwigGuidVector* p_guid_vector,
-    IAsrSwigErrorLens*  p_error_lens)
+    IAsrSwigReadOnlyGuidVector* p_guid_vector,
+    IAsrSwigErrorLens*          p_error_lens)
 {
     const AsrPtr<IAsrErrorLens> p_cpp_error_lens =
         MakeAsrPtr<SwigToCpp<IAsrSwigErrorLens>>(p_error_lens);
-    const auto p_cpp_guid_vector =
-        ASR::MakeAsrPtr<IAsrGuidVector, SwigToCpp<IAsrSwigGuidVector>>(
-            p_guid_vector);
+    const auto p_cpp_guid_vector = ASR::MakeAsrPtr<
+        IAsrReadOnlyGuidVector,
+        SwigToCpp<IAsrSwigReadOnlyGuidVector>>(p_guid_vector);
     return Register(p_cpp_guid_vector.Get(), p_cpp_error_lens.Get());
 }
 

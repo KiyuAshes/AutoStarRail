@@ -373,7 +373,7 @@ ASR_NS_ANONYMOUS_DETAILS_BEGIN
  */
 template <class T, class SwigT, size_t N>
 auto QueryInterfaceFrom(
-    const char           (&error_message)[N],
+    const char (&error_message)[N],
     const char*          u8_plugin_name,
     const CommonBasePtr& common_p_base) -> ASR::Utils::Expected<AsrPtr<T>>
 {
@@ -490,8 +490,8 @@ auto RegisterErrorLensFromPlugin(
 {
     const auto& [u8_plugin_name, common_p_base] = param;
 
-    AsrPtr<IAsrGuidVector> p_guid_vector{};
-    const auto             exptected_p_error_lens =
+    AsrPtr<IAsrReadOnlyGuidVector> p_guid_vector{};
+    const auto                     exptected_p_error_lens =
         QueryErrorLensFrom(u8_plugin_name, common_p_base);
     if (!exptected_p_error_lens)
     {
@@ -1160,7 +1160,7 @@ auto PluginManager::GetInterfaceStaticStorage(IAsrTypeInfo* p_type_info) const
 
 auto PluginManager::GetInterfaceStaticStorage(IAsrSwigTypeInfo* p_type_info)
     const -> Asr::Utils::Expected<
-        std::reference_wrapper<const InterfaceStaticStorage>>
+              std::reference_wrapper<const InterfaceStaticStorage>>
 {
     if (p_type_info == nullptr)
     {

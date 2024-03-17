@@ -3,15 +3,9 @@
 
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
-#include <AutoStarRail/Utils/Expected.h>
-#include <unordered_map>
+#include <AutoStarRail/Utils/StringUtils.h>
 #include <string>
-
-struct AsrReadOnlyStringHash
-{
-    std::size_t operator()(
-        const ASR::AsrPtr<IAsrReadOnlyString>& s) const noexcept;
-};
+#include <unordered_map>
 
 ASR_NS_BEGIN
 
@@ -25,7 +19,7 @@ class AdbCaptureErrorLens final : public IAsrErrorLens
     using LocaleErrorCodeMap = std::unordered_map<
         AsrPtr<IAsrReadOnlyString>,
         ErrorCodeMap,
-        AsrReadOnlyStringHash>;
+        Utils::AsrReadOnlyStringHash>;
     LocaleErrorCodeMap                          map_;
     ASR::Utils::RefCounter<AdbCaptureErrorLens> ref_counter_;
     std::vector<AsrGuid>                        iids_;
@@ -43,7 +37,7 @@ public:
     int64_t   Release() override;
     AsrResult QueryInterface(const AsrGuid& iid, void** pp_out_object) override;
     // IAsrErrorLens
-    AsrResult GetSupportedIids(IAsrGuidVector** pp_out_iids) override;
+    AsrResult GetSupportedIids(IAsrReadOnlyGuidVector** pp_out_iids) override;
     AsrResult GetErrorMessage(
         IAsrReadOnlyString*  locale_name,
         AsrResult            error_code,

@@ -1,14 +1,203 @@
-#include "IAsrGuidVectorImpl.h"
+#include <AutoStarRail/Core/ForeignInterfaceHost/IAsrGuidVectorImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <algorithm>
 
+IAsrReadOnlyGuidVectorImpl::IAsrReadOnlyGuidVectorImpl(
+    Asr::Core::ForeignInterfaceHost::AsrGuidVectorImpl& impl)
+    : impl_{impl}
+{
+}
+
+int64_t IAsrReadOnlyGuidVectorImpl::AddRef() { return impl_.AddRef(); }
+
+int64_t IAsrReadOnlyGuidVectorImpl::Release() { return impl_.Release(); }
+
+AsrResult IAsrReadOnlyGuidVectorImpl::QueryInterface(
+    const AsrGuid& iid,
+    void**         pp_out_object)
+{
+    return ASR::Utils::QueryInterface<IAsrReadOnlyGuidVector>(
+        this,
+        iid,
+        pp_out_object);
+}
+
+AsrResult IAsrReadOnlyGuidVectorImpl::Size(size_t* p_out_size)
+{
+    ASR_UTILS_CHECK_POINTER(p_out_size);
+
+    *p_out_size = impl_.Size();
+
+    return ASR_S_OK;
+}
+
+AsrResult IAsrReadOnlyGuidVectorImpl::At(size_t index, AsrGuid* p_out_iid)
+{
+    ASR_UTILS_CHECK_POINTER(p_out_iid)
+
+    return impl_.At(index, *p_out_iid);
+}
+
+AsrResult IAsrReadOnlyGuidVectorImpl::Find(const AsrGuid& iid)
+{
+    return impl_.Find(iid);
+}
+
+IAsrGuidVectorImpl::IAsrGuidVectorImpl(
+    Asr::Core::ForeignInterfaceHost::AsrGuidVectorImpl& impl)
+    : impl_{impl}
+{
+}
+
+int64_t IAsrGuidVectorImpl::AddRef() { return impl_.AddRef(); }
+
+int64_t IAsrGuidVectorImpl::Release() { return impl_.Release(); }
+
+AsrResult IAsrGuidVectorImpl::QueryInterface(
+    const AsrGuid& iid,
+    void**         pp_out_object)
+{
+    return ASR::Utils::QueryInterface<IAsrGuidVector>(this, iid, pp_out_object);
+}
+
+AsrResult IAsrGuidVectorImpl::Size(size_t* p_out_size)
+{
+    ASR_UTILS_CHECK_POINTER(p_out_size);
+
+    *p_out_size = impl_.Size();
+
+    return ASR_S_OK;
+}
+
+AsrResult IAsrGuidVectorImpl::At(size_t index, AsrGuid* p_out_iid)
+{
+    ASR_UTILS_CHECK_POINTER(p_out_iid)
+
+    return impl_.At(index, *p_out_iid);
+}
+
+AsrResult IAsrGuidVectorImpl::Find(const AsrGuid& iid)
+{
+    return impl_.Find(iid);
+}
+
+AsrResult IAsrGuidVectorImpl::PushBack(const AsrGuid& iid)
+{
+    return impl_.PushBack(iid);
+}
+
+AsrResult IAsrGuidVectorImpl::ToConst(IAsrReadOnlyGuidVector** pp_out_object)
+{
+    ASR_UTILS_CHECK_POINTER(pp_out_object)
+
+    *pp_out_object = impl_;
+
+    return ASR_S_OK;
+}
+
+auto IAsrGuidVectorImpl::GetImpl() noexcept -> std::vector<AsrGuid>&
+{
+    return impl_.GetImpl();
+}
+
+auto IAsrGuidVectorImpl::Get()
+    -> Asr::Core::ForeignInterfaceHost::AsrGuidVectorImpl&
+{
+    return impl_;
+}
+IAsrSwigReadOnlyGuidVectorImpl::IAsrSwigReadOnlyGuidVectorImpl(
+    Asr::Core::ForeignInterfaceHost::AsrGuidVectorImpl& impl)
+    : impl_{impl}
+{
+}
+
+int64_t IAsrSwigReadOnlyGuidVectorImpl::AddRef() { return impl_.AddRef(); }
+
+int64_t IAsrSwigReadOnlyGuidVectorImpl::Release() { return impl_.Release(); }
+
+AsrRetSwigBase IAsrSwigReadOnlyGuidVectorImpl::QueryInterface(
+    const AsrGuid& iid)
+{
+    return ASR::Utils::QueryInterface<IAsrSwigReadOnlyGuidVector>(this, iid);
+}
+
+AsrRetUInt IAsrSwigReadOnlyGuidVectorImpl::Size()
+{
+    return {ASR_S_OK, impl_.Size()};
+}
+
+AsrRetGuid IAsrSwigReadOnlyGuidVectorImpl::At(size_t index)
+{
+    AsrRetGuid result{};
+
+    result.error_code = impl_.At(index, result.value);
+
+    return result;
+}
+
+AsrResult IAsrSwigReadOnlyGuidVectorImpl::Find(const AsrGuid& iid)
+{
+    return impl_.Find(iid);
+}
+
+IAsrSwigGuidVectorImpl::IAsrSwigGuidVectorImpl(
+    Asr::Core::ForeignInterfaceHost::AsrGuidVectorImpl& impl)
+    : impl_{impl}
+{
+}
+
+int64_t IAsrSwigGuidVectorImpl::AddRef() { return impl_.AddRef(); }
+
+int64_t IAsrSwigGuidVectorImpl::Release() { return impl_.Release(); }
+
+AsrRetSwigBase IAsrSwigGuidVectorImpl::QueryInterface(const AsrGuid& iid)
+{
+    return ASR::Utils::QueryInterface<IAsrSwigGuidVector>(this, iid);
+}
+
+AsrRetUInt IAsrSwigGuidVectorImpl::Size() { return {ASR_S_OK, impl_.Size()}; }
+
+AsrRetGuid IAsrSwigGuidVectorImpl::At(size_t index)
+{
+    AsrRetGuid result{};
+
+    result.error_code = impl_.At(index, result.value);
+
+    return result;
+}
+
+AsrResult IAsrSwigGuidVectorImpl::Find(const AsrGuid& iid)
+{
+    return impl_.Find(iid);
+}
+
+AsrResult IAsrSwigGuidVectorImpl::PushBack(const AsrGuid& iid)
+{
+    return impl_.PushBack(iid);
+}
+
+AsrRetReadOnlyGuidVector IAsrSwigGuidVectorImpl::ToConst()
+{
+    return {ASR_S_OK, impl_};
+}
+
+auto IAsrSwigGuidVectorImpl::Get()
+    -> Asr::Core::ForeignInterfaceHost::AsrGuidVectorImpl&
+{
+    return impl_;
+}
+
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
+
+int64_t AsrGuidVectorImpl::AddRef() { return ref_counter_.AddRef(); }
+
+int64_t AsrGuidVectorImpl::Release() { return ref_counter_.Release(this); }
 
 auto AsrGuidVectorImpl::Size() const noexcept -> size_t { return iids_.size(); }
 
-auto AsrGuidVectorImpl::At(size_t index, AsrGuid& out_guid) noexcept
+auto AsrGuidVectorImpl::At(size_t index, AsrGuid& out_guid) const noexcept
     -> AsrResult
 {
     if (index >= iids_.size())
@@ -47,41 +236,6 @@ auto AsrGuidVectorImpl::GetImpl() noexcept -> std::vector<AsrGuid>&
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
 
-AsrResult IAsrGuidVectorImpl::QueryInterface(
-    const AsrGuid& iid,
-    void**         pp_out_object)
-{
-    return ASR::Utils::QueryInterface<IAsrGuidVector>(this, iid, pp_out_object);
-}
-
-AsrResult IAsrGuidVectorImpl::Size(size_t* p_out_size)
-{
-    ASR_UTILS_CHECK_POINTER(p_out_size);
-
-    *p_out_size = impl_.Size();
-
-    return ASR_S_OK;
-}
-
-AsrResult IAsrGuidVectorImpl::At(size_t index, AsrGuid* p_out_iid)
-{
-    ASR_UTILS_CHECK_POINTER(p_out_iid)
-
-    return impl_.At(index, *p_out_iid);
-}
-
-AsrResult IAsrGuidVectorImpl::Find(const AsrGuid& iid) { return impl_.Find(iid); }
-
-AsrResult IAsrGuidVectorImpl::PushBack(const AsrGuid& iid)
-{
-    return impl_.PushBack(iid);
-}
-
-auto IAsrGuidVectorImpl::GetImpl() noexcept -> std::vector<AsrGuid>&
-{
-    return impl_.GetImpl();
-}
-
 AsrResult CreateIAsrGuidVector(
     const AsrGuid*   p_iids,
     size_t           iid_count,
@@ -90,12 +244,13 @@ AsrResult CreateIAsrGuidVector(
     *pp_out_iid_vector = nullptr;
     try
     {
-        auto* const result = new IAsrGuidVectorImpl{};
+        auto* const result =
+            new ASR::Core::ForeignInterfaceHost::AsrGuidVectorImpl{};
         result->AddRef();
         auto& impl = result->GetImpl();
         impl.resize(iid_count);
         ASR::Utils::CopyArray(p_iids, iid_count, impl.data());
-        *pp_out_iid_vector = result;
+        *pp_out_iid_vector = *result;
         return ASR_S_OK;
     }
     catch (std::bad_alloc&)
@@ -111,39 +266,14 @@ AsrResult CreateIAsrGuidVector(
     }
 }
 
-AsrRetSwigBase IAsrSwigGuidVectorImpl::QueryInterface(const AsrGuid& iid)
+AsrRetGuidVector CreateIAsrSwigGuidVector()
 {
-    return ASR::Utils::QueryInterface<IAsrSwigGuidVector>(this, iid);
-}
-
-AsrRetUInt IAsrSwigGuidVectorImpl::Size() { return {ASR_S_OK, impl_.Size()}; }
-
-AsrRetGuid IAsrSwigGuidVectorImpl::At(size_t index)
-{
-    AsrRetGuid result{};
-
-    result.error_code = impl_.At(index, result.value);
-
-    return result;
-}
-
-AsrResult IAsrSwigGuidVectorImpl::Find(const AsrGuid& iid)
-{
-    return impl_.Find(iid);
-}
-
-AsrResult IAsrSwigGuidVectorImpl::PushBack(const AsrGuid& iid)
-{
-    return impl_.PushBack(iid);
-}
-
-AsrRetSwigGuidVector CreateIAsrSwigGuidVector()
-{
-    AsrRetSwigGuidVector result{};
+    AsrRetGuidVector result{};
     try
     {
-        const auto p_result = new IAsrSwigGuidVectorImpl{};
-        result.value = p_result;
+        const auto p_result =
+            new ASR::Core::ForeignInterfaceHost::AsrGuidVectorImpl{};
+        result.value = *p_result;
         p_result->AddRef();
     }
     catch (const std::bad_alloc&)

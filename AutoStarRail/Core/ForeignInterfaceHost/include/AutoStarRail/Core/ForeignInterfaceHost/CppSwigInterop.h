@@ -7,13 +7,13 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/IsCastAvailableImpl.hpp>
 #include <AutoStarRail/Core/Logger/Logger.h>
+#include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
+#include <AutoStarRail/ExportInterface/IAsrImage.h>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
-#include <AutoStarRail/ExportInterface/IAsrImage.h>
-#include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
 #include <AutoStarRail/Utils/Expected.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <cstdint>
@@ -232,14 +232,12 @@ public:
     }
 
     [[nodiscard]]
-    T*
-    operator->() const noexcept
+    T* operator->() const noexcept
     {
         return static_cast<T*>(this);
     }
     [[nodiscard]]
-    T&
-    operator*() const noexcept
+    T& operator*() const noexcept
     {
         return static_cast<T&>(*this);
     }
@@ -318,7 +316,7 @@ class SwigToCpp<IAsrSwigErrorLens> final
 public:
     ASR_USING_BASE_CTOR(SwigToCppBase);
 
-    AsrResult GetSupportedIids(IAsrGuidVector** pp_out_iids) override;
+    AsrResult GetSupportedIids(IAsrReadOnlyGuidVector** pp_out_iids) override;
     AsrResult GetErrorMessage(
         IAsrReadOnlyString*  locale_name,
         AsrResult            error_code,
@@ -354,6 +352,19 @@ public:
     ASR_IMPL At(size_t index, AsrGuid* p_out_iid) override;
     ASR_IMPL Find(const AsrGuid& iid) override;
     ASR_IMPL PushBack(const AsrGuid& iid) override;
+    ASR_IMPL ToConst(IAsrReadOnlyGuidVector** pp_out_object) override;
+};
+
+template <>
+class SwigToCpp<IAsrSwigReadOnlyGuidVector> final
+    : public SwigToCppBase<IAsrSwigReadOnlyGuidVector, IAsrReadOnlyGuidVector>
+{
+public:
+    ASR_USING_BASE_CTOR(SwigToCppBase);
+
+    ASR_IMPL Size(size_t* p_out_size) override;
+    ASR_IMPL At(size_t index, AsrGuid* p_out_iid) override;
+    ASR_IMPL Find(const AsrGuid& iid) override;
 };
 
 AsrResult CommonPluginEnumFeature(
@@ -567,10 +578,23 @@ class CppToSwig<IAsrGuidVector> final
 public:
     ASR_USING_BASE_CTOR(CppToSwigBase);
 
+    AsrRetUInt               Size() override;
+    AsrRetGuid               At(size_t index) override;
+    AsrResult                Find(const AsrGuid& guid) override;
+    AsrResult                PushBack(const AsrGuid& guid) override;
+    AsrRetReadOnlyGuidVector ToConst() override;
+};
+
+template <>
+class CppToSwig<IAsrReadOnlyGuidVector> final
+    : public CppToSwigBase<IAsrSwigReadOnlyGuidVector, IAsrReadOnlyGuidVector>
+{
+public:
+    ASR_USING_BASE_CTOR(CppToSwigBase);
+
     AsrRetUInt Size() override;
     AsrRetGuid At(size_t index) override;
     AsrResult  Find(const AsrGuid& guid) override;
-    AsrResult  PushBack(const AsrGuid& guid) override;
 };
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

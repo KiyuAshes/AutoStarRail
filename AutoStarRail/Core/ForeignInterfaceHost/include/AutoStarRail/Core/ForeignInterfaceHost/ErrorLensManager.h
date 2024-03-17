@@ -18,11 +18,11 @@ private:
 
 public:
     AsrResult Register(
-        IAsrGuidVector* p_guid_vector,
-        IAsrErrorLens*  p_error_lens);
+        IAsrReadOnlyGuidVector* p_guid_vector,
+        IAsrErrorLens*          p_error_lens);
     AsrResult Register(
-        IAsrSwigGuidVector* p_guid_vector,
-        IAsrSwigErrorLens*  p_error_lens);
+        IAsrSwigReadOnlyGuidVector* p_guid_vector,
+        IAsrSwigErrorLens*          p_error_lens);
 
     auto GetErrorMessage(
         const AsrGuid&      iid,

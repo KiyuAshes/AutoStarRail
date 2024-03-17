@@ -45,6 +45,26 @@ public:                                                                        \
     result.GetImpl(pp_out_class_name);                                         \
     return ASR_S_OK
 
+template <class Object, class T>
+class ProjectionGenerator
+{
+    T projection{*static_cast<std::add_pointer_t<Object>>(this)};
+
+public:
+    operator std::add_pointer_t<T>() { return &projection; }
+};
+
+// clang-format off
+
+#define ASR_UTILS_MULTIPLE_PROJECTION_GENERATORS(                              \
+    object_type,                                                               \
+    projection_type1,                                                          \
+    projection_type2)                                                          \
+    public ASR::Utils::ProjectionGenerator<object_type, projection_type1>,     \
+    public ASR::Utils::ProjectionGenerator<object_type, projection_type2>
+
+// clang-format on
+
 struct NonCopyable
 {
     NonCopyable() = default;
@@ -86,7 +106,8 @@ class OnExit : public NonCopyableAndNonMovable
 {
     ASR_USING_BASE_CTOR(NonCopyableAndNonMovable);
 
-    [[no_unique_address]] OnExitFunc on_exit_func_;
+    [[no_unique_address]]
+    OnExitFunc on_exit_func_;
 
 public:
     template <class F>
@@ -106,8 +127,9 @@ class ScopeGuard : public NonCopyableAndNonMovable
 {
     ASR_USING_BASE_CTOR(NonCopyableAndNonMovable);
 
-    T                                value_;
-    [[no_unique_address]] OnExitFunc on_exit_func_;
+    T value_;
+    [[no_unique_address]]
+    OnExitFunc on_exit_func_;
 
 public:
     template <class F>
@@ -129,7 +151,8 @@ class ScopeGuardVoid : public NonCopyableAndNonMovable
 {
     ASR_USING_BASE_CTOR(NonCopyableAndNonMovable);
 
-    [[no_unique_address]] OnExitFunc on_exit_func_;
+    [[no_unique_address]]
+    OnExitFunc on_exit_func_;
 
 public:
     template <class FInit, class FDestroy>

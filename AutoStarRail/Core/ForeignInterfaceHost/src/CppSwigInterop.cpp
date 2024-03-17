@@ -177,7 +177,7 @@ auto CreateSwigToCppObject(const AsrGuid& iid, void* p_cpp_object)
 // -------------------- implementation of SwigToCpp class --------------------
 
 AsrResult SwigToCpp<IAsrSwigErrorLens>::GetSupportedIids(
-    IAsrGuidVector** pp_out_iids)
+    IAsrReadOnlyGuidVector** pp_out_iids)
 {
     try
     {
@@ -188,7 +188,8 @@ AsrResult SwigToCpp<IAsrSwigErrorLens>::GetSupportedIids(
             return swig_result.error_code;
         }
 
-        auto p_result = new SwigToCpp<IAsrSwigGuidVector>(swig_result.value);
+        auto p_result =
+            new SwigToCpp<IAsrSwigReadOnlyGuidVector>(swig_result.value);
         p_result->AddRef();
         swig_result.value->Release();
         *pp_out_iids = p_result;
@@ -321,6 +322,64 @@ ASR_IMPL SwigToCpp<IAsrSwigGuidVector>::PushBack(const AsrGuid& iid)
     }
 }
 
+AsrResult SwigToCpp<IAsrSwigGuidVector>::ToConst(
+    IAsrReadOnlyGuidVector** pp_out_object)
+{
+    auto swig_result = p_impl_->ToConst();
+    if (IsFailed(swig_result.error_code))
+    {
+        return swig_result.error_code;
+    }
+
+    AsrPtr<IAsrReadOnlyGuidVector> p_result{};
+    try
+    {
+        p_result = MakeAsrPtr<SwigToCpp<IAsrSwigReadOnlyGuidVector>>(
+            swig_result.value);
+    }
+    catch (const std::bad_alloc&)
+    {
+        return ASR_E_OUT_OF_MEMORY;
+    }
+
+    ASR_UTILS_CHECK_POINTER(pp_out_object)
+    *pp_out_object = p_result.Get();
+    p_result->AddRef();
+    return ASR_S_OK;
+}
+
+ASR_IMPL SwigToCpp<IAsrSwigReadOnlyGuidVector>::Size(size_t* p_out_size)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigReadOnlyGuidVector::Size,
+        p_out_size);
+}
+
+ASR_IMPL SwigToCpp<IAsrSwigReadOnlyGuidVector>::At(
+    size_t   index,
+    AsrGuid* p_out_iid)
+{
+    ASR_CORE_FOREIGNINTERFACEHOST_CALL_SWIG_METHOD_IMPL_AND_HANDLE_EXCEPTION(
+        p_impl_.Get(),
+        &IAsrSwigReadOnlyGuidVector::At,
+        p_out_iid,
+        index);
+}
+
+ASR_IMPL SwigToCpp<IAsrSwigReadOnlyGuidVector>::Find(const AsrGuid& iid)
+{
+    try
+    {
+        return p_impl_->Find(iid);
+    }
+    catch (const std::exception& ex)
+    {
+        ASR_CORE_LOG_ERROR(ex.what());
+        return ASR_E_SWIG_INTERNAL_ERROR;
+    }
+}
+
 // TODO: IAsrSwigCaptureFactory CreateInstance
 
 AsrResult CommonPluginEnumFeature(
@@ -383,5 +442,52 @@ AsrResult CppToSwig<IAsrGuidVector>::PushBack(const AsrGuid& guid)
 {
     return p_impl_->PushBack(guid);
 }
+
+AsrRetReadOnlyGuidVector CppToSwig<IAsrGuidVector>::ToConst()
+{
+    AsrPtr<IAsrReadOnlyGuidVector> p_const_result{};
+    if (const auto tc_result = p_impl_->ToConst(p_const_result.Put());
+        IsFailed(tc_result))
+    {
+        return {tc_result};
+    }
+
+    AsrPtr<IAsrSwigReadOnlyGuidVector> p_result{};
+    try
+    {
+        p_result = MakeAsrPtr<
+            IAsrSwigReadOnlyGuidVector,
+            CppToSwig<IAsrReadOnlyGuidVector>>(p_const_result);
+    }
+    catch (const std::bad_alloc&)
+    {
+        return {ASR_E_OUT_OF_MEMORY};
+    }
+
+    p_result->AddRef();
+    return {ASR_S_OK, p_result.Get()};
+}
+
+AsrRetUInt CppToSwig<IAsrReadOnlyGuidVector>::Size()
+{
+    AsrRetUInt swig_result;
+    swig_result.error_code = p_impl_->Size(&swig_result.value);
+
+    return swig_result;
+}
+
+AsrRetGuid CppToSwig<IAsrReadOnlyGuidVector>::At(size_t index)
+{
+    AsrRetGuid swig_result;
+    swig_result.error_code = p_impl_->At(index, &swig_result.value);
+
+    return swig_result;
+}
+
+AsrResult CppToSwig<IAsrReadOnlyGuidVector>::Find(const AsrGuid& guid)
+{
+    return p_impl_->Find(guid);
+}
+
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

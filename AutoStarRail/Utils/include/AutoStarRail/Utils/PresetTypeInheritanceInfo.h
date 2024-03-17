@@ -4,7 +4,6 @@
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/Utils/InternalTypeList.hpp>
 
-
 ASR_UTILS_NS_BEGIN
 
 template <class T>
@@ -41,9 +40,13 @@ ASR_UTILS_NS_END
 // IAsrTypeInfo.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrTypeInfo, IAsrBase);
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrGuidVector, IAsrBase);
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrReadOnlyGuidVector, IAsrBase);
 // -------------------------------------
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigTypeInfo, IAsrSwigBase);
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigGuidVector, IAsrSwigBase);
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
+    IAsrSwigReadOnlyGuidVector,
+    IAsrSwigBase);
 
 // AsrReadOnlyString.hpp
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrReadOnlyString, IAsrBase);
@@ -93,6 +96,11 @@ ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrTemplateMatchResult, IAsrBase)
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
     IAsrSwigTemplateMatchResult,
     IAsrSwigBase)
+
+// ExportInterface/IAsrBasicErrorLens.h
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrBasicErrorLens, IAsrBase)
+// -------------------------------------
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigBasicErrorLens, IAsrSwigBase)
 
 // ExportInterface/IAsrCaptureManager.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrCaptureManager, IAsrBase);

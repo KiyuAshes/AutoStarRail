@@ -1,18 +1,10 @@
 #include "ErrorLensImpl.h"
-#include <AutoStarRail/Utils/StringUtils.h>
-#include <AutoStarRail/Utils/QueryInterface.hpp>
-#include <AutoStarRail/Utils/fmt.h>
-#include <boost/container_hash/hash.hpp>
 #include "PluginImpl.h"
 
-std::size_t AsrReadOnlyStringHash::operator()(
-    const ASR::AsrPtr<IAsrReadOnlyString>& s) const noexcept
-{
-    const char16_t* p_string{nullptr};
-    size_t          string_size{0};
-    s->GetUtf16(&p_string, &string_size);
-    return boost::hash_range(p_string, p_string + string_size);
-}
+#include <AutoStarRail/ExportInterface/AsrLogger.h>
+#include <AutoStarRail/Utils/QueryInterface.hpp>
+#include <AutoStarRail/Utils/StringUtils.h>
+#include <AutoStarRail/Utils/fmt.h>
 
 ASR_NS_BEGIN
 
@@ -51,9 +43,22 @@ AsrResult AdbCaptureErrorLens::QueryInterface(
     return ASR::Utils::QueryInterface<IAsrErrorLens>(this, iid, pp_out_object);
 }
 
-AsrResult AdbCaptureErrorLens::GetSupportedIids(IAsrGuidVector** pp_out_iids)
+AsrResult AdbCaptureErrorLens::GetSupportedIids(
+    IAsrReadOnlyGuidVector** pp_out_iids)
 {
-    return ::CreateIAsrGuidVector(iids_.data(), iids_.size(), pp_out_iids);
+    AsrPtr<IAsrGuidVector> p_iids{};
+    if (const auto error_code =
+            ::CreateIAsrGuidVector(iids_.data(), iids_.size(), p_iids.Put());
+        IsFailed(error_code))
+    {
+        const auto error_message = ASR_FMT_NS::format(
+            "Create IAsrGuidVector failed. Error code = {}.",
+            error_code);
+        ASR_LOG_ERROR(error_message.c_str());
+        return error_code;
+    }
+
+    return p_iids->ToConst(pp_out_iids);
 }
 
 AsrResult AdbCaptureErrorLens::GetErrorMessage(
