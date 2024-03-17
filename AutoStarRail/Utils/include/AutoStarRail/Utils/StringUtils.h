@@ -3,11 +3,11 @@
 
 #include <AutoStarRail/Utils/Config.h>
 #include <AutoStarRail/Utils/Expected.h>
-#include <utility>
 #include <string>
 #include <string_view>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #define ASR_UTILS_STRINGUTILS_COMPARE_STRING(var, string_literals)             \
@@ -83,6 +83,13 @@ bool Compare(const T& lhs, std::tuple<const char*, const wchar_t*> rhs)
 void ToLowerInPlace(std::string& in_out_str);
 
 void ToLowerInPlace(std::vector<std::string>& in_out_str_vector);
+
+struct AsrReadOnlyStringHash
+{
+    std::size_t operator()(IAsrReadOnlyString* p_string) const noexcept;
+    std::size_t operator()(
+        const AsrPtr<IAsrReadOnlyString>& asr_ro_string) const noexcept;
+};
 
 ASR_UTILS_NS_END
 

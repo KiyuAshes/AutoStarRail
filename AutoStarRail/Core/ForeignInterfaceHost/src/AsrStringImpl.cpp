@@ -57,38 +57,11 @@ auto(ASR_FMT_NS::formatter<AsrReadOnlyString, char>::format)(
 
 ASR_NS_BEGIN
 
-[[nodiscard]]
-std::size_t BkdrHash(const char16_t* p_begin, const char16_t* p_end)
-{
-    constexpr std::size_t seed = 31;
-    std::size_t           hash = 0;
-    while (p_begin != p_end)
-    {
-        hash = hash * seed + *p_begin;
-        std::advance(p_begin, 1);
-    }
-    return hash;
-}
-
-std::size_t AsrStringHash::operator()(
-    const AsrPtr<IAsrReadOnlyString>& str) const
-{
-    const char16_t* p_u16{nullptr};
-    size_t          string_size{0};
-    const auto      result = str->GetUtf16(&p_u16, &string_size);
-    const auto      string_size_int64 = static_cast<int64_t>(string_size);
-    if (ASR::IsOk(result)) [[likely]]
-    {
-        return BkdrHash(p_u16, std::next(p_u16, string_size_int64));
-    }
-    return std::hash<decltype(nullptr)>{}(nullptr);
-}
-
 ASR_NS_END
 
-bool Asr::AsrStringLess::operator()(
-    const Asr::AsrPtr<IAsrReadOnlyString>& lhs,
-    const Asr::AsrPtr<IAsrReadOnlyString>& rhs) const
+bool ASR::AsrStringLess::operator()(
+    const ASR::AsrPtr<IAsrReadOnlyString>& lhs,
+    const ASR::AsrPtr<IAsrReadOnlyString>& rhs) const
 {
     const char16_t* p_lhs{};
     const char16_t* p_rhs{};

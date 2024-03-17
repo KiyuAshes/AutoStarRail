@@ -32,11 +32,6 @@ struct ASR_FMT_NS::formatter<AsrReadOnlyString, char>
 
 ASR_NS_BEGIN
 
-struct AsrStringHash
-{
-    std::size_t operator()(const AsrPtr<IAsrReadOnlyString>& str) const;
-};
-
 struct AsrStringLess
 {
     bool operator()(
