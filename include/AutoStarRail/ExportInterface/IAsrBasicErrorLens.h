@@ -24,11 +24,11 @@ SWIG_IGNORE(IAsrBasicErrorLens)
  */
 ASR_INTERFACE IAsrBasicErrorLens : public IAsrErrorLens
 {
-    ASR_METHOD GetSupportedIids(IAsrIidVector * *pp_out_iids) = 0;
-    ASR_METHOD RegisterExplanation(
+    ASR_METHOD RegisterErrorMessage(
         IAsrReadOnlyString * locale_name,
         AsrResult error_code,
-        IAsrReadOnlyString * p_explanation) = 0;
+        IAsrReadOnlyString * p_error_message) = 0;
+    ASR_METHOD GetWritableSupportedIids(IAsrGuidVector * *pp_out_iids) = 0;
 };
 
 // {F44EBCCB-3110-4B0B-BB1A-E0C194E41F9B}
@@ -49,10 +49,11 @@ ASR_DEFINE_GUID(
 ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigBasicErrorLens)
 ASR_INTERFACE IAsrSwigBasicErrorLens : public IAsrSwigErrorLens
 {
-    virtual AsrResult RegisterExplanation(
-        AsrString locale_name,
-        AsrResult error_code,
-        AsrString explanation) = 0;
+    virtual AsrResult RegisterErrorMessage(
+        AsrReadOnlyString locale_name,
+        AsrResult         error_code,
+        AsrReadOnlyString error_message) = 0;
+    virtual AsrRetGuidVector GetWritableSupportedIids() = 0;
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetBasicErrorLens)

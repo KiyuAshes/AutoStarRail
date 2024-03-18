@@ -1,3 +1,5 @@
+// clang-format off
+
 %module(directors="1") AutoStarRail
 
 %include <stdint.i>
@@ -10,8 +12,8 @@
 %{
 #include <AutoStarRail/AsrExport.h>
 #include <AutoStarRail/IAsrBase.h>
-#include <AutoStarRail/IAsrTypeInfo.h>
 #include <AutoStarRail/AsrString.hpp>
+#include <AutoStarRail/IAsrTypeInfo.h>
 
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
@@ -19,10 +21,15 @@
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
 
+#include <AutoStarRail/ExportInterface/AsrCV.h>
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
-#include <AutoStarRail/ExportInterface/IAsrSettings.h>
+
+#include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
+#include <AutoStarRail/ExportInterface/IAsrBasicErrorLens.h>
+
 #include <AutoStarRail/ExportInterface/IAsrImage.h>
 #include <AutoStarRail/ExportInterface/IAsrCaptureManager.h>
+
 #include <AutoStarRail/ExportInterface/IAsrOcr.h>
 #include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/ExportInterface/IAsrSettings.h>
@@ -83,11 +90,12 @@
 
 %include <AutoStarRail/AsrExport.h>
 %include <AutoStarRail/IAsrBase.h>
-%include <AutoStarRail/IAsrTypeInfo.h>
 %include <AutoStarRail/AsrString.hpp>
+%include <AutoStarRail/IAsrTypeInfo.h>
 
 // 以下文件按照字母顺序排列！ The following files are in alphabetical order!
 // 例外：由于依赖关系的原因，IAsrImage.h必须在IAsrCaptureManager.h前
+// IAsrGuidVector.h必须在IAsrBasicErrorLens.h前
 
 %include <AutoStarRail/PluginInterface/IAsrCapture.h>
 %include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
@@ -95,10 +103,15 @@
 %include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 %include <AutoStarRail/PluginInterface/IAsrTask.h>
 
+%include <AutoStarRail/ExportInterface/AsrCV.h>
 %include <AutoStarRail/ExportInterface/AsrLogger.h>
-%include <AutoStarRail/ExportInterface/IAsrSettings.h>
+
+%include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
+%include <AutoStarRail/ExportInterface/IAsrBasicErrorLens.h>
+
 %include <AutoStarRail/ExportInterface/IAsrImage.h>
 %include <AutoStarRail/ExportInterface/IAsrCaptureManager.h>
+
 %include <AutoStarRail/ExportInterface/IAsrOcr.h>
 %include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 %include <AutoStarRail/ExportInterface/IAsrSettings.h>
