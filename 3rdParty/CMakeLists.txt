@@ -391,7 +391,8 @@ if (${ASR_USE_BUNDLED_BOOST})
             Boost::bimap
             Boost::container_hash
             Boost::pfr
-            Boost::nowide)
+            Boost::nowide
+            Boost::circular_buffer)
 else ()
     find_package(Boost 1.82 COMPONENTS filesystem url)
 
