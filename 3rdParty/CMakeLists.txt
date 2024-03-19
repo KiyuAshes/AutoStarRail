@@ -556,3 +556,18 @@ else ()
 endif ()
 
 message("================================================================")
+
+message(STATUS "The third-party libraries listed later are only used for AsrHttp.")
+
+message(STATUS "Downloading and configuring oatpp 1.3.0.")
+
+FetchContent_Declare(
+    oatpp
+    URL ${GITHUB_MIRROR_URL}/oatpp/oatpp/archive/refs/tags/1.3.0.tar.gz
+)
+
+set(OATPP_BUILD_TESTS OFF)
+
+FetchContent_MakeAvailable(oatpp)
+
+message("================================================================")
