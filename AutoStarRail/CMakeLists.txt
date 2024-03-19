@@ -24,6 +24,8 @@ add_subdirectory(Core)
 
 add_subdirectory(Plugins)
 
+add_subdirectory(AskrHttp)
+
 if(${ASR_BUILD_QT5_GUI})
     add_subdirectory(Qt5Gui)
 endif()
