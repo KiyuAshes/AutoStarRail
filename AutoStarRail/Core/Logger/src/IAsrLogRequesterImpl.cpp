@@ -18,6 +18,12 @@ IAsrLogRequesterImpl::IAsrLogRequesterImpl(uint32_t max_buffer_size)
         max_buffer_size);
 }
 
+IAsrLogRequesterImpl::~IAsrLogRequesterImpl()
+{
+    auto& sinks = ASR::Core::g_logger->sinks();
+    std::erase(sinks, sp_sink_);
+}
+
 AsrResult IAsrLogRequesterImpl::QueryInterface(
     const AsrGuid& iid,
     void**         pp_object)

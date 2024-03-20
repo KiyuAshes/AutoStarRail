@@ -15,6 +15,7 @@ class IAsrLogRequesterImpl : public IAsrLogRequester
     ASR_UTILS_IASRBASE_AUTO_IMPL(IAsrLogRequesterImpl)
 public:
     IAsrLogRequesterImpl(uint32_t max_buffer_size);
+    ~IAsrLogRequesterImpl();
     // IAsrBase
     AsrResult QueryInterface(const AsrGuid& iid, void** pp_object) override;
     // IAsrLogRequester
