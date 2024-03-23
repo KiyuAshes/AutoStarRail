@@ -91,16 +91,19 @@ ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
     IAsrSwigTypeInfo);
 
 // ExportInterface/AsrCV.h
-ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrTemplateMatchResult, IAsrBase)
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrLogRequester, IAsrBase);
+
+// ExportInterface/AsrCV.h
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrTemplateMatchResult, IAsrBase);
 // -------------------------------------
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(
     IAsrSwigTemplateMatchResult,
-    IAsrSwigBase)
+    IAsrSwigBase);
 
 // ExportInterface/IAsrBasicErrorLens.h
-ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrBasicErrorLens, IAsrBase)
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrBasicErrorLens, IAsrBase);
 // -------------------------------------
-ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigBasicErrorLens, IAsrSwigBase)
+ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrSwigBasicErrorLens, IAsrSwigBase);
 
 // ExportInterface/IAsrCaptureManager.h
 ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(IAsrCaptureManager, IAsrBase);
