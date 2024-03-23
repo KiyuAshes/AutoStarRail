@@ -17,9 +17,45 @@ typedef struct _asr_Point
 } AsrPoint;
 
 // {B03F0BB5-B328-45C4-99D1-04DBC7FC5BA7}
-ASR_DEFINE_GUID(ASR_IID_TOUCH_FACTORY,IAsrTouchFactory,
-0xb03f0bb5, 0xb328, 0x45c4, 0x99, 0xd1, 0x4, 0xdb, 0xc7, 0xfc, 0x5b, 0xa7);
-ASR_INTERFACE IAsrTouchFactory : public IAsrTypeInfo{};
+ASR_DEFINE_GUID(
+    ASR_IID_TOUCH_FACTORY,
+    IAsrInputFactory,
+    0xb03f0bb5,
+    0xb328,
+    0x45c4,
+    0x99,
+    0xd1,
+    0x4,
+    0xdb,
+    0xc7,
+    0xfc,
+    0x5b,
+    0xa7);
+SWIG_IGNORE(IAsrTouchFactory)
+ASR_INTERFACE IAsrInputFactory : public IAsrTypeInfo
+{
+    ASR_METHOD CreateInstance(IAsrReadOnlyString * p_json_config) = 0;
+};
+
+// {D96C059A-BBE8-4614-8D22-A0B035C40795}
+ASR_DEFINE_GUID(
+    ASR_IID_SWIG_TOUCH_FACTORY,
+    IAsrSwigInputFactory,
+    0xd96c059a,
+    0xbbe8,
+    0x4614,
+    0x8d,
+    0x22,
+    0xa0,
+    0xb0,
+    0x35,
+    0xc4,
+    0x7,
+    0x95);
+ASR_INTERFACE IAsrSwigInputFactory : public IAsrSwigTypeInfo
+{
+    ASR_METHOD CreateInstance(AsrReadOnlyString json_config) = 0;
+};
 
 // {02F6A16A-01FD-4303-886A-9B60373EBE8C}
 ASR_DEFINE_GUID(
