@@ -103,6 +103,14 @@ if (${ASR_USE_LLD} AND NOT MSVC)
     add_compile_options("-fuse-ld=lld")
 endif ()
 
+if (${ASR_USE_MOLD} AND NOT MSVC)
+    option(ASR_MOLD_EXECUTABLE "mold")
+    find_program(
+            MOLD_FOUND
+            mold REQUIRED)
+    add_compile_options("-fuse-ld=mold")
+endif ()
+
 configure_file(${CMAKE_SOURCE_DIR}/cmake/CTestCustom.cmake ${CMAKE_BINARY_DIR} @ONLY)
 
 add_custom_target(RemoveSwigOutput
