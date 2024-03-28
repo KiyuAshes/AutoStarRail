@@ -343,7 +343,7 @@ if (WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         endif ()
     endif ()
 
-    asr_add_auto_copy_dll_path(${ASR_BUNDLED_ICU_LIBRARIES})
+    asr_add_auto_copy_dll_path("${ASR_BUNDLED_ICU_LIBRARIES}")
 endif ()
 
 find_package(ICU COMPONENTS data i18n uc REQUIRED)
