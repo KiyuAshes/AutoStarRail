@@ -312,16 +312,29 @@ ASR_UTILS_NS_BEGIN
 template <class T>
 struct PresetTypeInheritanceInfo;
 
-#define ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(EndType, ...)                 \
-ASR_INTERFACE EndType;                                                     \
-ASR_UTILS_NS_BEGIN using EndType##InheritanceInfo =                        \
-    ASR::Utils::internal_type_holder<__VA_ARGS__, EndType>;                \
-template <>                                                                \
-struct PresetTypeInheritanceInfo<EndType>                                  \
-{                                                                          \
-    using TypeInfo = EndType##InheritanceInfo;                             \
-};                                                                         \
-ASR_UTILS_NS_END
+''')
+    preset_type_inheritance_info_header.write("#define ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(EndType, ...)             \\")
+    preset_type_inheritance_info_header.write('\n')
+    preset_type_inheritance_info_header.write("ASR_INTERFACE EndType;                                                     \\")
+    preset_type_inheritance_info_header.write('\n')
+    preset_type_inheritance_info_header.write("ASR_UTILS_NS_BEGIN                                                         \\")
+    preset_type_inheritance_info_header.write('\n')
+    preset_type_inheritance_info_header.write("using EndType##InheritanceInfo =                                           \\")
+    preset_type_inheritance_info_header.write('\n')
+    preset_type_inheritance_info_header.write("    ASR::Utils::internal_type_holder<__VA_ARGS__, EndType>;                \\")
+    preset_type_inheritance_info_header.write('\n')
+    preset_type_inheritance_info_header.write("template <>                                                                \\")
+    preset_type_inheritance_info_header.write('\n')
+    preset_type_inheritance_info_header.write("struct PresetTypeInheritanceInfo<EndType>                                  \\")
+    preset_type_inheritance_info_header.write('\n')
+    preset_type_inheritance_info_header.write("{                                                                          \\")
+    preset_type_inheritance_info_header.write('\n')
+    preset_type_inheritance_info_header.write("    using TypeInfo = EndType##InheritanceInfo;                             \\")
+    preset_type_inheritance_info_header.write('\n')
+    preset_type_inheritance_info_header.write("};                                                                         \\")
+    preset_type_inheritance_info_header.write('\nASR_UTILS_NS_END')
+    preset_type_inheritance_info_header.write(
+'''
 
 // IAsrBase.h
 using IAsrBaseInheritanceInfo = internal_type_holder<IAsrBase>;
