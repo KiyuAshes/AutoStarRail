@@ -1,7 +1,7 @@
 #ifndef ASR_ASRCONFIG_H
 #define ASR_ASRCONFIG_H
 
-#include "AsrExport.h"
+#include <AutoStarRail/AsrExport.h>
 
 #define ASR ::Asr
 
