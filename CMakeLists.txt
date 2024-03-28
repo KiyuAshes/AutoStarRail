@@ -49,6 +49,9 @@ option(ASR_USE_BUNDLED_EIGEN "强制使用下载的Eigen源码构建OpenCV" OFF)
 option(ASR_USE_BUNDLED_BOOST "强制使用下载的Boost源码构建" OFF)
 option(ASR_USE_BUNDLED_OPENCV "强制使用下载的OpenCV源码构建" OFF)
 
+option(ASR_USE_LLD "使用lld进行链接（实验性）" OFF)
+option(ASR_USE_MOLD "使用mold进行链接（实验性）" OFF)
+
 if (NOT DEFINED GITHUB_MIRROR_URL)
     set(GITHUB_MIRROR_URL "https://github.com")
 endif ()
