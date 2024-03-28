@@ -4,38 +4,14 @@
 #include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
-#include <boost/bimap/bimap.hpp>
-#include <boost/bimap/unordered_set_of.hpp>
+#include <DAS/_autogen/CppSwigBiMap.h>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
-
-using CppSwigMap = boost::bimaps::bimap<
-    // cpp iid
-    boost::bimaps::unordered_set_of<AsrGuid, std::hash<AsrGuid>>,
-    // swig iid
-    boost::bimaps::unordered_set_of<AsrGuid, std::hash<AsrGuid>>>;
-
-#define ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(name)        \
-    {                                                                          \
-        AsrIidOf<IAsr##name>(), AsrIidOf<IAsrSwig##name>()                     \
-    }
-
-/**
- * @brief The left side is cpp iid, while the right side is swig iid.
- */
-const CppSwigMap g_cpp_swig_map = []() -> CppSwigMap
-{
-    std::initializer_list<CppSwigMap::value_type> list{
-        ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(Base),
-        ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(TypeInfo)
-
-    };
-    return {list.begin(), list.end()};
-}();
 
 auto ConvertCppIidToSwigIid(const AsrGuid& cpp_iid)
     -> ASR::Utils::Expected<AsrGuid>
 {
+    const auto& g_cpp_swig_map = Das::_autogen::g_cpp_swig_map;
     auto it = g_cpp_swig_map.left.find(cpp_iid);
     if (it == g_cpp_swig_map.left.end())
     {
@@ -46,12 +22,14 @@ auto ConvertCppIidToSwigIid(const AsrGuid& cpp_iid)
 
 bool IsCppIid(const AsrGuid& cpp_iid)
 {
+    const auto& g_cpp_swig_map = Das::_autogen::g_cpp_swig_map;
     const auto it = g_cpp_swig_map.left.find(cpp_iid);
     return it != g_cpp_swig_map.left.end();
 }
 
 bool IsSwigIid(const AsrGuid& swig_iid)
 {
+    const auto& g_cpp_swig_map = Das::_autogen::g_cpp_swig_map;
     const auto it = g_cpp_swig_map.right.find(swig_iid);
     return it != g_cpp_swig_map.right.end();
 }

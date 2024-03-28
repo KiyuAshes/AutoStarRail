@@ -1,43 +1,10 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/ErrorLensManager.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
+#include <DAS/_autogen/OfficialIids.h>
 #include <unordered_set>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
-
-// TODO:检查添加的iid是否覆盖了所有预定义的接口，需要包含C++和SWIG版本的
-const std::unordered_set<AsrGuid> g_official_iids{
-    []()
-    {
-        std::unordered_set<AsrGuid> result{{
-            // IAsrBase.h
-            AsrIidOf<IAsrBase>(),
-            AsrIidOf<IAsrSwigBase>(),
-            // IAsrTypeInfo.h
-            AsrIidOf<IAsrTypeInfo>(),
-            AsrIidOf<IAsrSwigTypeInfo>(),
-            AsrIidOf<IAsrGuidVector>(),
-            // AsrReadOnlyString.hpp
-            AsrIidOf<IAsrReadOnlyString>(),
-            AsrIidOf<IAsrString>(),
-            // PluginInterface/IAsrCapture.h
-            AsrIidOf<IAsrCapture>(),
-            AsrIidOf<IAsrSwigCapture>(),
-            AsrIidOf<IAsrCaptureFactory>(),
-            // PluginInterface/IAsrErrorLens.h
-            AsrIidOf<IAsrErrorLens>(),
-            AsrIidOf<IAsrSwigErrorLens>(),
-            // PluginInterface/IAsrInput.h
-            // PluginInterface/IAsrPlugin.h
-            AsrIidOf<IAsrPlugin>(),
-            AsrIidOf<IAsrSwigPlugin>(),
-            // PluginInterface/IAsrTask.h
-            AsrIidOf<IAsrTask>(),
-            AsrIidOf<IAsrSwigTask>()
-            // ExportInterface
-        }};
-        return result;
-    }()};
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
@@ -112,6 +79,7 @@ AsrResult ErrorLensManager::Register(
             }
             return get_iid_from_iid_vector_result.error();
         }
+        const auto& g_official_iids = Das::_autogen::g_official_iids;
         const auto& iid = get_iid_from_iid_vector_result.value();
         if (g_official_iids.find(iid) != g_official_iids.end())
         {

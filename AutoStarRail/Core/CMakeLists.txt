@@ -39,7 +39,7 @@ target_compile_options(AsrCoreObjects PRIVATE
 )
 set_property(TARGET AsrCoreObjects PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_include_directories(AsrCoreObjects INTERFACE ${CMAKE_BINARY_DIR}/DAS/include/)
+target_include_directories(AsrCoreObjects PUBLIC ${CMAKE_BINARY_DIR}/DAS/include/)
 target_sources(AsrCoreObjects PRIVATE ${DAS_AUTOGEN_OUTPUT_FILES})
 target_compile_definitions(AsrCoreObjects PRIVATE -DASR_BUILD_SHARED)
 target_link_libraries(AsrCoreObjects PUBLIC
