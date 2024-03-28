@@ -1,4 +1,6 @@
 add_library(AsrCoreObjects OBJECT)
+add_custom_target(AsrCoreObjectsPreBuild ALL)
+add_dependencies(AsrCoreObjects AsrCoreObjectsPreBuild)
 
 message("Python3 is required because we need to run script.")
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
@@ -17,7 +19,7 @@ add_custom_command(
     COMMENT "Scan header and generate sources."
 )
 add_custom_command(
-    OUTPUT ${CMAKE_SOURCE_DIR}/AutoStarRail/Utils/include/AutoStarRail/Utils/PresetTypeInheritanceInfo.h
+    TARGET AsrCoreObjectsPreBuild PRE_BUILD
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/generator.py -I${CMAKE_SOURCE_DIR}/include/AutoStarRail -O${CMAKE_SOURCE_DIR}/AutoStarRail/Utils/include/AutoStarRail/Utils -M1
     DEPENDS ${ASR_EXPORT_HEADERS} ${CMAKE_SOURCE_DIR}/tools/generator.py
     COMMENT "Generate PresetTypeInheritanceInfo.h."
