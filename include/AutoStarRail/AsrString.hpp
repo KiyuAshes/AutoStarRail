@@ -265,7 +265,7 @@ ASR_C_API AsrResult CreateIAsrReadOnlyStringFromWChar(
 #endif // SWIG
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetReadOnlyString)
-    AsrReadOnlyString value;
+    AsrReadOnlyString value{};
 ASR_RET_TYPE_DECLARE_END
 
 ASR_API AsrReadOnlyString AsrGuidToString(const AsrGuid& guid);

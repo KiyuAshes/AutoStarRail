@@ -60,7 +60,7 @@ ASR_INTERFACE IAsrSwigBasicErrorLens : public IAsrSwigErrorLens
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetBasicErrorLens)
-    IAsrSwigErrorLens* value;
+    IAsrSwigErrorLens* value{};
 ASR_RET_TYPE_DECLARE_END
 
 SWIG_IGNORE(CreateIAsrBasicErrorLens)

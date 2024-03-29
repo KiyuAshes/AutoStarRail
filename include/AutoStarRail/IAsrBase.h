@@ -220,7 +220,7 @@ public:
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetSwigBase)
-    AsrSwigBaseWrapper value;
+    AsrSwigBaseWrapper value{};
 ASR_RET_TYPE_DECLARE_END
 
 // {FAF64DEB-0C0A-48CC-BA10-FCDE420350A2}

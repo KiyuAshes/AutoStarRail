@@ -85,7 +85,7 @@ ASR_INTERFACE IAsrSwigPlugin : public IAsrSwigBase
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetPlugin)
-    IAsrSwigPlugin* value;
+    IAsrSwigPlugin* value{};
 ASR_RET_TYPE_DECLARE_END
 
 ASR_API AsrResult AsrRegisterPluginObject(AsrRetSwigBase result_and_p_object);
