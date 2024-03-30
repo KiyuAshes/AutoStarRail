@@ -535,6 +535,10 @@ if __name__ == '__main__':
     output_path = args.output_value
     input_path = args.input_value
 
+    # 检查output是否存在，不存在就创建一下，避免linux下后续创建文件失败
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
     # input_path = r'D:\Sources\CPP\OpenSourceProjects\AutoStarRail\include\AutoStarRail'
     # output_path = r'D:\Sources\CPP\OpenSourceProjects\AutoStarRail\build\DAS\include\DAS\_autogen'
 
