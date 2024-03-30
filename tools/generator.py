@@ -113,6 +113,97 @@ class InheritTree:
             print(result)
         return result
 
+    def to_cpp_swig_interop_factory(self):
+        result = '''
+template <class SwigT>
+auto CreateCppToSwigObjectImpl(void* p_swig_object, void** pp_out_cpp_object)
+    -> AsrResult
+{
+    try
+    {
+        auto* const p_cpp_object =
+            new SwigToCpp<SwigT>(static_cast<SwigT*>(p_swig_object));
+        p_cpp_object->AddRef();
+        *pp_out_cpp_object = p_cpp_object;
+        return ASR_S_OK;
+    }
+    catch (const std::bad_alloc&)
+    {
+        return ASR_E_OUT_OF_MEMORY;
+    }
+}
+
+/**
+ * @brief
+ * 注意：外部保证传入的指针一定是已经转换到T的指针。如果指针是QueryInterface的返回值，则代表无问题。
+ * @tparam T
+ * @param p_cpp_object
+ * @return
+ */
+template <class T>
+auto CreateSwigToCppObjectImpl(void* p_cpp_object) -> AsrRetSwigBase
+{
+    AsrRetSwigBase result{};
+    try
+    {
+        using SwigType = CppToSwig<T>::SwigType;
+        auto* const p_swig_object =
+            new CppToSwig<T>(static_cast<T*>(p_cpp_object));
+        p_swig_object->AddRef();
+        result.error_code = ASR_S_OK;
+        // explicit 导致要decltype来显式写出类型，似乎没有必要explicit了
+        result.value = decltype(result.value){
+            static_cast<void*>(static_cast<SwigType*>(p_swig_object))};
+
+        return result;
+    }
+    catch (const std::bad_alloc&)
+    {
+        result.error_code = ASR_E_OUT_OF_MEMORY;
+        return result;
+    }
+}
+
+'''
+        cpp_to_swig_factory_list = []
+        swig_to_cpp_factory_list = []
+        template = 'IAsrSwig'
+        for k in self.children_map.keys():
+            if k.find(template) != -1:
+                cpp_type_name = k[len(template):]
+                cpp_to_swig_factory_list.append(f'''
+{{AsrIidOf<{k}>(),
+    [](void* p_swig_object, void** pp_out_cpp_object)
+{{
+    return CreateCppToSwigObjectImpl<{k}>(
+        p_swig_object,
+        pp_out_cpp_object);
+}}}},''')
+                swig_to_cpp_factory_list.append(f'''
+{{AsrIidOf<IAsr{cpp_type_name}>(), [](void* p_cpp_object)
+{{ return CreateSwigToCppObjectImpl<IAsr{cpp_type_name}>(p_cpp_object); }}}},''')
+        result += '''
+std::unordered_map<
+    AsrGuid,
+    AsrResult (*)(void* p_swig_object, void** pp_out_cpp_object)>
+    g_cpp_to_swig_factory {
+'''
+        for s in cpp_to_swig_factory_list:
+            for l in s.splitlines():
+                result += f'        {l}\n'
+        result += '\n    };\n'
+        result += '''
+const std::unordered_map<AsrGuid, AsrRetSwigBase (*)(void* p_cpp_object)>
+    g_swig_to_cpp_factory{
+'''
+        for s in swig_to_cpp_factory_list:
+            for l in s.splitlines():
+                result += f'        {l}\n'
+        result += '\n    };\n'
+        if g_debug:
+            print(result)
+        return result
+
 
 def parse_line(line):
     if line.find('ASR_INTERFACE') != -1:
@@ -285,7 +376,7 @@ namespace Das{
     namespace _autogen{
 ''')
     for l in official_iids.splitlines():
-        official_iids_source.write(f'                {l}\n')
+        official_iids_source.write(f'        {l}\n')
     official_iids_source.write(
 '''
     }
@@ -293,6 +384,59 @@ namespace Das{
 '''
     )
     official_iids_source.close()
+    # ! 由于无法全部实例化这些类型，因此该生成已经被禁用
+    # 生成 CppSwigInteropFactory
+#     cpp_swig_interop_factory_header = open(f'{output_path}/CppSwigInteropFactory.h', 'w', encoding='utf-8')
+#     write_file_info(cpp_swig_interop_factory_header)
+#     cpp_swig_interop_factory_header.write('''
+# #ifndef DAS_AUTOGEN_CPPSWIGINTEROPFACTORY_H
+# #define DAS_AUTOGEN_CPPSWIGINTEROPFACTORY_H
+
+# #include <unordered_map>
+# #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
+
+# namespace Das{
+#     namespace _autogen{
+#         extern std::unordered_map<
+#             AsrGuid,
+#             AsrResult (*)(void* p_swig_object, void** pp_out_cpp_object)>
+#             g_cpp_to_swig_factory;
+
+#         extern const std::unordered_map<AsrGuid, AsrRetSwigBase (*)(void* p_cpp_object)>
+#             g_swig_to_cpp_factory;
+#     }
+# }
+
+# #endif // DAS_AUTOGEN_CPPSWIGINTEROPFACTORY_H
+# ''')
+#     cpp_swig_interop_factory_header.close()
+#     cpp_swig_interop_factory = type_tree.to_cpp_swig_interop_factory()
+#     cpp_swig_interop_factory_source = open(f'{output_path}/CppSwigInteropFactory.cpp', 'w', encoding='utf-8')
+#     write_file_info(cpp_swig_interop_factory_source)
+#     cpp_swig_interop_factory_source.write(include_files(include_file_list))
+#     cpp_swig_interop_factory_source.write('''
+# #include <AutoStarRail/Core/Logger/Logger.h>
+# #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
+
+# using namespace ASR::Core::ForeignInterfaceHost;
+
+# ''')
+#     cpp_swig_interop_factory_source.write(
+# '''
+# #include "CppSwigInteropFactory.h"
+
+# namespace Das{
+#     namespace _autogen{
+# ''')
+#     for l in cpp_swig_interop_factory.splitlines():
+#         cpp_swig_interop_factory_source.write(f'        {l}\n')
+#     cpp_swig_interop_factory_source.write('''
+#     }
+# }
+# ''')
+#     cpp_swig_interop_factory_source.close()
+    print('成功生成 CppSwigBiMap 和 OfficialIids')
+
 
 def mode1(output_path, type_tree):
     preset_type_inheritance_info = type_tree.to_preset_type_inheritance_info()
@@ -360,6 +504,7 @@ ASR_UTILS_NS_END
 #endif // ASR_UTILS_PRESETTYPEINHERITANCEINFO_H
 ''')
     preset_type_inheritance_info_header.close()
+    print('成功生成 PresetTypeInheritanceInfo.h')
 
 
 # ----------------------------------------------------------------

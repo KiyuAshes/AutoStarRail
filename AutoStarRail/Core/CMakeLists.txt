@@ -11,7 +11,10 @@ set(DAS_AUTOGEN_OUTPUT_FILES
     "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/OfficialIids.h"
     "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/OfficialIids.cpp"
     "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/CppSwigBiMap.h"
-    "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/CppSwigBiMap.cpp")
+    "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/CppSwigBiMap.cpp"
+    # "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/CppSwigInteropFactory.h"
+    # "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/CppSwigInteropFactory.cpp"
+)
 add_custom_command(
     OUTPUT ${DAS_AUTOGEN_OUTPUT_FILES}
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/generator.py -I${CMAKE_SOURCE_DIR}/include/AutoStarRail -O${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen -M0
