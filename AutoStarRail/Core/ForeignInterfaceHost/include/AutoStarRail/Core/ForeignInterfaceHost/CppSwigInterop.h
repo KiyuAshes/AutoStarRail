@@ -244,12 +244,14 @@ public:
     }
 
     [[nodiscard]]
-    T* operator->() const noexcept
+    T*
+    operator->() const noexcept
     {
         return static_cast<T*>(this);
     }
     [[nodiscard]]
-    T& operator*() const noexcept
+    T&
+    operator*() const noexcept
     {
         return static_cast<T&>(*this);
     }
@@ -379,28 +381,41 @@ public:
     ASR_IMPL Find(const AsrGuid& iid) override;
 };
 
-template <>
-class SwigToCpp<IAsrSwigInput>
-    : public SwigToCppTypeInfo<IAsrSwigInput, IAsrInput>
+template <is_asr_swig_interface SwigT, is_asr_interface T>
+class SwigToCppInput : public SwigToCppTypeInfo<SwigT, T>
 {
+    static_assert(
+        std::is_base_of_v<IAsrSwigInput, SwigT>,
+        "SwigT is not inherit from SwigToCppInput!");
+
+    using Base = SwigToCppTypeInfo<SwigT, T>;
+
 public:
-    ASR_USING_BASE_CTOR(SwigToCppTypeInfo);
+    using Base::Base;
 
     ASR_IMPL Click(int32_t x, int32_t y) override;
 };
 
 template <>
-class SwigToCpp<IAsrSwigTouch>
-    : public SwigToCppTypeInfo<IAsrSwigTouch, IAsrTouch>
+class SwigToCpp<IAsrSwigInput> final
+    : public SwigToCppInput<IAsrSwigInput, IAsrInput>
 {
 public:
-    ASR_USING_BASE_CTOR(SwigToCppTypeInfo);
+    ASR_USING_BASE_CTOR(SwigToCppInput);
+};
+
+template <>
+class SwigToCpp<IAsrSwigTouch> final
+    : public SwigToCppInput<IAsrSwigTouch, IAsrTouch>
+{
+public:
+    ASR_USING_BASE_CTOR(SwigToCppInput);
 
     ASR_IMPL Swipe(AsrPoint from, AsrPoint to, int32_t duration_ms) override;
 };
 
 template <>
-class SwigToCpp<IAsrSwigInputFactory>
+class SwigToCpp<IAsrSwigInputFactory> final
     : public SwigToCppTypeInfo<IAsrSwigInputFactory, IAsrInputFactory>
 {
 public:
@@ -651,21 +666,35 @@ public:
     AsrResult  Find(const AsrGuid& guid) override;
 };
 
-template <>
-class CppToSwig<IAsrInput> : public CppToSwigTypeInfo<IAsrSwigInput, IAsrInput>
+template <is_asr_swig_interface SwigT, is_asr_interface T>
+class CppToSwigInput : public CppToSwigTypeInfo<SwigT, T>
 {
+    static_assert(
+        std::is_base_of_v<IAsrInput, T>,
+        "T is not inherit from IAsrInput!");
+
+    using Base = CppToSwigTypeInfo<SwigT, T>;
+
 public:
-    ASR_USING_BASE_CTOR(CppToSwigTypeInfo);
+    using Base::Base;
 
     ASR_IMPL Click(const int32_t x, const int32_t y) override;
 };
 
 template <>
-class CppToSwig<IAsrTouch> final
-    : public CppToSwigTypeInfo<IAsrSwigTouch, IAsrTouch>
+class CppToSwig<IAsrInput> final
+    : public CppToSwigInput<IAsrSwigInput, IAsrInput>
 {
 public:
-    ASR_USING_BASE_CTOR(CppToSwigTypeInfo);
+    ASR_USING_BASE_CTOR(CppToSwigInput);
+};
+
+template <>
+class CppToSwig<IAsrTouch> final
+    : public CppToSwigInput<IAsrSwigTouch, IAsrTouch>
+{
+public:
+    ASR_USING_BASE_CTOR(CppToSwigInput);
 
     ASR_IMPL Swipe(AsrPoint from, AsrPoint to, const int32_t duration_ms)
         override;

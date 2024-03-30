@@ -356,9 +356,10 @@ ASR_IMPL SwigToCpp<IAsrSwigReadOnlyGuidVector>::Find(const AsrGuid& iid)
     }
 }
 
-AsrResult SwigToCpp<IAsrSwigInput>::Click(int32_t x, int32_t y)
+template <is_asr_swig_interface SwigT, is_asr_interface T>
+AsrResult SwigToCppInput<SwigT, T>::Click(int32_t x, int32_t y)
 {
-    return p_impl_->Click(x, y);
+    return Base::p_impl_->Click(x, y);
 }
 
 AsrResult SwigToCpp<IAsrSwigTouch>::Swipe(
@@ -497,9 +498,10 @@ AsrResult CppToSwig<IAsrReadOnlyGuidVector>::Find(const AsrGuid& guid)
     return p_impl_->Find(guid);
 }
 
-AsrResult CppToSwig<IAsrInput>::Click(const int32_t x, const int32_t y)
+template <is_asr_swig_interface SwigT, is_asr_interface T>
+AsrResult CppToSwigInput<SwigT, T>::Click(const int32_t x, const int32_t y)
 {
-    return p_impl_->Click(x, y);
+    return Base::p_impl_->Click(x, y);
 }
 
 AsrResult CppToSwig<IAsrTouch>::Swipe(
@@ -521,6 +523,5 @@ AsrRetInput CppToSwig<IAsrInputFactory>::CreateInstance(
     ToAsrRetType(expected_result, swig_result);
     return swig_result;
 }
-
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
