@@ -1,6 +1,7 @@
 add_library(AsrCoreObjects OBJECT)
 add_custom_target(AsrCoreObjectsPreBuild ALL)
 add_dependencies(AsrCoreObjects AsrCoreObjectsPreBuild)
+add_dependencies(AsrAutoCopyDll AsrCoreObjectsPreBuild)
 
 message("Python3 is required because we need to run script.")
 find_package(Python3 COMPONENTS Interpreter REQUIRED)

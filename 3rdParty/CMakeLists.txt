@@ -35,7 +35,7 @@ else ()
     endif ()
 endif ()
 
-add_custom_target(AsrAutoCopyDll ALL DEPENDS AsrUtils)
+add_custom_target(AsrAutoCopyDll ALL)
 
 set(CMAKE_CXX_STANDARD 20)
 add_library(Asr3rdParty INTERFACE)
