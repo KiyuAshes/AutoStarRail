@@ -4,8 +4,11 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/ExportInterface/IAsrInputFactoryVector.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
+#include <variant>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
+
+using CommonInputPtr = std::variant<AsrPtr<IAsrInput>, AsrPtr<IAsrSwigInput>>;
 
 class AsrInputFactoryVectorImpl;
 
@@ -37,11 +40,9 @@ public:
     auto Release() -> int64_t override;
     auto QueryInterface(const AsrGuid& iid) -> AsrRetSwigBase override;
     // IAsrSwigInputFactoryVector
-    auto Size(size_t* p_out_size) -> AsrRetUInt override;
-    auto At(size_t index, IAsrInputFactory** pp_out_factory)
-        -> AsrRetInputFactory override;
-    auto Find(const AsrGuid& iid, IAsrInputFactory** pp_out_factory)
-        -> AsrRetInputFactory override;
+    auto Size() -> AsrRetUInt override;
+    auto At(size_t index) -> AsrRetInputFactory override;
+    auto Find(const AsrGuid& iid) -> AsrRetInputFactory override;
 
 private:
     AsrInputFactoryVectorImpl& impl_;

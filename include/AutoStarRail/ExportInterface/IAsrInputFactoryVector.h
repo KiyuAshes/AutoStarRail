@@ -44,17 +44,13 @@ ASR_DEFINE_GUID(
 ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigInputFactoryVector)
 ASR_INTERFACE IAsrSwigInputFactoryVector : public IAsrSwigBase
 {
-    virtual AsrRetUInt         Size(size_t * p_out_size) = 0;
-    virtual AsrRetInputFactory At(
-        size_t index,
-        IAsrInputFactory * *pp_out_factory) = 0;
-    virtual AsrRetInputFactory Find(
-        const AsrGuid&     iid,
-        IAsrInputFactory** pp_out_factory) = 0;
+    virtual AsrRetUInt         Size() = 0;
+    virtual AsrRetInputFactory At(size_t index) = 0;
+    virtual AsrRetInputFactory Find(const AsrGuid& iid) = 0;
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetInputFactoryVector)
-    IAsrSwigInputFactoryVector* value;
+    IAsrSwigInputFactoryVector* value{};
 ASR_RET_TYPE_DECLARE_END
 
 #endif // ASR_IASRINPUTFACTORYVECTOR_H
