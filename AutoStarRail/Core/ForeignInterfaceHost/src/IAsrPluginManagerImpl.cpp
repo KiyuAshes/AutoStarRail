@@ -268,12 +268,12 @@ AsrPluginInfoImpl::operator IAsrSwigPluginInfoImpl*() noexcept
 
 AsrPluginInfoImpl::operator AsrPtr<IAsrPluginInfoImpl>() noexcept
 {
-    return {&cpp_projection_, take_ownership};
+    return {&cpp_projection_};
 }
 
 AsrPluginInfoImpl::operator AsrPtr<IAsrSwigPluginInfoImpl>() noexcept
 {
-    return {&swig_projection_, take_ownership};
+    return {&swig_projection_};
 }
 
 int64_t AsrPluginInfoVectorImpl::AddRef() { return ref_counter_.AddRef(); }

@@ -464,11 +464,9 @@ auto QueryErrorLensFrom(
                     return tl::make_unexpected(qi_result.error_code);
                 }
 
-                AsrPtr<IAsrErrorLens> result{
-                    new SwigToCpp<IAsrSwigErrorLens>{
-                        static_cast<IAsrSwigErrorLens*>(
-                            qi_result.value.GetVoid())},
-                    take_ownership};
+                AsrPtr<IAsrErrorLens> result{new SwigToCpp<IAsrSwigErrorLens>{
+                    static_cast<IAsrSwigErrorLens*>(
+                        qi_result.value.GetVoid())}};
 
                 qi_result.value.Get()->Release();
 
@@ -545,8 +543,7 @@ auto RegisterTaskFromPlugin(T& task_manager, GetInterfaceFromPluginParam param)
                     return tl::make_unexpected(qi_result.error_code);
                 }
                 return AsrPtr{
-                    static_cast<IAsrSwigTask*>(qi_result.value.GetVoid()),
-                    take_ownership};
+                    static_cast<IAsrSwigTask*>(qi_result.value.GetVoid())};
             }},
         common_p_base);
     if (!expected_common_p_task)
@@ -843,7 +840,7 @@ struct FailedPluginProxy : public ASR::Utils::NonCopyableAndNonMovable
                                 result.Put());
                             return result;
                         }(error_code)},
-          name{plugin_name, take_ownership}, error_code{error_code}
+          name{plugin_name}, error_code{error_code}
     {
     }
 

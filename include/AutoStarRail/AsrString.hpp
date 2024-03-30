@@ -120,7 +120,7 @@ public:
     }
 
     explicit(false) AsrReadOnlyString(IAsrReadOnlyString* p_impl)
-        : p_impl_{p_impl, ASR::take_ownership_t{}}
+        : p_impl_{p_impl}
     {
     }
 
@@ -137,7 +137,7 @@ public:
 
     AsrReadOnlyString& operator=(IAsrReadOnlyString* p_impl)
     {
-        p_impl_ = {p_impl, ASR::take_ownership_t{}};
+        p_impl_ = {p_impl};
         return *this;
     }
 

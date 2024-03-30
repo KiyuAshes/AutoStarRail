@@ -92,7 +92,7 @@ AsrResult ErrorLensManager::Register(
                     iid);
             }
             // register IAsrErrorLens instance.
-            map_[iid] = {p_error_lens, take_ownership};
+            map_[iid] = {p_error_lens};
         }
     }
     return ASR_S_OK;

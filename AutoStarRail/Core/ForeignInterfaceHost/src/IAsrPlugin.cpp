@@ -1,15 +1,14 @@
-#include <AutoStarRail/PluginInterface/IAsrPlugin.h>
+#include "TemporaryPluginObjectStorage.h"
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
-#include "TemporaryPluginObjectStorage.h"
+#include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 
 AsrResult AsrRegisterPluginObject(AsrRetSwigBase result_and_p_object)
 {
     AsrResult result{ASR_S_OK};
 
     ASR::AsrPtr p_plugin{
-        static_cast<IAsrSwigPlugin*>(result_and_p_object.value.GetVoid()),
-        Asr::take_ownership};
+        static_cast<IAsrSwigPlugin*>(result_and_p_object.value.GetVoid())};
 
     switch (const auto ref_count = p_plugin->AddRef())
     {

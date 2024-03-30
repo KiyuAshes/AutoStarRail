@@ -12,6 +12,7 @@
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
+#include <AutoStarRail/PluginInterface/IAsrInput.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/PluginInterface/IAsrTask.h>
 #include <AutoStarRail/Utils/Expected.h>
@@ -139,7 +140,7 @@ public:
     }
 
     template <class Other, class = std::enable_if<is_asr_swig_interface<Other>>>
-    explicit SwigToCppBase(Other* p_other) : p_impl_{p_other, take_ownership}
+    explicit SwigToCppBase(Other* p_other) : p_impl_{p_other}
     {
     }
 
@@ -179,6 +180,8 @@ public:
      */
     AsrResult QueryInterface(const AsrGuid& iid, void** pp_out_object) final
     {
+        ASR_UTILS_CHECK_POINTER(pp_out_object)
+        // 先看能不能直接转换
         const auto get_default_query_interface_result =
             ASR::Utils::QueryInterface<T>(this, iid, pp_out_object);
         if (IsOk(get_default_query_interface_result)
@@ -186,7 +189,16 @@ public:
         {
             return get_default_query_interface_result;
         }
-
+        // 再看内部实现能不能直接转换
+        if (const auto get_swig_query_interface_result =
+                p_impl_->QueryInterface(iid);
+            IsOk(get_swig_query_interface_result.error_code)
+            || get_swig_query_interface_result.error_code != ASR_E_NO_INTERFACE)
+        {
+            *pp_out_object = get_swig_query_interface_result.value;
+            return get_swig_query_interface_result.error_code;
+        }
+        // 最后看是不是要转换到子类
         if (const auto swig_iid = ConvertCppIidToSwigIid(iid); swig_iid)
         {
             AsrRetSwigBase result;
@@ -367,6 +379,38 @@ public:
     ASR_IMPL Find(const AsrGuid& iid) override;
 };
 
+template <>
+class SwigToCpp<IAsrSwigInput>
+    : public SwigToCppTypeInfo<IAsrSwigInput, IAsrInput>
+{
+public:
+    ASR_USING_BASE_CTOR(SwigToCppTypeInfo);
+
+    ASR_IMPL Click(int32_t x, int32_t y) override;
+};
+
+template <>
+class SwigToCpp<IAsrSwigTouch>
+    : public SwigToCppTypeInfo<IAsrSwigTouch, IAsrTouch>
+{
+public:
+    ASR_USING_BASE_CTOR(SwigToCppTypeInfo);
+
+    ASR_IMPL Swipe(AsrPoint from, AsrPoint to, int32_t duration_ms) override;
+};
+
+template <>
+class SwigToCpp<IAsrSwigInputFactory>
+    : public SwigToCppTypeInfo<IAsrSwigInputFactory, IAsrInputFactory>
+{
+public:
+    ASR_USING_BASE_CTOR(SwigToCppTypeInfo);
+
+    AsrResult CreateInstance(
+        IAsrReadOnlyString* p_json_config,
+        IAsrInput**         pp_out_input) override;
+};
+
 AsrResult CommonPluginEnumFeature(
     const CommonPluginPtr& p_this,
     size_t                 index,
@@ -396,7 +440,7 @@ public:
     }
 
     template <class Other, class = std::enable_if<is_asr_interface<Other>>>
-    explicit CppToSwigBase(Other* p_other) : p_impl_{p_other, take_ownership}
+    explicit CppToSwigBase(Other* p_other) : p_impl_{p_other}
     {
     }
 
@@ -432,12 +476,22 @@ public:
         void*          p_out_object{};
         const auto     pp_out_object = &p_out_object;
 
-        const auto get_default_query_interface_result =
-            ASR::Utils::QueryInterface<SwigT>(this, swig_iid, pp_out_object);
-        if (IsOk(get_default_query_interface_result)
-            || get_default_query_interface_result != ASR_E_NO_INTERFACE)
+        if (const auto get_default_query_interface_result =
+                ASR::Utils::QueryInterface<SwigT>(this, swig_iid);
+            IsOk(get_default_query_interface_result.error_code)
+            || get_default_query_interface_result.error_code
+                   != ASR_E_NO_INTERFACE)
         {
-            result.error_code = get_default_query_interface_result;
+            return get_default_query_interface_result;
+        }
+
+        if (const auto get_cpp_query_interface_result =
+                p_impl_->QueryInterface(swig_iid, pp_out_object);
+            IsOk(get_cpp_query_interface_result)
+            || get_cpp_query_interface_result != ASR_E_NO_INTERFACE)
+        {
+            result.error_code = get_cpp_query_interface_result;
+            result.value = AsrSwigBaseWrapper{p_out_object};
             return result;
         }
 
@@ -596,6 +650,96 @@ public:
     AsrRetGuid At(size_t index) override;
     AsrResult  Find(const AsrGuid& guid) override;
 };
+
+template <>
+class CppToSwig<IAsrInput> : public CppToSwigTypeInfo<IAsrSwigInput, IAsrInput>
+{
+public:
+    ASR_USING_BASE_CTOR(CppToSwigTypeInfo);
+
+    ASR_IMPL Click(const int32_t x, const int32_t y) override;
+};
+
+template <>
+class CppToSwig<IAsrTouch> final
+    : public CppToSwigTypeInfo<IAsrSwigTouch, IAsrTouch>
+{
+public:
+    ASR_USING_BASE_CTOR(CppToSwigTypeInfo);
+
+    ASR_IMPL Swipe(AsrPoint from, AsrPoint to, const int32_t duration_ms)
+        override;
+};
+
+template <>
+class CppToSwig<IAsrInputFactory> final
+    : public CppToSwigTypeInfo<IAsrSwigInputFactory, IAsrInputFactory>
+{
+public:
+    ASR_USING_BASE_CTOR(CppToSwigTypeInfo);
+
+    AsrRetInput CreateInstance(AsrReadOnlyString json_config) override;
+};
+
+template <is_asr_interface ToCpp, is_asr_swig_interface FromSwig>
+auto MakeInterop(FromSwig* p_from) -> Utils::Expected<AsrPtr<ToCpp>>
+{
+    if (const auto qi_result = p_from->QueryInterface(AsrIidOf<ToCpp>());
+        IsOk(qi_result.error_code))
+    {
+        return AsrPtr{static_cast<ToCpp*>(qi_result.value.GetVoid())};
+    }
+
+    try
+    {
+        return MakeAsrPtr<ToCpp, SwigToCpp<FromSwig>>(p_from);
+    }
+    catch (const std::bad_alloc&)
+    {
+        ASR_CORE_LOG_ERROR("Out of memory!");
+        return tl::make_unexpected(ASR_E_OUT_OF_MEMORY);
+    }
+}
+
+template <is_asr_swig_interface ToSwig, is_asr_interface FromCpp>
+auto MakeInterop(FromCpp* p_from) -> Utils::Expected<AsrPtr<ToSwig>>
+{
+    void*  p_out_object{};
+    void** pp_out_object = &p_out_object;
+    if (const auto qi_result =
+            p_from->QueryInterface(AsrIidOf<ToSwig>(), pp_out_object);
+        IsOk(qi_result))
+    {
+        return {static_cast<ToSwig*>(p_out_object)};
+    }
+
+    try
+    {
+        return MakeAsrPtr<ToSwig, CppToSwig<FromCpp>>(p_from);
+    }
+    catch (const std::bad_alloc&)
+    {
+        ASR_CORE_LOG_ERROR("Out of memory!");
+        return tl::make_unexpected(ASR_E_OUT_OF_MEMORY);
+    }
+}
+
+template <class RetType, is_asr_swig_interface SwigT>
+auto ToAsrRetType(
+    const Utils::Expected<AsrPtr<SwigT>>& expected_result,
+    RetType&                              ref_out_result)
+{
+    if (expected_result)
+    {
+        const auto& value = expected_result.value();
+        value->AddRef();
+        ref_out_result = RetType{ASR_S_OK, value.Get()};
+    }
+    else
+    {
+        ref_out_result = {expected_result.error(), nullptr};
+    }
+}
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
 

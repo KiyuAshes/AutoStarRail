@@ -120,6 +120,15 @@ QueryInterface(TImpl* p_this, const AsrGuid& iid, void** pp_out_object)
         pp_out_object);
 }
 
+/**
+ *
+ * @tparam T 要执行QueryInterface的类型
+ * @tparam TImpl this的类型，即T的子类
+ * @param p_this this指针
+ * @param iid 要搜索的iid
+ * @return 成功时为 ASR_S_OK ，失败为 ASR_E_NO_INTERFACE
+ * ，注意：指针已经AddRef,析构时需释放。
+ */
 template <
     class T,
     class TImpl,

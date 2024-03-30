@@ -3,14 +3,25 @@
 
 #include <AutoStarRail/AsrConfig.h>
 #include <AutoStarRail/AsrGuidHolder.h>
-#include <new>
+#include <type_traits>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
+template <class T>
+void _asr_internal_Release(T& resource) noexcept
+{
+    if constexpr (std::is_pointer_v<
+                      std::remove_reference_t<decltype(resource)>>)
+    {
+        resource->Release();
+    }
+}
+
 #define ASR_RET_TYPE_DECLARE_BEGIN(type_name)                                  \
     struct type_name                                                           \
     {                                                                          \
+        ~type_name() { _asr_internal_Release(value); }                         \
         AsrResult error_code{ASR_E_UNDEFINED_RETURN_VALUE};
 
 #define ASR_RET_TYPE_DECLARE_END                                               \

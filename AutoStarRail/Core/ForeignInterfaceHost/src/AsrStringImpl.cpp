@@ -509,12 +509,12 @@ namespace Details
 
     AsrPtr<IAsrReadOnlyString> CreateNullAsrString()
     {
-        return {&null_asr_string_impl_, take_ownership};
+        return {&null_asr_string_impl_};
     }
 
     AsrPtr<IAsrString> CreateAsrString()
     {
-        return {new AsrStringCppImpl(), take_ownership};
+        return {new AsrStringCppImpl()};
     }
 }
 
