@@ -90,6 +90,11 @@ auto IAsrSwigInputFactoryVectorImpl::Find(const AsrGuid& iid)
     ToAsrRetType(p_result, result);
     return result;
 }
+auto IAsrSwigInputFactoryVectorImpl::QueryInterface(const AsrGuid& iid)
+    -> AsrRetSwigBase
+{
+    return Utils::QueryInterface<IAsrSwigInputFactoryVector>(this, iid);
+}
 
 int64_t AsrInputFactoryVectorImpl::AddRef() { return ref_counter_.AddRef(); }
 
