@@ -79,6 +79,11 @@ class InheritTree:
 
     def to_preset_type_inheritance_info(self):
         result = ""
+        result_list = []
+        type_names = sorted(self.children_map.keys())
+        for t in type_names:
+            result += f"ASR_INTERFACE {t};\n"
+        result += '\n'
         for t in self.children_map.values():
             type_parents = t.get_parents()
             if len(type_parents) == 0:
@@ -91,10 +96,14 @@ class InheritTree:
                 continue
             # 单继承，只有一个路径
             parents_name = [t.get_name() for t in reversed(parent_list[0])]
-            result += f"ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO({child_type}"
+            single_result = f"ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO({child_type}"
             for parent_name in parents_name:
-                result += f", {parent_name}"
-            result += ");\n"
+                single_result += f", {parent_name}"
+            single_result += ");\n"
+            result_list.append(single_result)
+        result_list = sorted(result_list)
+        for r in result_list:
+            result += r
         if g_debug:
             print(result)
         return result
@@ -456,8 +465,6 @@ struct PresetTypeInheritanceInfo;
 
 '''
     preset_type_inheritance_info_virtual_header  += "#define ASR_UTILS_DEFINE_PRESET_INHERITANCE_INFO(EndType, ...)             \\"
-    preset_type_inheritance_info_virtual_header  += '\n'
-    preset_type_inheritance_info_virtual_header  += "ASR_INTERFACE EndType;                                                     \\"
     preset_type_inheritance_info_virtual_header  += '\n'
     preset_type_inheritance_info_virtual_header  += "ASR_UTILS_NS_BEGIN                                                         \\"
     preset_type_inheritance_info_virtual_header  += '\n'
