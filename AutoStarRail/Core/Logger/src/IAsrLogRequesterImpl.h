@@ -4,6 +4,7 @@
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <boost/circular_buffer.hpp>
+#include <mutex>
 #include <spdlog/sinks/base_sink.h>
 
 template <typename Mutex>
@@ -32,7 +33,7 @@ template <typename Mutex>
 class AsrLogRequesterSink final : public spdlog::sinks::base_sink<Mutex>
 {
 private:
-    std::mutex                                     mutex_;
+    Mutex                                          mutex_;
     std::vector<ASR::AsrPtr<IAsrLogRequesterImpl>> logger_requester_vector_ =
         ASR::Utils::MakeEmptyCOntainerOfReservedSize<
             decltype(logger_requester_vector_)>(5);
