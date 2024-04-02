@@ -350,18 +350,16 @@ find_package(ICU COMPONENTS data i18n uc REQUIRED)
 target_link_libraries(Asr3rdParty INTERFACE ICU::data ICU::i18n ICU::uc)
 
 function(_download_and_config_boost)
-    message(STATUS "Downloading and configuring boost 1.82.")
+    message(STATUS "Downloading and configuring boost 1.84.")
 
     set(BUILD_SHARED_LIBS OFF)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     set(BUILD_TESTING OFF)
 
     FetchContent_Declare(
-            AsrBoost
-            URL ${GITHUB_MIRROR_URL}/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.7z
-            URL_HASH SHA256=AB41BF39435E5513A6141916B972B785B9A3096D9C84A7D943F607BCC3BC1132
-            PATCH_COMMAND ${CMAKE_COMMAND} -E copy
-            "${CMAKE_SOURCE_DIR}/cmake/AsrBoostContext182Patch.cmake" <SOURCE_DIR>/libs/context/CMakeLists.txt)
+        AsrBoost
+        URL ${GITHUB_MIRROR_URL}/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.7z
+        URL_HASH SHA256=CE132F85FC706AA8B5C7E6E52A8338DE33A688E92E7C8FADA3713194B109232E)
 
     # See [Symbol redefinition on latest mingw gcc](https://github.com/boostorg/stacktrace/issues/133)
     # You should use boost from msys package manager to avoid this error.
