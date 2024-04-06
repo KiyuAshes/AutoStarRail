@@ -3,6 +3,7 @@
 
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
+#include <AutoStarRail/Utils/fmt.h>
 #include <boost/circular_buffer.hpp>
 #include <mutex>
 #include <spdlog/sinks/base_sink.h>
@@ -50,7 +51,7 @@ protected:
         spdlog::memory_buf_t formatted;
         spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
         const auto sp_message =
-            std::make_shared<std::string>(fmt::to_string(formatted));
+            std::make_shared<std::string>(ASR::FmtCommon::to_string(formatted));
         std::lock_guard guard{mutex_};
         for (const auto& p_requester : logger_requester_vector_)
         {
