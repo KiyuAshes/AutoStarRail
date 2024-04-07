@@ -1,11 +1,12 @@
 #include "AutoStarRail/IAsrBase.h"
-#include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
+#include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
 #define ASR_BUILD_SHARED
 
 #include "PluginImpl.h"
+
 #include <stdexcept>
 
 ASR_NS_BEGIN

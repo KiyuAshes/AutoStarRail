@@ -1,6 +1,15 @@
 #include <AutoStarRail/AsrConfig.h>
 #include <AutoStarRail/ExportInterface/IAsrMemory.h>
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
+
+#include <Windows.h>
+#endif // WIN32
+
 ASR_DISABLE_WARNING_BEGIN
 ASR_IGNORE_UNUSED_PARAMETER
 
@@ -17,10 +26,6 @@ ASR_DISABLE_WARNING_END
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-
-#if defined(_WIN32) || defined(__CYGWIN__)
-#include <sdkddkver.h>
-#endif // WIN32
 
 #include "AdbCaptureImpl.h"
 #include "ErrorLensImpl.h"

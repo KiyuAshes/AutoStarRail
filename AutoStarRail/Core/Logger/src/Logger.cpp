@@ -31,7 +31,7 @@ void UseUtf8Console()
     }
 }
 ASR_NS_ANONYMOUS_DETAILS_END
-#define ASR_FORCE_CONSOLE_UTF8 Details::UseUtf8Console()
+#define ASR_FORCE_CONSOLE_UTF8 ::Details::UseUtf8Console()
 #else
 #define ASR_FORCE_CONSOLE_UTF8
 #endif // ASR_WINDOWS
