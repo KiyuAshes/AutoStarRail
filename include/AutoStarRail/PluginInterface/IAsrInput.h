@@ -126,7 +126,7 @@ ASR_DEFINE_GUID(
     0xfc,
     0x5b,
     0xa7);
-SWIG_IGNORE(IAsrTouchFactory)
+SWIG_IGNORE(IAsrInputFactory)
 ASR_INTERFACE IAsrInputFactory : public IAsrTypeInfo
 {
     ASR_METHOD CreateInstance(

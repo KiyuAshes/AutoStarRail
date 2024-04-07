@@ -264,35 +264,6 @@ ASR_CORE_FOREIGNINTERFACEHOST_NS_END
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
-auto GetErrorMessageWhenGetNameFailed(
-    const AsrResult                        error_code,
-    const ASR::AsrPtr<IAsrCaptureFactory>& p_factory)
-    -> ASR::AsrPtr<IAsrReadOnlyString>
-{
-    ASR::AsrPtr<IAsrReadOnlyString> result{};
-    ASR::AsrPtr<IAsrTypeInfo>       p_factory_base{};
-    p_factory.As(p_factory_base);
-    if (const auto get_error_message_result = ::AsrGetErrorMessage(
-            p_factory_base.Get(),
-            error_code,
-            result.Put());
-        ASR::IsOk(get_error_message_result)) [[unlikely]]
-    {
-        const auto get_explanation_result =
-            ASR::Core::i18n::GetExplanationWhenTranslateErrorFailed(
-                error_code,
-                get_error_message_result,
-                result.Put());
-        if (ASR::IsFailed(get_explanation_result))
-        {
-            ASR_CORE_LOG_ERROR(
-                "Failed to get error message from error code. Error code = {}.",
-                get_error_message_result);
-        }
-    }
-    return result;
-}
-
 void OnCreateCaptureInstanceFailed(
     ASR::Core::ForeignInterfaceHost::CaptureManagerImpl::ErrorInfo&
                                            in_error_info,
@@ -354,7 +325,7 @@ auto CreateAsrCaptureManagerImpl(IAsrReadOnlyString* p_json_config)
     catch (std::bad_alloc&)
     {
         ASR_CORE_LOG_ERROR("Out of memory!");
-        return {ASR_E_OUT_OF_MEMORY, {}};
+        return {ASR_E_OUT_OF_MEMORY, nullptr};
     }
 
     ::AsrGetDefaultLocale(p_locale_name.Put());
@@ -364,37 +335,20 @@ auto CreateAsrCaptureManagerImpl(IAsrReadOnlyString* p_json_config)
     p_capture_manager->ReserveInstanceContainer(capture_factories.size());
     for (const auto& p_factory : capture_factories)
     {
-        struct
+        ASR::Core::ForeignInterfaceHost::CaptureManagerImpl::ErrorInfo
+                                        error_info{};
+        ASR::AsrPtr<IAsrReadOnlyString> capture_factory_name;
+        try
         {
-            AsrResult& result;
-            ASR::AsrPtr<ASR::Core::ForeignInterfaceHost::CaptureManagerImpl>
-                                            p_capture_manager;
-            ASR::AsrPtr<IAsrCaptureFactory> p_factory;
-            ASR::Core::ForeignInterfaceHost::CaptureManagerImpl::ErrorInfo
-                error_info{};
-        } context{result, p_capture_manager, p_factory};
-
-        const auto nullable_capture_factory_name =
-            ASR::Core::Utils::GetRuntimeClassNameFrom(
-                p_factory.Get(),
-                [&context](const auto error_code)
-                {
-                    context.result = ASR_S_FALSE;
-
-                    auto& error_info = context.error_info;
-
-                    error_info.error_code = error_code;
-                    error_info.p_error_message =
-                        GetErrorMessageWhenGetNameFailed(
-                            error_info.error_code,
-                            context.p_factory);
-                    ASR_CORE_LOG_ERROR(
-                        "Get IAsrCaptureFactory object name failed. Error message = {}.",
-                        error_info.p_error_message);
-                    context.p_capture_manager->AddInstance(context.error_info);
-                });
-        if (!nullable_capture_factory_name)
+            capture_factory_name =
+                ASR::Core::Utils::GetRuntimeClassNameFrom(p_factory.Get());
+        }
+        catch (const ASR::Core::AsrException& ex)
         {
+            ASR_CORE_LOG_ERROR("Can not resolve capture factory type name.");
+            ASR_CORE_LOG_EXCEPTION(ex);
+
+            result = ASR_FALSE;
             continue;
         }
 
@@ -405,28 +359,30 @@ auto CreateAsrCaptureManagerImpl(IAsrReadOnlyString* p_json_config)
             ASR::IsFailed(error_code))
         {
             result = ASR_S_FALSE;
-            context.error_info.error_code = error_code;
+            error_info.error_code = error_code;
+            // 补个接口
             Details::OnCreateCaptureInstanceFailed(
-                context.error_info,
-                nullable_capture_factory_name,
+                error_info,
+                capture_factory_name,
                 p_capture_manager);
             continue;
         }
 
-        const auto nullable_capture_name = ASR::Core::Utils::GetRuntimeClassNameFrom(
-            p_instance.Get(),
-            [&context](const auto error_code)
-            {
-                context.result = ASR_S_FALSE;
-                const auto error_message = GetErrorMessageWhenGetNameFailed(
-                    error_code,
-                    context.p_factory);
-                ASR_CORE_LOG_ERROR(
-                    "Get IAsrCapture object name failed. Error message = {}.",
-                    error_message);
-            });
-
-        p_capture_manager->AddInstance(nullable_capture_name, p_instance);
+        try
+        {
+            const auto capture_name =
+                ASR::Core::Utils::GetRuntimeClassNameFrom(p_instance.Get());
+            p_capture_manager->AddInstance(capture_name, p_instance);
+        }
+        catch (const ASR::Core::AsrException& ex)
+        {
+            ASR_CORE_LOG_ERROR("Get IAsrCapture object name failed.");
+            ASR_CORE_LOG_EXCEPTION(ex);
+            result = ASR_FALSE;
+            p_capture_manager->AddInstance(
+                ASR::Details::CreateNullAsrString(),
+                p_instance);
+        }
     }
 
     return {result, p_capture_manager};

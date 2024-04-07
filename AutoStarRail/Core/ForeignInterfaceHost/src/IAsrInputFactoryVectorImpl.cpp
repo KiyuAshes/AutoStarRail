@@ -6,6 +6,12 @@
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
+IAsrInputFactoryVectorImpl::IAsrInputFactoryVectorImpl(
+    AsrInputFactoryVectorImpl& impl)
+    : impl_{impl}
+{
+}
+
 auto IAsrInputFactoryVectorImpl::AddRef() -> int64_t { return impl_.AddRef(); }
 
 auto IAsrInputFactoryVectorImpl::Release() -> int64_t
@@ -42,6 +48,12 @@ AsrResult IAsrInputFactoryVectorImpl::Find(
     return impl_.Find(iid, pp_out_factory);
 }
 
+IAsrSwigInputFactoryVectorImpl::IAsrSwigInputFactoryVectorImpl(
+    AsrInputFactoryVectorImpl& impl)
+    : impl_{impl}
+{
+}
+
 auto IAsrSwigInputFactoryVectorImpl::AddRef() -> int64_t
 {
     return impl_.AddRef();
@@ -68,9 +80,9 @@ auto IAsrSwigInputFactoryVectorImpl::At(size_t index) -> AsrRetInputFactory
         return result;
     }
 
-    const auto exptected_result =
+    const auto expected_result =
         MakeInterop<IAsrSwigInputFactory>(p_cpp_result.Get());
-    ToAsrRetType(exptected_result, result);
+    ToAsrRetType(expected_result, result);
     return result;
 }
 
@@ -96,6 +108,28 @@ auto IAsrSwigInputFactoryVectorImpl::QueryInterface(const AsrGuid& iid)
     return Utils::QueryInterface<IAsrSwigInputFactoryVector>(this, iid);
 }
 
+auto AsrInputFactoryVectorImpl::InternalFind(const AsrGuid& iid)
+    -> AsrInputFactoryVectorImpl::ContainerIt
+{
+    return std::ranges::find_if(
+        input_factory_vector_,
+        [iid](const auto& pair)
+        {
+            const auto ret_guid = pair.second->GetGuid();
+            if (IsFailed(ret_guid.error_code))
+            {
+                return false;
+            }
+            return ret_guid.value == iid;
+        });
+}
+
+AsrInputFactoryVectorImpl::AsrInputFactoryVectorImpl(
+    const InputFactoryManager& manager)
+    : input_factory_vector_{manager.GetVector()}
+{
+}
+
 int64_t AsrInputFactoryVectorImpl::AddRef() { return ref_counter_.AddRef(); }
 
 int64_t AsrInputFactoryVectorImpl::Release()
@@ -116,7 +150,7 @@ auto AsrInputFactoryVectorImpl::At(
     {
         ASR_UTILS_CHECK_POINTER(pp_out_factory)
 
-        *pp_out_factory = input_factory_vector_[index].Get();
+        *pp_out_factory = input_factory_vector_[index].first.Get();
         (*pp_out_factory)->AddRef();
         return ASR_S_OK;
     }
@@ -127,27 +161,40 @@ auto AsrInputFactoryVectorImpl::Find(
     const AsrGuid&     iid,
     IAsrInputFactory** pp_out_factory) -> AsrResult
 {
-    const auto it = std::ranges::find_if(
-        input_factory_vector_,
-        [iid](const AsrPtr<IAsrInputFactory>& p_factory) -> bool
-        {
-            AsrGuid factory_iid;
-            if (IsOk(p_factory->GetGuid(&factory_iid)))
-            {
-                return factory_iid == iid;
-            }
-            return false;
-        });
+    const auto it = InternalFind(iid);
     if (it != input_factory_vector_.end())
     {
         ASR_UTILS_CHECK_POINTER(pp_out_factory)
 
-        const auto value = it->Get();
-        *pp_out_factory = value;
-        value->AddRef();
+        const auto p_result = it->first.Get();
+        *pp_out_factory = p_result;
+        p_result->AddRef();
         return ASR_S_OK;
     }
     return ASR_E_OUT_OF_RANGE;
-};
+}
+
+auto AsrInputFactoryVectorImpl::At(size_t index) -> AsrRetInputFactory
+{
+    if (index < input_factory_vector_.size())
+    {
+        const auto p_result = input_factory_vector_[index].second.Get();
+        p_result->AddRef();
+        return {ASR_S_OK, p_result};
+    }
+    return {ASR_E_OUT_OF_RANGE, nullptr};
+}
+
+auto AsrInputFactoryVectorImpl::Find(const AsrGuid& iid) -> AsrRetInputFactory
+{
+    const auto it = InternalFind(iid);
+    if (it != input_factory_vector_.end())
+    {
+        const auto p_result = it->second.Get();
+        p_result->AddRef();
+        return {ASR_S_OK, p_result};
+    }
+    return {ASR_E_OUT_OF_RANGE, nullptr};
+}
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

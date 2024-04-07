@@ -7,6 +7,7 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/ErrorLensManager.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/InputFactoryManager.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/TaskManager.h>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
 #include <AutoStarRail/Utils/Expected.h>
@@ -136,9 +137,10 @@ private:
      */
     NamePluginMap                           name_plugin_map_{};
     InterfaceStaticStorageMap               guid_storage_map_{};
-    TaskManager                             asr_task_interface_manager_;
+    TaskManager                             task_manager_{};
     std::vector<AsrPtr<IAsrCaptureFactory>> capture_factory_vector_{};
-    ErrorLensManager                        error_lens_manager_;
+    ErrorLensManager                        error_lens_manager_{};
+    InputFactoryManager                     input_factory_manager_{};
 
     IAsrPluginManagerImpl cpp_projection_{*this};
 
