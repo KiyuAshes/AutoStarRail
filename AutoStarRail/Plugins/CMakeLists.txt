@@ -19,20 +19,27 @@ asr_add_plugin_library(AsrAdbTouch ASR_EX_PRIVATE_LIBS)
 
 target_link_libraries(AsrAdbCapture PRIVATE zlib AsrCore)
 
-if (WIN32)
+if(WIN32)
     target_link_libraries(AsrAdbCapture PRIVATE Ws2_32)
-endif ()
+endif()
 
 target_include_directories(AsrAdbCapture PRIVATE ${gzip-hpp_SOURCE_DIR}/include)
 
-if (ASR_USE_BUNDLED_BOOST)
+if(ASR_USE_BUNDLED_BOOST)
     target_link_libraries(AsrAdbCapture PUBLIC
-            Boost::process
-            Boost::container_hash
-            Boost::url
-            Boost::asio
-            Boost::pfr)
-else ()
+        Boost::process
+        Boost::container_hash
+        Boost::url
+        Boost::asio
+        Boost::pfr)
+    target_link_libraries(AsrAdbTouch PUBLIC
+        Boost::process
+        Boost::url
+        Boost::asio)
+else()
     target_include_directories(AsrAdbCapture PUBLIC ${Boost_INCLUDE_DIRS})
     target_link_libraries(AsrAdbCapture PRIVATE ${Boost_LIBRARIES})
-endif ()
+
+    target_include_directories(AsrAdbTouch PUBLIC ${Boost_INCLUDE_DIRS})
+    target_link_libraries(AsrAdbTouch PRIVATE ${Boost_LIBRARIES})
+endif()

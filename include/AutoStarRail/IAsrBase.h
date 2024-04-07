@@ -104,6 +104,7 @@ void _asr_internal_Release(T& resource) noexcept
 #define ASR_E_INVALID_SIZE ASR_E_RESERVED - 24
 #define ASR_E_OPENCV_ERROR ASR_E_RESERVED - 25
 #define ASR_E_ONNX_RUNTIME_ERROR ASR_E_RESERVED - 26
+#define ASR_E_TIMEOUT ASR_E_RESERVED - 27
 
 #ifdef ASR_WINDOWS
 // MSVC
