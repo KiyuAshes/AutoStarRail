@@ -40,9 +40,8 @@ SWIG_IGNORE(IAsrPlugin)
 ASR_INTERFACE IAsrPlugin : public IAsrBase
 {
     ASR_METHOD EnumFeature(size_t index, AsrPluginFeature * p_out_feature) = 0;
-    ASR_METHOD CreateFeatureInterface(
-        AsrPluginFeature feature,
-        void**           pp_out_interface) = 0;
+    ASR_METHOD CreateFeatureInterface(size_t index, void** pp_out_interface) =
+        0;
     /**
      * @brief 插件检查是否还有已创建的接口实例存活，若有，返回 ASR_FALSE
      * ；否则返回 ASR_TRUE 。
@@ -81,8 +80,8 @@ ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigPlugin)
 ASR_INTERFACE IAsrSwigPlugin : public IAsrSwigBase
 {
     virtual AsrRetPluginFeature EnumFeature(size_t index) = 0;
-    virtual AsrRetSwigBase CreateFeatureInterface(AsrPluginFeature feature) = 0;
-    virtual AsrResult      CanUnloadPlugin() = 0;
+    virtual AsrRetSwigBase      CreateFeatureInterface(size_t index) = 0;
+    virtual AsrResult           CanUnloadPlugin() = 0;
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetPlugin)

@@ -39,8 +39,8 @@ ASR_IMPL AsrAdbTouchPlugin::EnumFeature(
 }
 
 ASR_IMPL AsrAdbTouchPlugin::CreateFeatureInterface(
-    AsrPluginFeature feature,
-    void**           pp_out_interface)
+    size_t index,
+    void** pp_out_interface)
 {
     if (pp_out_interface == nullptr)
     {
@@ -48,26 +48,21 @@ ASR_IMPL AsrAdbTouchPlugin::CreateFeatureInterface(
         return ASR_E_INVALID_POINTER;
     }
 
-    switch (feature)
-    {
-    case ASR_PLUGIN_FEATURE_INPUT_FACTORY:
+    if (index == 0)
     {
         try
         {
             const auto p_factory = new AdbTouchFactory{};
             *pp_out_interface = p_factory;
             p_factory->AddRef();
+            return ASR_S_OK;
         }
         catch (const std::bad_alloc&)
         {
             return ASR_E_OUT_OF_MEMORY;
         }
-        break;
     }
-    default:
-        return ASR_E_NO_IMPLEMENTATION;
-    }
-    return ASR_S_OK;
+    return ASR_E_OUT_OF_RANGE;
 }
 
 ASR_IMPL AsrAdbTouchPlugin::CanUnloadNow() { return ASR_E_NO_IMPLEMENTATION; }

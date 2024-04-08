@@ -19,7 +19,7 @@ public:
     ASR_IMPL EnumFeature(size_t index, AsrPluginFeature* p_out_feature)
         override;
     ASR_IMPL CreateFeatureInterface(
-        AsrPluginFeature feature,
+        size_t           index,
         void**           pp_out_interface) override;
     ASR_IMPL CanUnloadNow() override;
 };

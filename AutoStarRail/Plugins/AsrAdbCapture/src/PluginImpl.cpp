@@ -43,14 +43,16 @@ AsrResult AdbCapturePlugin::EnumFeature(
 }
 
 AsrResult AdbCapturePlugin::CreateFeatureInterface(
-    AsrPluginFeature feature,
-    void**           pp_out_interface)
+    size_t index,
+    void** pp_out_interface)
 {
     // TODO: Create instance for every feature.
-    switch (feature)
+    switch (index)
     {
-    case ASR_PLUGIN_FEATURE_CAPTURE_FACTORY:
-    case ASR_PLUGIN_FEATURE_ERROR_LENS:
+        // Capture Factory
+    case 0:
+        // Error lens
+    case 1:
     default:
         *pp_out_interface = nullptr;
         return ASR_E_OUT_OF_RANGE;

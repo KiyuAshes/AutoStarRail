@@ -169,19 +169,19 @@ auto GetPredefinedErrorMessage(
 auto CreateInterface(
     const char*            u8_plugin_name,
     const CommonPluginPtr& common_p_plugin,
-    AsrPluginFeature       feature) -> std::optional<CommonBasePtr>
+    size_t                 index) -> std::optional<CommonBasePtr>
 {
     constexpr auto& CREATE_FEATURE_INTERFACE_FAILED_MESSAGE =
         "Error happened when calling p_plugin->CreateFeatureInterface."
         "Error code = {}. Plugin Name = {}.";
     return std::visit(
         ASR::Utils::overload_set{
-            [feature, u8_plugin_name](
+            [index, u8_plugin_name](
                 AsrPtr<IAsrPlugin> p_plugin) -> std::optional<CommonBasePtr>
             {
                 AsrPtr<IAsrBase> result{};
                 if (const auto cfi_result = p_plugin->CreateFeatureInterface(
-                        feature,
+                        index,
                         result.PutVoid());
                     IsFailed(cfi_result))
                 {
@@ -193,11 +193,10 @@ auto CreateInterface(
                 }
                 return result;
             },
-            [feature, u8_plugin_name](
+            [index, u8_plugin_name](
                 AsrPtr<IAsrSwigPlugin> p_plugin) -> std::optional<CommonBasePtr>
             {
-                const auto cfi_result =
-                    p_plugin->CreateFeatureInterface(feature);
+                const auto cfi_result = p_plugin->CreateFeatureInterface(index);
                 if (IsFailed(cfi_result.error_code))
                 {
                     ASR_CORE_LOG_ERROR(
@@ -703,7 +702,7 @@ AsrResult PluginManager::AddInterface(
     const Plugin& plugin,
     const char*   u8_plugin_name)
 {
-    AsrResult result{ASR_S_OK};
+    AsrResult   result{ASR_S_OK};
     const auto& common_p_plugin = plugin.p_plugin_;
     const auto& opt_resource_path = plugin.sp_desc_->opt_resource_path;
 
@@ -712,11 +711,13 @@ AsrResult PluginManager::AddInterface(
     {
         return expected_features.error();
     }
+    size_t index = 0;
     for (const auto& features = expected_features.value();
          const auto  feature : features)
     {
         const auto opt_common_p_base =
-            Details::CreateInterface(u8_plugin_name, common_p_plugin, feature);
+            Details::CreateInterface(u8_plugin_name, common_p_plugin, index);
+        ++index;
 
         if (!opt_common_p_base)
         {
@@ -1241,7 +1242,7 @@ auto PluginManager::GetInterfaceStaticStorage(IAsrTypeInfo* p_type_info) const
 
 auto PluginManager::GetInterfaceStaticStorage(IAsrSwigTypeInfo* p_type_info)
     const -> Asr::Utils::Expected<
-        std::reference_wrapper<const InterfaceStaticStorage>>
+              std::reference_wrapper<const InterfaceStaticStorage>>
 {
     if (p_type_info == nullptr)
     {
