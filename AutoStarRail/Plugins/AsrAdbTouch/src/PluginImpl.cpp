@@ -1,6 +1,8 @@
 #include "AdbTouchFactoryImpl.h"
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
+#include <array>
+#include <stdexcept>
 
 #define ASR_BUILD_SHARED
 #include "PluginImpl.h"
