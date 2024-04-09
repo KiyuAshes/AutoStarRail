@@ -15,6 +15,7 @@
 
 ASR_DISABLE_WARNING_BEGIN
 ASR_IGNORE_UNUSED_PARAMETER
+ASR_IGNORE_UNSIGNED_SIGNED_MATCH
 
 #include <boost/asio.hpp>
 #include <boost/process/v2.hpp>
