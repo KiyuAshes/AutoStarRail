@@ -15,7 +15,10 @@
 
 ASR_DISABLE_WARNING_BEGIN
 ASR_IGNORE_UNUSED_PARAMETER
-ASR_IGNORE_UNSIGNED_SIGNED_MATCH
+
+#ifdef _MSC_VER
+ASR_PRAGMA(warning(disable : 4189 4245))
+#endif // _MSC_VER
 
 #include <boost/asio.hpp>
 #include <boost/process/v2.hpp>
