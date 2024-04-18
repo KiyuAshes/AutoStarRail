@@ -105,6 +105,7 @@ void _asr_internal_Release(T& resource) noexcept
 #define ASR_E_OPENCV_ERROR ASR_E_RESERVED - 25
 #define ASR_E_ONNX_RUNTIME_ERROR ASR_E_RESERVED - 26
 #define ASR_E_TIMEOUT ASR_E_RESERVED - 27
+#define ASR_E_PERMISSION_DENNIED ASR_E_RESERVED - 29
 
 #ifdef ASR_WINDOWS
 // MSVC
