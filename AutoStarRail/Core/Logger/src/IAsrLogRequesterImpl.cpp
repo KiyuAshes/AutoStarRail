@@ -8,6 +8,7 @@ IAsrLogRequesterImpl::IAsrLogRequesterImpl(
     SpLogRequesterSink sp_sink)
     : buffer_{max_buffer_size}, sp_log_requester_sink_{sp_sink}
 {
+    sp_sink->Add(this);
     ASR_CORE_LOG_INFO(
         "Initialize IAsrLogRequesterImpl successfully! This = {}. max_buffer_size = {}.",
         ASR::Utils::VoidP(this),
