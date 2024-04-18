@@ -32,7 +32,7 @@ ASR_NS_ANONYMOUS_DETAILS_END
 
 void AsrLogError(IAsrReadOnlyString* p_string)
 {
-    Asr::AsrPtr<IAsrReadOnlyString> p_string_holder{p_string, ASR::take_ownership};
+    Asr::AsrPtr<IAsrReadOnlyString> p_string_holder{p_string};
     const char*                     p_u8_string{};
 
     p_string_holder->GetUtf8(&p_u8_string);
@@ -60,7 +60,7 @@ void AsrLogErrorU8WithSourceLocation(
 
 void AsrLogWarning(IAsrReadOnlyString* p_string)
 {
-    ASR::AsrPtr<IAsrReadOnlyString> p_string_holder{p_string, ASR::take_ownership};
+    ASR::AsrPtr<IAsrReadOnlyString> p_string_holder{p_string};
     const char*                     p_u8_string{};
 
     p_string_holder->GetUtf8(&p_u8_string);
@@ -88,7 +88,7 @@ void AsrLogWarningU8WithSourceLocation(
 
 void AsrLogInfo(IAsrReadOnlyString* p_string)
 {
-    Asr::AsrPtr<IAsrReadOnlyString> p_string_holder{p_string, ASR::take_ownership};
+    Asr::AsrPtr<IAsrReadOnlyString> p_string_holder{p_string};
     const char*                     p_u8_string{};
 
     p_string_holder->GetUtf8(&p_u8_string);

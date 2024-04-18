@@ -1,5 +1,5 @@
-#include <AutoStarRail/Core/i18n/GlobalLocale.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
+#include <AutoStarRail/Core/i18n/GlobalLocale.h>
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 
 ASR_CORE_I18N_NS_BEGIN
@@ -28,9 +28,9 @@ void GlobalLocaleSingleton::SetInstance(
 
 ASR_DEFINE_VARIABLE(g_locale) = InitializeGlobalLocaleSingleton();
 
-const AsrPtr<IAsrReadOnlyString> g_fallback_locale_name{
-    new ::AsrStringCppImpl{U_NAMESPACE_QUALIFIER UnicodeString::fromUTF8("en")},
-    take_ownership};
+const auto g_fallback_locale_name{
+    MakeAsrPtr<IAsrReadOnlyString, ::AsrStringCppImpl>(
+        U_NAMESPACE_QUALIFIER UnicodeString::fromUTF8("en"))};
 
 auto GetFallbackLocale() -> AsrPtr<IAsrReadOnlyString>
 {
@@ -43,7 +43,7 @@ ASR_CORE_I18N_NS_END
 
 AsrResult AsrSetDefaultLocale(IAsrReadOnlyString* locale_name)
 {
-    ASR::AsrPtr holder{locale_name, ASR::take_ownership};
+    ASR::AsrPtr holder{locale_name};
     ASR::Core::i18n::g_locale.SetInstance(holder);
     return ASR_S_OK;
 }

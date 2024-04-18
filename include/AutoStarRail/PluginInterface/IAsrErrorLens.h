@@ -70,12 +70,12 @@ SWIG_IGNORE(AsrGetErrorMessage)
 ASR_C_API AsrResult AsrGetErrorMessage(
     IAsrTypeInfo*        p_error_generator,
     AsrResult            error_code,
-    IAsrReadOnlyString** pp_out_error_explanation);
+    IAsrReadOnlyString** pp_out_error_message);
 
 SWIG_IGNORE(AsrGetPredefinedErrorMessage)
 ASR_C_API AsrResult AsrGetPredefinedErrorMessage(
     AsrResult            error_code,
-    IAsrReadOnlyString** pp_out_error_explanation);
+    IAsrReadOnlyString** pp_out_error_message);
 
 /**
  * @brief See AsrGetErrorMessage

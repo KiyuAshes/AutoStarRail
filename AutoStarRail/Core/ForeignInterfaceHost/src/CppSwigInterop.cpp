@@ -1,42 +1,17 @@
 #include <AutoStarRail/AsrPtr.hpp>
-#include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
-#include <boost/bimap/bimap.hpp>
-#include <boost/bimap/unordered_set_of.hpp>
+#include <DAS/_autogen/CppSwigBiMap.h>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
-
-using CppSwigMap = boost::bimaps::bimap<
-    // cpp iid
-    boost::bimaps::unordered_set_of<AsrGuid, std::hash<AsrGuid>>,
-    // swig iid
-    boost::bimaps::unordered_set_of<AsrGuid, std::hash<AsrGuid>>>;
-
-#define ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(name)        \
-    {                                                                          \
-        AsrIidOf<IAsr##name>(), AsrIidOf<IAsrSwig##name>()                     \
-    }
-
-/**
- * @brief The left side is cpp iid, while the right side is swig iid.
- */
-const CppSwigMap g_cpp_swig_map = []() -> CppSwigMap
-{
-    std::initializer_list<CppSwigMap::value_type> list{
-        ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(Base),
-        ASR_CORE_FOREIGNINTERFACEHOST_DEFINE_CPP_TO_SWIG_MAP_ITEM(TypeInfo)
-
-    };
-    return {list.begin(), list.end()};
-}();
 
 auto ConvertCppIidToSwigIid(const AsrGuid& cpp_iid)
     -> ASR::Utils::Expected<AsrGuid>
 {
-    auto it = g_cpp_swig_map.left.find(cpp_iid);
+    const auto& g_cpp_swig_map = Das::_autogen::g_cpp_swig_map;
+    auto        it = g_cpp_swig_map.left.find(cpp_iid);
     if (it == g_cpp_swig_map.left.end())
     {
         return tl::make_unexpected(ASR_E_NO_INTERFACE);
@@ -46,13 +21,15 @@ auto ConvertCppIidToSwigIid(const AsrGuid& cpp_iid)
 
 bool IsCppIid(const AsrGuid& cpp_iid)
 {
-    const auto it = g_cpp_swig_map.left.find(cpp_iid);
+    const auto& g_cpp_swig_map = Das::_autogen::g_cpp_swig_map;
+    const auto  it = g_cpp_swig_map.left.find(cpp_iid);
     return it != g_cpp_swig_map.left.end();
 }
 
 bool IsSwigIid(const AsrGuid& swig_iid)
 {
-    const auto it = g_cpp_swig_map.right.find(swig_iid);
+    const auto& g_cpp_swig_map = Das::_autogen::g_cpp_swig_map;
+    const auto  it = g_cpp_swig_map.right.find(swig_iid);
     return it != g_cpp_swig_map.right.end();
 }
 
@@ -332,19 +309,18 @@ AsrResult SwigToCpp<IAsrSwigGuidVector>::ToConst(
     }
 
     AsrPtr<IAsrReadOnlyGuidVector> p_result{};
-    try
+
+    const auto expected_result =
+        MakeInterop<IAsrReadOnlyGuidVector>(swig_result.value);
+    if (!expected_result)
     {
-        p_result = MakeAsrPtr<SwigToCpp<IAsrSwigReadOnlyGuidVector>>(
-            swig_result.value);
-    }
-    catch (const std::bad_alloc&)
-    {
-        return ASR_E_OUT_OF_MEMORY;
+        return expected_result.error();
     }
 
     ASR_UTILS_CHECK_POINTER(pp_out_object)
-    *pp_out_object = p_result.Get();
-    p_result->AddRef();
+    const auto value = expected_result.value().Get();
+    *pp_out_object = value;
+    value->AddRef();
     return ASR_S_OK;
 }
 
@@ -378,6 +354,39 @@ ASR_IMPL SwigToCpp<IAsrSwigReadOnlyGuidVector>::Find(const AsrGuid& iid)
         ASR_CORE_LOG_ERROR(ex.what());
         return ASR_E_SWIG_INTERNAL_ERROR;
     }
+}
+
+template <is_asr_swig_interface SwigT, is_asr_interface T>
+AsrResult SwigToCppInput<SwigT, T>::Click(int32_t x, int32_t y)
+{
+    return Base::p_impl_->Click(x, y);
+}
+
+AsrResult SwigToCpp<IAsrSwigTouch>::Swipe(
+    AsrPoint from,
+    AsrPoint to,
+    int32_t  duration_ms)
+{
+    return p_impl_->Swipe(from, to, duration_ms);
+}
+
+AsrResult SwigToCpp<IAsrSwigInputFactory>::CreateInstance(
+    IAsrReadOnlyString* p_json_config,
+    IAsrInput**         pp_out_input)
+{
+    ASR_UTILS_CHECK_POINTER(p_json_config)
+    ASR_UTILS_CHECK_POINTER(pp_out_input)
+
+    const auto swig_result = p_impl_->CreateInstance({p_json_config});
+    const auto exptcted_result = MakeInterop<IAsrInput>(swig_result.value);
+    if (exptcted_result)
+    {
+        const auto& value = exptcted_result.value();
+        *pp_out_input = value.Get();
+        value->AddRef();
+        return ASR_S_OK;
+    }
+    return exptcted_result.error();
 }
 
 // TODO: IAsrSwigCaptureFactory CreateInstance
@@ -489,5 +498,30 @@ AsrResult CppToSwig<IAsrReadOnlyGuidVector>::Find(const AsrGuid& guid)
     return p_impl_->Find(guid);
 }
 
+template <is_asr_swig_interface SwigT, is_asr_interface T>
+AsrResult CppToSwigInput<SwigT, T>::Click(const int32_t x, const int32_t y)
+{
+    return Base::p_impl_->Click(x, y);
+}
+
+AsrResult CppToSwig<IAsrTouch>::Swipe(
+    AsrPoint      from,
+    AsrPoint      to,
+    const int32_t duration_ms)
+{
+    return p_impl_->Swipe(from, to, duration_ms);
+}
+
+AsrRetInput CppToSwig<IAsrInputFactory>::CreateInstance(
+    AsrReadOnlyString json_config)
+{
+    AsrRetInput       swig_result{};
+    AsrPtr<IAsrInput> p_cpp_result{};
+    swig_result.error_code =
+        p_impl_->CreateInstance(json_config.Get(), p_cpp_result.Put());
+    const auto expected_result = MakeInterop<IAsrSwigInput>(p_cpp_result.Get());
+    ToAsrRetType(expected_result, swig_result);
+    return swig_result;
+}
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

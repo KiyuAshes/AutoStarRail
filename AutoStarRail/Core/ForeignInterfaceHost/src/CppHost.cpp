@@ -43,7 +43,7 @@ public:
 auto CreateForeignLanguageRuntime(const ForeignLanguageRuntimeFactoryDesc&)
     -> ASR::Utils::Expected<AsrPtr<IForeignLanguageRuntime>>
 {
-    return AsrPtr<IForeignLanguageRuntime>{new CppRuntime(), take_ownership};
+    return MakeAsrPtr<IForeignLanguageRuntime, CppRuntime>();
 }
 
 ASR_NS_CPPHOST_END

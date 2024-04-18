@@ -1,7 +1,8 @@
+#include "IAsrLogRequesterImpl.h"
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <array>
-#include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/sinks/rotating_file_sink.h>
+#include <spdlog/sinks/stdout_sinks.h>
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
@@ -24,11 +25,13 @@ void UseUtf8Console()
         == 0)
     {
         const auto error_code = ::GetLastError();
-        SPDLOG_ERROR("Failed to set console font. GetLastError = {}", error_code);
+        SPDLOG_ERROR(
+            "Failed to set console font. GetLastError = {}",
+            error_code);
     }
 }
 ASR_NS_ANONYMOUS_DETAILS_END
-#define ASR_FORCE_CONSOLE_UTF8 Details::UseUtf8Console()
+#define ASR_FORCE_CONSOLE_UTF8 ::Details::UseUtf8Console()
 #else
 #define ASR_FORCE_CONSOLE_UTF8
 #endif // ASR_WINDOWS
@@ -45,7 +48,14 @@ namespace Core
                 "logs/libAsrCore.log",
                 50 * 1024 * 1024, // 50mb
                 2);
-        const auto sinks = std::array<spdlog::sink_ptr, 2>{std_sink, file_sink};
+        const auto log_requester_sink =
+            std::make_shared<AsrLogRequesterSink<std::mutex>>();
+        g_asr_log_requester_sink = log_requester_sink;
+
+        const auto sinks = std::array<spdlog::sink_ptr, 3>{
+            std_sink,
+            file_sink,
+            log_requester_sink};
         const auto result = std::make_shared<spdlog::logger>(
             g_logger_name,
             std::begin(sinks),

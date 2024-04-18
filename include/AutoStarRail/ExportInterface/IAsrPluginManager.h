@@ -94,7 +94,7 @@ ASR_INTERFACE IAsrSwigPluginInfo : public IAsrSwigBase
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetPluginInfo)
-    IAsrSwigPluginInfo* value;
+    IAsrSwigPluginInfo* value{};
 ASR_RET_TYPE_DECLARE_END
 
 // {30CCAE61-3884-43F4-AE78-976410156370}

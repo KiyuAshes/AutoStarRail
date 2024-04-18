@@ -66,7 +66,7 @@ AsrResult AdbCaptureErrorLens::GetErrorMessage(
     AsrResult            error_code,
     IAsrReadOnlyString** out_string)
 {
-    AsrPtr locale_name_ptr{locale_name, ASR::take_ownership};
+    AsrPtr locale_name_ptr{locale_name};
     if (const auto locale_it = map_.find(locale_name_ptr);
         locale_it != map_.end())
     {

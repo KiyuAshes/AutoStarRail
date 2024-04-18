@@ -30,6 +30,14 @@ const auto value = A;
         return ASR_E_INVALID_POINTER;                                          \
     }
 
+#define ASR_UTILS_CHECK_POINTER_FOR_PLUGIN(pointer)                            \
+    if (pointer == nullptr) [[unlikely]]                                       \
+    {                                                                          \
+        ASR_LOG_ERROR("Null pointer found! Variable name is " #pointer         \
+                      ". Please check your code.");                            \
+        return ASR_E_INVALID_POINTER;                                          \
+    }
+
 #define ASR_UTILS_IASRBASE_AUTO_IMPL(class_name)                               \
 private:                                                                       \
     ASR::Utils::RefCounter<class_name> ref_counter_;                           \
@@ -106,8 +114,7 @@ class OnExit : public NonCopyableAndNonMovable
 {
     ASR_USING_BASE_CTOR(NonCopyableAndNonMovable);
 
-    [[no_unique_address]]
-    OnExitFunc on_exit_func_;
+    [[no_unique_address]] OnExitFunc on_exit_func_;
 
 public:
     template <class F>
@@ -127,9 +134,8 @@ class ScopeGuard : public NonCopyableAndNonMovable
 {
     ASR_USING_BASE_CTOR(NonCopyableAndNonMovable);
 
-    T value_;
-    [[no_unique_address]]
-    OnExitFunc on_exit_func_;
+    T                                value_;
+    [[no_unique_address]] OnExitFunc on_exit_func_;
 
 public:
     template <class F>
@@ -151,8 +157,7 @@ class ScopeGuardVoid : public NonCopyableAndNonMovable
 {
     ASR_USING_BASE_CTOR(NonCopyableAndNonMovable);
 
-    [[no_unique_address]]
-    OnExitFunc on_exit_func_;
+    [[no_unique_address]] OnExitFunc on_exit_func_;
 
 public:
     template <class FInit, class FDestroy>
@@ -238,6 +243,15 @@ public:
         return object;
     }
 };
+
+template <class C>
+C MakeEmptyCOntainerOfReservedSize(std::size_t reserved_size)
+{
+    using Allocator = typename C::allocator_type;
+    C result{std::size_t{0}, {}, Allocator{}};
+    result.reserve(reserved_size);
+    return result;
+}
 
 template <class C>
 C MakeEmptyContainer()

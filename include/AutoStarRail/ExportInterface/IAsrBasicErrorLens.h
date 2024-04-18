@@ -3,6 +3,9 @@
 
 #include <AutoStarRail/PluginInterface/IAsrErrorLens.h>
 
+ASR_INTERFACE IAsrErrorLens;
+ASR_INTERFACE IAsrSwigErrorLens;
+
 // {813FD58D-5632-4A43-A87E-26E412D9EADD}
 ASR_DEFINE_GUID(
     ASR_IID_BASIC_ERROR_LENS,
@@ -57,7 +60,7 @@ ASR_INTERFACE IAsrSwigBasicErrorLens : public IAsrSwigErrorLens
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetBasicErrorLens)
-    IAsrSwigErrorLens* value;
+    IAsrSwigErrorLens* value{};
 ASR_RET_TYPE_DECLARE_END
 
 SWIG_IGNORE(CreateIAsrBasicErrorLens)

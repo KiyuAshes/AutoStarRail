@@ -13,7 +13,7 @@ AsrResult AddTask(Map& map, std::pair<AsrGuid, T*> kv)
     {
         return ASR_E_DUPLICATE_ELEMENT;
     }
-    map[kv.first] = AsrPtr<T>{kv.second, take_ownership};
+    map[kv.first] = AsrPtr<T>{kv.second};
     return ASR_S_OK;
 }
 
@@ -36,16 +36,12 @@ AsrResult TaskManager::Register(IAsrTask* p_task, AsrGuid guid)
 
 AsrResult TaskManager::Register(IAsrSwigTask* p_swig_task, AsrGuid guid)
 {
-    AsrPtr<IAsrTask> p_task{};
-
-    try
+    auto exptected_p_tast = MakeInterop<IAsrTask>(p_swig_task);
+    if (!exptected_p_tast)
     {
-        p_task = MakeAsrPtr<IAsrTask, SwigToCpp<IAsrSwigTask>>(p_swig_task);
+        return exptected_p_tast.error();
     }
-    catch (const std::bad_alloc&)
-    {
-        return ASR_E_OUT_OF_MEMORY;
-    }
+    const AsrPtr<IAsrTask> p_task = std::move(exptected_p_tast.value());
 
     const auto error_code =
         Details::AddTask(map_, std::make_pair(guid, p_task.Get()));

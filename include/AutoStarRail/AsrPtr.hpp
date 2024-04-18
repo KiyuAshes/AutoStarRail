@@ -52,7 +52,7 @@ protected:
 public:
     AsrPtr() noexcept : ptr_(nullptr) {}
     AsrPtr(decltype(nullptr)) noexcept : ptr_(nullptr) {}
-    AsrPtr(T* p, take_ownership_t) : ptr_(p) { InternalAddRef(); }
+    AsrPtr(T* p) : ptr_(p) { InternalAddRef(); }
     AsrPtr(const AsrPtr& other) : ptr_(other.Get()) { InternalAddRef(); }
     template <class U>
     AsrPtr(const AsrPtr<U>& other) : ptr_(other.Get())
@@ -125,7 +125,7 @@ public:
             {
                 return query_interface_result;
             }
-            other = {static_cast<Other*>(result), take_ownership};
+            other = {static_cast<Other*>(result)};
             return ASR_S_OK;
         }
         return ASR_E_INVALID_POINTER;
@@ -175,13 +175,13 @@ public:
 template <class T, class... Args>
 auto MakeAsrPtr(Args&&... args)
 {
-    return AsrPtr<T>(new T(std::forward<Args>(args)...), take_ownership);
+    return AsrPtr<T>(new T(std::forward<Args>(args)...));
 }
 
 template <class Base, class T, class... Args>
 auto MakeAsrPtr(Args&&... args)
 {
-    return AsrPtr<Base>(new T(std::forward<Args>(args)...), take_ownership);
+    return AsrPtr<Base>(new T(std::forward<Args>(args)...));
 }
 
 #if __cplusplus >= 201703L

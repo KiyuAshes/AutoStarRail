@@ -138,7 +138,7 @@ AsrResult AsrBasicErrorLensImpl::GetErrorMessage(
 {
     ASR_UTILS_CHECK_POINTER(out_string)
 
-    AsrPtr locale_name_holder{locale_name, take_ownership};
+    AsrPtr locale_name_holder{locale_name};
 
     const auto locale_it = map_.find(locale_name_holder);
     if (locale_it != map_.end())
@@ -170,10 +170,10 @@ AsrResult AsrBasicErrorLensImpl::RegisterErrorMessage(
     AsrResult           error_code,
     IAsrReadOnlyString* p_error_message)
 {
-    AsrPtr locale_name_holder{locale_name, take_ownership};
+    AsrPtr locale_name_holder{locale_name};
     try
     {
-        AsrPtr error_message_holder = {p_error_message, take_ownership};
+        AsrPtr error_message_holder = {p_error_message};
         map_[std::move(locale_name_holder)][error_code] = error_message_holder;
     }
     catch (const std::bad_alloc&)

@@ -40,9 +40,8 @@ public:
     // IAsrPlugin
     AsrResult EnumFeature(const size_t index, AsrPluginFeature* p_out_feature)
         override;
-    AsrResult CreateFeatureInterface(
-        AsrPluginFeature feature,
-        void**           pp_out_interface) override;
+    AsrResult CreateFeatureInterface(size_t index, void** pp_out_interface)
+        override;
     AsrResult CanUnloadNow() override;
 };
 

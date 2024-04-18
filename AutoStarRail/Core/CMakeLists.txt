@@ -1,10 +1,50 @@
 add_library(AsrCoreObjects OBJECT)
+add_custom_target(AsrCoreObjectsPreBuild ALL)
+add_dependencies(AsrCoreObjects AsrCoreObjectsPreBuild)
+add_dependencies(AsrCoreObjectsPreBuild AsrAutoCopyDll)
+
+message("Python3 is required because we need to run script.")
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+# 枚举所有头文件
+file(GLOB_RECURSE ASR_EXPORT_HEADERS "${CMAKE_SOURCE_DIR}/include/AutoStarRail/*")
+set(DAS_AUTOGEN_OUTPUT_FILES
+    "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/OfficialIids.h"
+    "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/OfficialIids.cpp"
+    "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/CppSwigBiMap.h"
+    "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/CppSwigBiMap.cpp"
+    # "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/CppSwigInteropFactory.h"
+    # "${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen/CppSwigInteropFactory.cpp"
+)
+add_custom_command(
+    OUTPUT ${DAS_AUTOGEN_OUTPUT_FILES}
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/generator.py -I${CMAKE_SOURCE_DIR}/include/AutoStarRail -O${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen -M0
+    DEPENDS ${ASR_EXPORT_HEADERS} ${CMAKE_SOURCE_DIR}/tools/generator.py
+    COMMENT "Scan header and generate sources."
+)
+add_custom_command(
+    TARGET AsrCoreObjectsPreBuild PRE_BUILD
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/generator.py -I${CMAKE_SOURCE_DIR}/include/AutoStarRail -O${CMAKE_SOURCE_DIR}/AutoStarRail/Utils/include/AutoStarRail/Utils -M1
+    DEPENDS ${ASR_EXPORT_HEADERS} ${CMAKE_SOURCE_DIR}/tools/generator.py
+    COMMENT "Generate PresetTypeInheritanceInfo.h."
+)
+
+message("Generating source...")
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/generator.py -I${CMAKE_SOURCE_DIR}/include/AutoStarRail -O${CMAKE_BINARY_DIR}/DAS/include/DAS/_autogen -M0
+)
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/generator.py -I${CMAKE_SOURCE_DIR}/include/AutoStarRail -O${CMAKE_SOURCE_DIR}/AutoStarRail/Utils/include/AutoStarRail/Utils -M1
+)
+
 target_compile_options(AsrCoreObjects PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /MP>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
 )
 set_property(TARGET AsrCoreObjects PROPERTY POSITION_INDEPENDENT_CODE ON)
 
+target_include_directories(AsrCoreObjects PUBLIC ${CMAKE_BINARY_DIR}/DAS/include/)
+target_sources(AsrCoreObjects PRIVATE ${DAS_AUTOGEN_OUTPUT_FILES})
 target_compile_definitions(AsrCoreObjects PRIVATE -DASR_BUILD_SHARED)
 target_link_libraries(AsrCoreObjects PUBLIC
     Boost::filesystem

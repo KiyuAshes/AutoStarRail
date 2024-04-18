@@ -35,7 +35,7 @@ else ()
     endif ()
 endif ()
 
-add_custom_target(AsrAutoCopyDll ALL DEPENDS AsrUtils)
+add_custom_target(AsrAutoCopyDll ALL)
 
 set(CMAKE_CXX_STANDARD 20)
 add_library(Asr3rdParty INTERFACE)
@@ -343,25 +343,23 @@ if (WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         endif ()
     endif ()
 
-    asr_add_auto_copy_dll_path(${ASR_BUNDLED_ICU_LIBRARIES})
+    asr_add_auto_copy_dll_path("${ASR_BUNDLED_ICU_LIBRARIES}")
 endif ()
 
 find_package(ICU COMPONENTS data i18n uc REQUIRED)
 target_link_libraries(Asr3rdParty INTERFACE ICU::data ICU::i18n ICU::uc)
 
 function(_download_and_config_boost)
-    message(STATUS "Downloading and configuring boost 1.82.")
+    message(STATUS "Downloading and configuring boost 1.84.")
 
     set(BUILD_SHARED_LIBS OFF)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     set(BUILD_TESTING OFF)
 
     FetchContent_Declare(
-            AsrBoost
-            URL ${GITHUB_MIRROR_URL}/boostorg/boost/releases/download/boost-1.82.0/boost-1.82.0.7z
-            URL_HASH SHA256=AB41BF39435E5513A6141916B972B785B9A3096D9C84A7D943F607BCC3BC1132
-            PATCH_COMMAND ${CMAKE_COMMAND} -E copy
-            "${CMAKE_SOURCE_DIR}/cmake/AsrBoostContext182Patch.cmake" <SOURCE_DIR>/libs/context/CMakeLists.txt)
+        AsrBoost
+        URL ${GITHUB_MIRROR_URL}/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.7z
+        URL_HASH SHA256=CE132F85FC706AA8B5C7E6E52A8338DE33A688E92E7C8FADA3713194B109232E)
 
     # See [Symbol redefinition on latest mingw gcc](https://github.com/boostorg/stacktrace/issues/133)
     # You should use boost from msys package manager to avoid this error.
@@ -391,7 +389,8 @@ if (${ASR_USE_BUNDLED_BOOST})
             Boost::bimap
             Boost::container_hash
             Boost::pfr
-            Boost::nowide)
+            Boost::nowide
+            Boost::circular_buffer)
 else ()
     find_package(Boost 1.82 COMPONENTS filesystem url)
 
@@ -561,12 +560,14 @@ message(STATUS "The third-party libraries listed later are only used for AsrHttp
 
 message(STATUS "Downloading and configuring oatpp 1.3.0.")
 
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+set(OATPP_BUILD_TESTS OFF)
+
 FetchContent_Declare(
     oatpp
     URL ${GITHUB_MIRROR_URL}/oatpp/oatpp/archive/refs/tags/1.3.0.tar.gz
 )
-
-set(OATPP_BUILD_TESTS OFF)
 
 FetchContent_MakeAvailable(oatpp)
 

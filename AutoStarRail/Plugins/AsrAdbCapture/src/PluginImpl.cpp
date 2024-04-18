@@ -1,11 +1,12 @@
 #include "AutoStarRail/IAsrBase.h"
-#include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
+#include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
 #define ASR_BUILD_SHARED
 
 #include "PluginImpl.h"
+
 #include <stdexcept>
 
 ASR_NS_BEGIN
@@ -42,14 +43,16 @@ AsrResult AdbCapturePlugin::EnumFeature(
 }
 
 AsrResult AdbCapturePlugin::CreateFeatureInterface(
-    AsrPluginFeature feature,
-    void**           pp_out_interface)
+    size_t index,
+    void** pp_out_interface)
 {
     // TODO: Create instance for every feature.
-    switch (feature)
+    switch (index)
     {
-    case ASR_PLUGIN_FEATURE_CAPTURE_FACTORY:
-    case ASR_PLUGIN_FEATURE_ERROR_LENS:
+        // Capture Factory
+    case 0:
+        // Error lens
+    case 1:
     default:
         *pp_out_interface = nullptr;
         return ASR_E_OUT_OF_RANGE;

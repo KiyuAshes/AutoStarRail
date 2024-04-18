@@ -60,7 +60,7 @@ ASR_INTERFACE IAsrCaptureFactory : public IAsrTypeInfo
 
 ASR_INTERFACE IAsrSwigCapture;
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetCapture)
-    IAsrSwigCapture* value;
+    IAsrSwigCapture* value{};
 ASR_RET_TYPE_DECLARE_END
 
 // {FC326FB1-9669-4D41-8003-27709071DA10}

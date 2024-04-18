@@ -37,7 +37,7 @@ auto CreateForeignLanguageRuntime(
     -> ASR::Utils::Expected<AsrPtr<IForeignLanguageRuntime>>
 {
     const auto                      p_runtime = new PythonRuntime{};
-    AsrPtr<IForeignLanguageRuntime> result{p_runtime, take_ownership};
+    AsrPtr<IForeignLanguageRuntime> result{p_runtime};
     return result;
 }
 

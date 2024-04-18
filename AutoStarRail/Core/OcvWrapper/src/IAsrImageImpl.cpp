@@ -57,7 +57,7 @@ IAsrImageImpl::IAsrImageImpl(
     int         type,
     void*       p_data,
     IAsrMemory* p_asr_data)
-    : p_memory_{p_asr_data, take_ownership}, mat_{height, width, type, p_data}
+    : p_memory_{p_asr_data}, mat_{height, width, type, p_data}
 {
 }
 

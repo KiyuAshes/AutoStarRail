@@ -169,19 +169,19 @@ auto GetPredefinedErrorMessage(
 auto CreateInterface(
     const char*            u8_plugin_name,
     const CommonPluginPtr& common_p_plugin,
-    AsrPluginFeature       feature) -> std::optional<CommonBasePtr>
+    size_t                 index) -> std::optional<CommonBasePtr>
 {
     constexpr auto& CREATE_FEATURE_INTERFACE_FAILED_MESSAGE =
         "Error happened when calling p_plugin->CreateFeatureInterface."
         "Error code = {}. Plugin Name = {}.";
     return std::visit(
         ASR::Utils::overload_set{
-            [feature, u8_plugin_name](
+            [index, u8_plugin_name](
                 AsrPtr<IAsrPlugin> p_plugin) -> std::optional<CommonBasePtr>
             {
                 AsrPtr<IAsrBase> result{};
                 if (const auto cfi_result = p_plugin->CreateFeatureInterface(
-                        feature,
+                        index,
                         result.PutVoid());
                     IsFailed(cfi_result))
                 {
@@ -193,11 +193,10 @@ auto CreateInterface(
                 }
                 return result;
             },
-            [feature, u8_plugin_name](
+            [index, u8_plugin_name](
                 AsrPtr<IAsrSwigPlugin> p_plugin) -> std::optional<CommonBasePtr>
             {
-                const auto cfi_result =
-                    p_plugin->CreateFeatureInterface(feature);
+                const auto cfi_result = p_plugin->CreateFeatureInterface(index);
                 if (IsFailed(cfi_result.error_code))
                 {
                     ASR_CORE_LOG_ERROR(
@@ -285,7 +284,7 @@ ASR_CORE_FOREIGNINTERFACEHOST_NS_END
 AsrResult AsrGetErrorMessage(
     IAsrTypeInfo*        p_error_generator,
     AsrResult            error_code,
-    IAsrReadOnlyString** pp_out_error_explanation)
+    IAsrReadOnlyString** pp_out_error_message)
 {
     AsrGuid guid;
     if (const auto get_guid_result = p_error_generator->GetGuid(&guid);
@@ -297,12 +296,12 @@ AsrResult AsrGetErrorMessage(
     return Asr::Core::ForeignInterfaceHost::g_plugin_manager.GetErrorMessage(
         guid,
         error_code,
-        pp_out_error_explanation);
+        pp_out_error_message);
 }
 
 AsrResult AsrGetPredefinedErrorMessage(
     AsrResult            error_code,
-    IAsrReadOnlyString** pp_out_error_explanation)
+    IAsrReadOnlyString** pp_out_error_message)
 {
     ASR::AsrPtr<IAsrReadOnlyString> p_default_locale_name{};
     std::ignore = ::AsrGetDefaultLocale(p_default_locale_name.Put());
@@ -314,7 +313,7 @@ AsrResult AsrGetPredefinedErrorMessage(
     {
         auto* const p_result = result.value().Get();
         p_result->AddRef();
-        *pp_out_error_explanation = p_result;
+        *pp_out_error_message = p_result;
         return ASR_S_OK;
     }
     return result.error();
@@ -464,11 +463,9 @@ auto QueryErrorLensFrom(
                     return tl::make_unexpected(qi_result.error_code);
                 }
 
-                AsrPtr<IAsrErrorLens> result{
-                    new SwigToCpp<IAsrSwigErrorLens>{
-                        static_cast<IAsrSwigErrorLens*>(
-                            qi_result.value.GetVoid())},
-                    take_ownership};
+                AsrPtr<IAsrErrorLens> result{new SwigToCpp<IAsrSwigErrorLens>{
+                    static_cast<IAsrSwigErrorLens*>(
+                        qi_result.value.GetVoid())}};
 
                 qi_result.value.Get()->Release();
 
@@ -545,8 +542,7 @@ auto RegisterTaskFromPlugin(T& task_manager, GetInterfaceFromPluginParam param)
                     return tl::make_unexpected(qi_result.error_code);
                 }
                 return AsrPtr{
-                    static_cast<IAsrSwigTask*>(qi_result.value.GetVoid()),
-                    take_ownership};
+                    static_cast<IAsrSwigTask*>(qi_result.value.GetVoid())};
             }},
         common_p_base);
     if (!expected_common_p_task)
@@ -558,31 +554,39 @@ auto RegisterTaskFromPlugin(T& task_manager, GetInterfaceFromPluginParam param)
         ASR::Utils::overload_set{
             [u8_plugin_name, &task_manager](const AsrPtr<IAsrTask>& p_task)
             {
-                const auto guid = Utils::GetGuidFrom(
-                    p_task.Get(),
-                    [u8_plugin_name](const auto gg_result)
-                    {
-                        ASR_CORE_LOG_ERROR(
-                            "Get guid in IAsrTask object failed."
-                            "Plugin name = {}. Error Code = {}.",
-                            u8_plugin_name,
-                            gg_result);
-                    });
-                return task_manager.Register(p_task.Get(), guid);
+                try
+                {
+                    const auto guid = Utils::GetGuidFrom(p_task.Get());
+                    return task_manager.Register(p_task.Get(), guid);
+                }
+                catch (const AsrException& ex)
+                {
+                    ASR_CORE_LOG_ERROR(
+                        "Get guid in IAsrTask object failed."
+                        "Plugin name = {}. Error Code = {}. Error message = {}.",
+                        u8_plugin_name,
+                        ex.GetErrorCode(),
+                        ex.what());
+                    return ex.GetErrorCode();
+                }
             },
             [u8_plugin_name, &task_manager](const AsrPtr<IAsrSwigTask>& p_task)
             {
-                const auto guid = Utils::GetGuidFrom(
-                    p_task.Get(),
-                    [u8_plugin_name](const auto gg_result)
-                    {
-                        ASR_CORE_LOG_ERROR(
-                            "Get guid in IAsrSwigTask object failed."
-                            "Plugin name = {}. Error Code = {}.",
-                            u8_plugin_name,
-                            gg_result);
-                    });
-                return task_manager.Register(p_task.Get(), guid);
+                try
+                {
+                    const auto guid = Utils::GetGuidFrom(p_task.Get());
+                    return task_manager.Register(p_task.Get(), guid);
+                }
+                catch (const AsrException& ex)
+                {
+                    ASR_CORE_LOG_ERROR(
+                        "Get guid in IAsrSwigTask object failed."
+                        "Plugin name = {}. Error Code = {}. Error message = {}.",
+                        u8_plugin_name,
+                        ex.GetErrorCode(),
+                        ex.what());
+                    return ex.GetErrorCode();
+                }
             }},
         expected_common_p_task.value());
 }
@@ -616,6 +620,61 @@ auto RegisterCaptureFactoryFromPlugin(
     return ASR_S_OK;
 }
 
+template <class T>
+auto RegisterInputFactoryFromPlugin(
+    T&                          input_factory_manager,
+    GetInterfaceFromPluginParam param) -> AsrResult
+{
+    const auto& [u8_plugin_name, common_p_base] = param;
+
+    using CommonInputFactoryPointer =
+        std::variant<AsrPtr<IAsrInputFactory>, AsrPtr<IAsrSwigInputFactory>>;
+    using ExpectedCommonInputFactoryPointer =
+        ASR::Utils::Expected<CommonInputFactoryPointer>;
+
+    ExpectedCommonInputFactoryPointer expected_common_p_input_factory =
+        std::visit(
+            ASR::Utils::overload_set{
+                [](const AsrPtr<IAsrBase>& p_base)
+                    -> ExpectedCommonInputFactoryPointer
+                {
+                    AsrPtr<IAsrInputFactory> p_task{};
+                    if (const auto qi_result = p_base.As(p_task);
+                        IsFailed(qi_result))
+                    {
+                        return tl::make_unexpected(qi_result);
+                    }
+                    return p_task;
+                },
+                [](const AsrPtr<IAsrSwigBase>& p_base)
+                    -> ExpectedCommonInputFactoryPointer
+                {
+                    const auto qi_result = p_base->QueryInterface(
+                        AsrIidOf<IAsrSwigInputFactory>());
+                    if (IsFailed(qi_result.error_code))
+                    {
+                        return tl::make_unexpected(qi_result.error_code);
+                    }
+                    return AsrPtr{static_cast<IAsrSwigInputFactory*>(
+                        qi_result.value.GetVoid())};
+                }},
+            common_p_base);
+
+    if (!expected_common_p_input_factory)
+    {
+        return expected_common_p_input_factory.error();
+    }
+
+    return std::visit(
+        Utils::overload_set{
+            [&input_factory_manager](const AsrPtr<IAsrInputFactory>& p_factory)
+            { return input_factory_manager.Register(p_factory.Get()); },
+            [&input_factory_manager](
+                const AsrPtr<IAsrSwigInputFactory>& p_factory)
+            { return input_factory_manager.Register(p_factory.Get()); }},
+        expected_common_p_input_factory.value());
+}
+
 ASR_NS_ANONYMOUS_DETAILS_END
 
 IAsrPluginManagerImpl::IAsrPluginManagerImpl(PluginManager& impl) : impl_{impl}
@@ -643,6 +702,7 @@ AsrResult PluginManager::AddInterface(
     const Plugin& plugin,
     const char*   u8_plugin_name)
 {
+    AsrResult   result{ASR_S_OK};
     const auto& common_p_plugin = plugin.p_plugin_;
     const auto& opt_resource_path = plugin.sp_desc_->opt_resource_path;
 
@@ -651,11 +711,13 @@ AsrResult PluginManager::AddInterface(
     {
         return expected_features.error();
     }
+    size_t index = 0;
     for (const auto& features = expected_features.value();
          const auto  feature : features)
     {
         const auto opt_common_p_base =
-            Details::CreateInterface(u8_plugin_name, common_p_plugin, feature);
+            Details::CreateInterface(u8_plugin_name, common_p_plugin, index);
+        ++index;
 
         if (!opt_common_p_base)
         {
@@ -707,13 +769,14 @@ AsrResult PluginManager::AddInterface(
                     "Error code = {}.",
                     u8_plugin_name,
                     relfp_result);
+                result = ASR_S_FALSE;
             }
             break;
         }
         case ASR_PLUGIN_FEATURE_TASK:
         {
             if (const auto rtfp_result = Details::RegisterTaskFromPlugin(
-                    asr_task_interface_manager_,
+                    task_manager_,
                     {u8_plugin_name, opt_common_p_base.value()});
                 IsFailed(rtfp_result))
             {
@@ -722,6 +785,7 @@ AsrResult PluginManager::AddInterface(
                     "Error code = {}.",
                     u8_plugin_name,
                     rtfp_result);
+                result = ASR_S_FALSE;
             }
             break;
         }
@@ -738,6 +802,24 @@ AsrResult PluginManager::AddInterface(
                     "Error code = {}.",
                     u8_plugin_name,
                     rcffp_result);
+                result = ASR_S_FALSE;
+            }
+            break;
+        }
+        case ASR_PLUGIN_FEATURE_INPUT_FACTORY:
+        {
+            if (const auto riffp_result =
+                    Details::RegisterInputFactoryFromPlugin(
+                        input_factory_manager_,
+                        {u8_plugin_name, opt_common_p_base.value()});
+                IsFailed(riffp_result))
+            {
+                ASR_CORE_LOG_ERROR(
+                    "Can not get input factory interface from plugin {}. "
+                    "Error code = {}.",
+                    u8_plugin_name,
+                    riffp_result);
+                result = ASR_S_FALSE;
             }
             break;
         }
@@ -745,7 +827,7 @@ AsrResult PluginManager::AddInterface(
             throw ASR::Utils::UnexpectedEnumException::FromEnum(feature);
         }
     }
-    return ASR_E_NO_IMPLEMENTATION;
+    return result;
 }
 
 void PluginManager::RegisterInterfaceStaticStorage(
@@ -843,7 +925,7 @@ struct FailedPluginProxy : public ASR::Utils::NonCopyableAndNonMovable
                                 result.Put());
                             return result;
                         }(error_code)},
-          name{plugin_name, take_ownership}, error_code{error_code}
+          name{plugin_name}, error_code{error_code}
     {
     }
 

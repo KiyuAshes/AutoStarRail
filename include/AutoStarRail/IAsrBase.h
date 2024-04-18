@@ -3,14 +3,25 @@
 
 #include <AutoStarRail/AsrConfig.h>
 #include <AutoStarRail/AsrGuidHolder.h>
-#include <new>
+#include <type_traits>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
+template <class T>
+void _asr_internal_Release(T& resource) noexcept
+{
+    if constexpr (std::is_pointer_v<
+                      std::remove_reference_t<decltype(resource)>>)
+    {
+        resource->Release();
+    }
+}
+
 #define ASR_RET_TYPE_DECLARE_BEGIN(type_name)                                  \
     struct type_name                                                           \
     {                                                                          \
+        ~type_name() { _asr_internal_Release(value); }                         \
         AsrResult error_code{ASR_E_UNDEFINED_RETURN_VALUE};
 
 #define ASR_RET_TYPE_DECLARE_END                                               \
@@ -93,6 +104,7 @@
 #define ASR_E_INVALID_SIZE ASR_E_RESERVED - 24
 #define ASR_E_OPENCV_ERROR ASR_E_RESERVED - 25
 #define ASR_E_ONNX_RUNTIME_ERROR ASR_E_RESERVED - 26
+#define ASR_E_TIMEOUT ASR_E_RESERVED - 27
 
 #ifdef ASR_WINDOWS
 // MSVC
@@ -220,7 +232,7 @@ public:
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetSwigBase)
-    AsrSwigBaseWrapper value;
+    AsrSwigBaseWrapper value{};
 ASR_RET_TYPE_DECLARE_END
 
 // {FAF64DEB-0C0A-48CC-BA10-FCDE420350A2}

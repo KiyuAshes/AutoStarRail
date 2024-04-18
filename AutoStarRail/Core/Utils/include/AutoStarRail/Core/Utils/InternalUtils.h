@@ -2,6 +2,7 @@
 #define ASR_CORE_UTILS_INTERNALUTILS_H
 
 #include <AutoStarRail/AsrString.hpp>
+#include <AutoStarRail/Core/Exceptions/AsrException.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
 #include <AutoStarRail/Core/Utils/Config.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
@@ -16,16 +17,15 @@ inline void* VoidP(void* pointer) { return pointer; }
 auto MakeAsrReadOnlyStringFromUtf8(std::string_view u8_string)
     -> ASR::Utils::Expected<AsrPtr<IAsrReadOnlyString>>;
 
-template <class T, class Callable>
-auto GetGuidFrom(T* p_object, Callable on_error) -> AsrGuid
+template <class T>
+auto GetGuidFrom(T* p_object) -> AsrGuid
 {
     if constexpr (ASR::Core::ForeignInterfaceHost::is_asr_swig_interface<T>)
     {
         const auto ret_guid = p_object->GetGuid();
         if (IsFailed(ret_guid.error_code))
         {
-            on_error(ret_guid.error_code);
-            return {};
+            AsrException::Throw(ret_guid.error_code, p_object);
         }
         return ret_guid.value;
     }
@@ -35,8 +35,7 @@ auto GetGuidFrom(T* p_object, Callable on_error) -> AsrGuid
         if (const auto gg_result = p_object->GetGuid(&guid);
             IsFailed(gg_result))
         {
-            on_error(gg_result);
-            return {};
+            AsrException::Throw(gg_result, p_object);
         }
         return guid;
     }
@@ -46,9 +45,8 @@ auto GetGuidFrom(T* p_object, Callable on_error) -> AsrGuid
     }
 }
 
-template <class T, class Callable>
-auto GetRuntimeClassNameFrom(T* p_object, Callable on_error)
-    -> AsrPtr<IAsrReadOnlyString>
+template <class T>
+auto GetRuntimeClassNameFrom(T* p_object) -> AsrPtr<IAsrReadOnlyString>
 {
     if constexpr (ASR::Core::ForeignInterfaceHost::is_asr_swig_interface<T>)
     {
@@ -56,8 +54,7 @@ auto GetRuntimeClassNameFrom(T* p_object, Callable on_error)
         const auto                 ret_name = p_object->GetRuntimeClassName();
         if (IsFailed(ret_name.error_code))
         {
-            on_error(ret_name.error_code);
-            return {};
+            AsrException::Throw(ret_name.error_code, p_object);
         }
         ret_name.value.GetImpl(result.Put());
         return result;
@@ -68,7 +65,7 @@ auto GetRuntimeClassNameFrom(T* p_object, Callable on_error)
         if (const auto error_code = p_object->GetRuntimeClassName(result.Put());
             IsFailed(error_code)) [[unlikely]]
         {
-            on_error(error_code);
+            AsrException::Throw(error_code, p_object);
         }
         return result;
     }

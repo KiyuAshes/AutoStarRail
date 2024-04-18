@@ -67,7 +67,7 @@ ASR_INTERFACE IAsrSwigCaptureManager : public IAsrSwigBase
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetCaptureManager)
-    IAsrSwigCaptureManager* value;
+    IAsrSwigCaptureManager* value{};
 ASR_RET_TYPE_DECLARE_END
 
 SWIG_IGNORE(CreateIAsrCaptureManager)

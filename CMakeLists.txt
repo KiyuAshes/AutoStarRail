@@ -2,6 +2,13 @@ cmake_minimum_required(VERSION 3.21)
 
 project(AutoStarRail LANGUAGES CXX VERSION 0.1)
 
+if(MSVC)
+    if(MSVC_VERSION LESS 1939)
+        message(FATAL_ERROR "MSVC STL has bug in this_thread::sleep_until and this_thread::sleep_for.\n"
+            "See https://github.com/microsoft/STL/pull/3914 https://github.com/microsoft/STL/wiki/Changelog#expected-in-vs-2022-179-preview-2")
+    endif()
+endif()
+
 if(WIN32)
     set(ASR_LIB_PREFIX "Asr")
 else()
@@ -48,6 +55,9 @@ option(ASR_USE_CCACHE "Using CCACHE" OFF)
 option(ASR_USE_BUNDLED_EIGEN "强制使用下载的Eigen源码构建OpenCV" OFF)
 option(ASR_USE_BUNDLED_BOOST "强制使用下载的Boost源码构建" OFF)
 option(ASR_USE_BUNDLED_OPENCV "强制使用下载的OpenCV源码构建" OFF)
+
+option(ASR_USE_LLD "使用lld进行链接（实验性）" OFF)
+option(ASR_USE_MOLD "使用mold进行链接（实验性）" OFF)
 
 if (NOT DEFINED GITHUB_MIRROR_URL)
     set(GITHUB_MIRROR_URL "https://github.com")
@@ -101,6 +111,14 @@ if (${ASR_USE_LLD} AND NOT MSVC)
             LLD_FOUND
             lld REQUIRED)
     add_compile_options("-fuse-ld=lld")
+endif ()
+
+if (${ASR_USE_MOLD} AND NOT MSVC)
+    option(ASR_MOLD_EXECUTABLE "mold")
+    find_program(
+            MOLD_FOUND
+            mold REQUIRED)
+    add_compile_options("-fuse-ld=mold")
 endif ()
 
 configure_file(${CMAKE_SOURCE_DIR}/cmake/CTestCustom.cmake ${CMAKE_BINARY_DIR} @ONLY)

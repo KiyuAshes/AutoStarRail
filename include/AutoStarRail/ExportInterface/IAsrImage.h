@@ -119,7 +119,7 @@ public:
 };
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetImage)
-    AsrSwigImage value;
+    AsrSwigImage value{};
 ASR_RET_TYPE_DECLARE_END
 
 ASR_RET_TYPE_DECLARE_BEGIN(AsrRetRect)
