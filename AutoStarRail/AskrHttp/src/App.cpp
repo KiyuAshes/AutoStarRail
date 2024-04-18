@@ -1,7 +1,6 @@
 #include "./AppComponent.hpp"
 #include "./controller/MyController.hpp"
 
-
 #include "oatpp/network/Server.hpp"
 
 #include <iostream>
