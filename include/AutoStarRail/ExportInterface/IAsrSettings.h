@@ -1,8 +1,11 @@
 #ifndef ASR_STEEINGS_H
 #define ASR_STEEINGS_H
 
-#include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/AsrString.hpp>
+#include <AutoStarRail/IAsrBase.h>
+
+ASR_INTERFACE IAsrTypeInfo;
+ASR_INTERFACE IAsrSwigTypeInfo;
 
 typedef enum AsrType
 {
@@ -34,9 +37,9 @@ ASR_INTERFACE IAsrSettings : public IAsrBase
     ASR_METHOD GetString(
         IAsrReadOnlyString * key,
         IAsrReadOnlyString * *pp_out_string) = 0;
-    ASR_METHOD GetBool(IAsrReadOnlyString * key, bool* pp_out_bool) = 0;
-    ASR_METHOD GetInt(IAsrReadOnlyString * key, int64_t * pp_out_int) = 0;
-    ASR_METHOD GetFloat(IAsrReadOnlyString * key, float* pp_out_float) = 0;
+    ASR_METHOD GetBool(IAsrReadOnlyString * key, bool* p_out_bool) = 0;
+    ASR_METHOD GetInt(IAsrReadOnlyString * key, int64_t * p_out_int) = 0;
+    ASR_METHOD GetFloat(IAsrReadOnlyString * key, float* p_out_float) = 0;
 };
 
 // {0552065B-8FDF-46C7-82BA-703665E769EF}
@@ -62,9 +65,50 @@ ASR_INTERFACE IAsrSwigSettings : public IAsrSwigBase
     virtual AsrRetFloat          GetFloat(const AsrReadOnlyString key) = 0;
 };
 
-ASR_API IAsrSwigSettings* GetIAsrSwigSettings();
+#ifndef SWIG
 
-SWIG_IGNORE(GetIAsrSettings)
-ASR_C_API AsrResult GetIAsrSettings(IAsrSettings** pp_settings);
+// {56E5529D-C4EB-498D-BFAA-EFEFA20EB02A}
+ASR_DEFINE_GUID(
+    ASR_IID_SETTINGS_FOR_UI,
+    IAsrSettingsForUi,
+    0x56e5529d,
+    0xc4eb,
+    0x498d,
+    0xbf,
+    0xaa,
+    0xef,
+    0xef,
+    0xa2,
+    0xe,
+    0xb0,
+    0x2a);
+ASR_INTERFACE IAsrSettingsForUi : public IAsrBase
+{
+    ASR_METHOD ToString(IAsrReadOnlyString * *pp_out_string) = 0;
+    ASR_METHOD FromString(IAsrReadOnlyString * p_in_settings) = 0;
+    ASR_METHOD SaveTo(IAsrReadOnlyString* p_path) = 0;
+};
+
+/**
+ * @brief 使用指定路径初始化Core设置，调用将从指定路径加载设置。
+ *
+ * @param p_settings_path 设置文件路径
+ * @param pp_out_settings
+ * @return AsrResult
+ */
+ASR_C_API AsrResult InitializeGlobalSettings(
+    IAsrReadOnlyString* p_settings_path,
+    IAsrSettingsForUi** pp_out_settings);
+
+#endif // SWIG
+
+ASR_C_API AsrResult
+GetGlobalSettings(IAsrTypeInfo* p_plugin, IAsrSettings** pp_out_settings);
+
+ASR_RET_TYPE_DECLARE_BEGIN(AsrRetGlobalSettings)
+    IAsrSwigSettings* value{nullptr};
+ASR_RET_TYPE_DECLARE_END
+
+ASR_API AsrRetGlobalSettings GetGlobalSettings(IAsrSwigTypeInfo* p_plugin);
 
 #endif // ASR_STEEINGS_H

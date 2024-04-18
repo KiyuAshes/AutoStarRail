@@ -8,6 +8,7 @@ IAsrLogRequesterImpl::IAsrLogRequesterImpl(
     SpLogRequesterSink sp_sink)
     : buffer_{max_buffer_size}, sp_log_requester_sink_{sp_sink}
 {
+    sp_sink->Add(this);
     ASR_CORE_LOG_INFO(
         "Initialize IAsrLogRequesterImpl successfully! This = {}. max_buffer_size = {}.",
         ASR::Utils::VoidP(this),
@@ -30,6 +31,12 @@ AsrResult IAsrLogRequesterImpl::RequestOne(IAsrLogReader* p_reader)
 {
     std::lock_guard guard{mutex_};
 
+    if (buffer_.empty())
+    {
+        return ASR_E_OUT_OF_RANGE;
+    }
+
+    ASR_UTILS_CHECK_POINTER(p_reader);
     const auto& message = buffer_.front();
     const auto  result = p_reader->ReadOne(message->c_str());
     buffer_.pop_front();

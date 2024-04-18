@@ -50,8 +50,9 @@ protected:
         // the message before sending it to its final destination:
         spdlog::memory_buf_t formatted;
         spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
+        auto       message = ASR::FmtCommon::to_string(formatted);
         const auto sp_message =
-            std::make_shared<std::string>(ASR::FmtCommon::to_string(formatted));
+            std::make_shared<std::string>(std::move(message));
         std::lock_guard guard{mutex_};
         for (const auto& p_requester : logger_requester_vector_)
         {
@@ -69,6 +70,12 @@ public:
     {
         std::lock_guard lock_guard{mutex_};
         std::erase(logger_requester_vector_, p_requester);
+    }
+
+    void Add(IAsrLogRequesterImpl* p_requester)
+    {
+        std::lock_guard lock_guard{mutex_};
+        logger_requester_vector_.emplace_back(p_requester);
     }
 };
 
