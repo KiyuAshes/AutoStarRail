@@ -1,3 +1,5 @@
+set(CMAKE_FOLDER "AutoStarRail")
+
 add_compile_definitions($<$<CONFIG:Debug>:DEBUG>)
 
 aux_source_directory(Utils/src ASR_UTILS_SOURCES)

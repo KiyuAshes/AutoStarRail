@@ -62,6 +62,7 @@ message("================================================================")
 message(STATUS "The third-party libraries listed later are globally shared in the project.")
 
 function(_download_and_config_zlib_ng)
+    set(CMAKE_FOLDER "Asr3rd/zlib_ng")
     # 修改此处版本时，需一并修改../cmake/FindZLIB.cmake的第26行
     set(ASR_ZLIB_NG_VERSION "2.1.6")
     message(STATUS "Downloading and configuring zlib-ng (VERSION ${ASR_ZLIB_NG_VERSION})")
@@ -81,20 +82,25 @@ _download_and_config_zlib_ng()
 set(ZLIB_NG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/_deps/zlib-ng-build)
 set(ZLIB_NG_LIBRARY zlib)
 
-if (${ASR_BUILD_TEST})
+function(_download_and_config_gtest)
+    set(CMAKE_FOLDER "Asr3rd/gtest")
     # config GoogleTest
     # GoogleTest requires at least C++14
     message(STATUS "Downloading and configuring google test.")
     FetchContent_Declare(
-            googletest
-            URL ${GITHUB_MIRROR_URL}/google/googletest/archive/refs/tags/v1.14.0.tar.gz
-            URL_HASH SHA256=8AD598C73AD796E0D8280B082CEBD82A630D73E73CD3C70057938A6501BBA5D7
+        googletest
+        URL ${GITHUB_MIRROR_URL}/google/googletest/archive/refs/tags/v1.14.0.tar.gz
+        URL_HASH SHA256=8AD598C73AD796E0D8280B082CEBD82A630D73E73CD3C70057938A6501BBA5D7
     )
 
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
     FetchContent_MakeAvailable(googletest)
+endfunction()
+
+if (${ASR_BUILD_TEST})
+    _download_and_config_gtest()
 endif ()
 
 # config QT5
@@ -145,31 +151,34 @@ else ()
     target_compile_definitions(Asr3rdParty INTERFACE -DASR_USE_STD_FMT=1)
 endif ()
 
-# config spdlog
-message(STATUS "Downloading and configuring spdlog.")
-FetchContent_Declare(
+function(_download_and_config_spdlog)
+    set(CMAKE_FOLDER "Asr3rd/spdlog")
+    # config spdlog
+    message(STATUS "Downloading and configuring spdlog.")
+    FetchContent_Declare(
         spdlog
         URL "${GITHUB_MIRROR_URL}/gabime/spdlog/archive/refs/tags/v1.12.0.zip"
         URL_HASH SHA256=6174BF8885287422A6C6A0312EB8A30E8D22BCFCEE7C48A6D02D1835D7769232)
 
-set(SPDLOG_BUILD_PIC ON)
+    set(SPDLOG_BUILD_PIC ON)
 
-if (ASR_SPDLOG_USE_STD_FMT)
-    message(STATUS "spdlog will use std format library.")
-    set(SPDLOG_USE_STD_FORMAT ON)
-else ()
-    # NOTE: The fmt version should be compatible with the spdlog version.
-    # https://github.com/gabime/spdlog/pull/2694
-    set(SPDLOG_FMT_EXTERNAL ON)
-endif ()
+    if (ASR_SPDLOG_USE_STD_FMT)
+        message(STATUS "spdlog will use std format library.")
+        set(SPDLOG_USE_STD_FORMAT ON)
+    else ()
+        # NOTE: The fmt version should be compatible with the spdlog version.
+        # https://github.com/gabime/spdlog/pull/2694
+        set(SPDLOG_FMT_EXTERNAL ON)
+    endif ()
 
-if (WIN32)
-    set(SPDLOG_WCHAR_SUPPORT ON)
-    set(SPDLOG_WCHAR_FILENAMES OFF)
-endif ()
+    if (WIN32)
+        set(SPDLOG_WCHAR_SUPPORT ON)
+        set(SPDLOG_WCHAR_FILENAMES OFF)
+    endif ()
 
-FetchContent_MakeAvailable(spdlog)
-target_link_libraries(Asr3rdParty INTERFACE spdlog::spdlog)
+    FetchContent_MakeAvailable(spdlog)
+    target_link_libraries(Asr3rdParty INTERFACE spdlog::spdlog)
+endfunction()
 
 # for OpenCV compatibility
 if (POLICY CMP0148)
@@ -351,6 +360,8 @@ target_link_libraries(Asr3rdParty INTERFACE ICU::data ICU::i18n ICU::uc)
 
 function(_download_and_config_boost)
     message(STATUS "Downloading and configuring boost 1.84.")
+
+    set(CMAKE_FOLDER "Asr3rd/boost")
 
     set(BUILD_SHARED_LIBS OFF)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -560,15 +571,21 @@ message(STATUS "The third-party libraries listed later are only used for AsrHttp
 
 message(STATUS "Downloading and configuring oatpp 1.3.0.")
 
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+function(_download_and_config_oatpp)
+    set(CMAKE_FOLDER "Asr3rd/oatpp")
 
-set(OATPP_BUILD_TESTS OFF)
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
-FetchContent_Declare(
-    oatpp
-    URL ${GITHUB_MIRROR_URL}/oatpp/oatpp/archive/refs/tags/1.3.0.tar.gz
-)
+    set(OATPP_BUILD_TESTS OFF)
 
-FetchContent_MakeAvailable(oatpp)
+    FetchContent_Declare(
+        oatpp
+        URL ${GITHUB_MIRROR_URL}/oatpp/oatpp/archive/refs/tags/1.3.0.tar.gz
+    )
+
+    FetchContent_MakeAvailable(oatpp)
+endfunction()
+
+
 
 message("================================================================")
