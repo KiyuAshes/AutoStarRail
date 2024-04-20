@@ -38,7 +38,7 @@ AsrResult IAsrLogRequesterImpl::RequestOne(IAsrLogReader* p_reader)
 
     ASR_UTILS_CHECK_POINTER(p_reader);
     const auto& message = buffer_.front();
-    const auto  result = p_reader->ReadOne(message->c_str());
+    const auto  result = p_reader->ReadOne(message->c_str(), message->size());
     buffer_.pop_front();
 
     return result;
