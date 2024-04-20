@@ -46,6 +46,12 @@ using ExpectedWithExplanation = tl::expected<T, ErrorAndExplanation>;
 template <class T>
 using Expected = tl::expected<T, AsrResult>;
 
+template <class T>
+auto Map(T&& object) -> Expected<T>
+{
+    return std::forward<T>(object);
+}
+
 ASR_UTILS_NS_END
 
 template <>

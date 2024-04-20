@@ -1,6 +1,7 @@
 #ifndef ASR_CORE_FOREIGNINTERFACEHOST_ASRSTRINGIMPL_H
 #define ASR_CORE_FOREIGNINTERFACEHOST_ASRSTRINGIMPL_H
 
+#include <AutoStarRail/Utils/Config.h>
 #include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/fmt.h>
@@ -102,6 +103,14 @@ namespace Details
 } // namespace Details
 
 ASR_NS_END
+
+ASR_UTILS_NS_BEGIN
+
+AsrResult ToPath(
+    IAsrReadOnlyString*    p_string,
+    std::filesystem::path& ref_out_path);
+
+ASR_UTILS_NS_END
 
 class AsrReadOnlyStringWrapper
 {

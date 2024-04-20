@@ -55,9 +55,34 @@ auto(ASR_FMT_NS::formatter<AsrReadOnlyString, char>::format)(
     return ASR_FMT_NS::format_to(ctx.out(), "{}", asr_string.GetUtf8());
 }
 
-ASR_NS_BEGIN
+ASR_UTILS_NS_BEGIN
 
-ASR_NS_END
+AsrResult ToPath(
+    IAsrReadOnlyString*    p_string,
+    std::filesystem::path& ref_out_path)
+{
+    ASR_UTILS_CHECK_POINTER(p_string);
+#ifdef ASR_WINDOWS
+    const wchar_t* w_path;
+    const auto     get_result = p_string->GetW(&w_path);
+    if (ASR::IsFailed(get_result))
+    {
+        return get_result;
+    }
+    ref_out_path = std::filesystem::path{w_path};
+#else
+    const char* u8_path;
+    const auto  get_result = p_string->GetUtf8(&u8_path);
+    if (ASR::IsFailed(get_result))
+    {
+        return get_result;
+    }
+    ref_out_path = std::filesystem::path{u8_path};
+#endif // ASR_WINDOWS
+    return get_result;
+}
+
+ASR_UTILS_NS_END
 
 bool ASR::AsrStringLess::operator()(
     const ASR::AsrPtr<IAsrReadOnlyString>& lhs,
@@ -512,10 +537,7 @@ namespace Details
         return {&null_asr_string_impl_};
     }
 
-    AsrPtr<IAsrString> CreateAsrString()
-    {
-        return {new AsrStringCppImpl()};
-    }
+    AsrPtr<IAsrString> CreateAsrString() { return {new AsrStringCppImpl()}; }
 }
 
 ASR_NS_END

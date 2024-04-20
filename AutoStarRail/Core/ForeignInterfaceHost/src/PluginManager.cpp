@@ -488,14 +488,14 @@ auto RegisterErrorLensFromPlugin(
     const auto& [u8_plugin_name, common_p_base] = param;
 
     AsrPtr<IAsrReadOnlyGuidVector> p_guid_vector{};
-    const auto                     exptected_p_error_lens =
+    const auto                     expected_p_error_lens =
         QueryErrorLensFrom(u8_plugin_name, common_p_base);
-    if (!exptected_p_error_lens)
+    if (!expected_p_error_lens)
     {
-        return exptected_p_error_lens.error();
+        return expected_p_error_lens.error();
     }
 
-    const auto& p_error_lens = exptected_p_error_lens.value();
+    const auto& p_error_lens = expected_p_error_lens.value();
 
     if (const auto get_iids_result =
             p_error_lens->GetSupportedIids(p_guid_vector.Put());
