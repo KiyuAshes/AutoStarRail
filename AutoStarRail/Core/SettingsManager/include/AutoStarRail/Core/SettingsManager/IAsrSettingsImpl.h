@@ -72,7 +72,7 @@ public:
     ASR_IMPL SaveTo(IAsrReadOnlyString* p_path) override;
 };
 
-/**
+/**`
  * @brief 全局单例
  */
 class AsrSettings
@@ -91,8 +91,6 @@ class AsrSettings
     auto ToString(IAsrReadOnlyString* p_string) -> Utils::Expected<const char*>;
 
 public:
-    AsrSettings(IAsrReadOnlyString* p_path);
-
     int64_t AddRef();
     int64_t Release();
 
@@ -112,6 +110,7 @@ public:
     // IAsrSettingsForUi
     AsrResult ToString(IAsrReadOnlyString** pp_out_string);
     AsrResult FromString(IAsrReadOnlyString* p_in_settings);
+    AsrResult SaveTo(IAsrReadOnlyString* p_path);
     // AsrSettings
     /**
      * @brief Set the Default Values object
@@ -120,10 +119,11 @@ public:
      * @return AsrResult
      */
     AsrResult SetDefaultValues(nlohmann::json&& rv_json);
+    AsrResult LoadSettings(IAsrReadOnlyString* p_path);
 };
 
-ASR_CORE_SETTINGSMANAGER_NS_END
+extern AsrSettings g_settings;
 
-extern ASR::Core::SettingsManager::AsrSettings g_settings;
+ASR_CORE_SETTINGSMANAGER_NS_END
 
 #endif // ASR_CORE_SETTINGSMANAGER_GLOBALSETTINGSMANAGER_H

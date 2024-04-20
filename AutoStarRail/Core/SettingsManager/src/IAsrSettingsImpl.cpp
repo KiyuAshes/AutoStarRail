@@ -191,11 +191,11 @@ ASR_IMPL IAsrSettingsForUiImpl::FromString(IAsrReadOnlyString* p_in_settings)
 
 ASR_IMPL IAsrSettingsForUiImpl::SaveTo(IAsrReadOnlyString* p_path)
 {
-
+    return impl_.SaveTo(p_path);
 }
 
-    auto AsrSettings::GetKey(const char* p_type_name, const char* key)
-        -> Utils::Expected<std::reference_wrapper<const nlohmann::json>>
+auto AsrSettings::GetKey(const char* p_type_name, const char* key)
+    -> Utils::Expected<std::reference_wrapper<const nlohmann::json>>
 {
     if (const auto global_setting_it = settings_.find(p_type_name);
         global_setting_it != settings_.end())
@@ -231,39 +231,6 @@ auto AsrSettings::ToString(IAsrReadOnlyString* p_string)
         return tl::make_unexpected(get_u8_string_result);
     }
     return p_u8_string;
-}
-
-AsrSettings::AsrSettings(IAsrReadOnlyString* p_path)
-{
-    if (p_path == nullptr) [[unlikely]]
-    {
-        ASR_CORE_LOG_ERROR("Null pointer found! Variable name is p_path."
-                           " Please check your code.");
-        AsrException::Throw(ASR_E_INVALID_POINTER);
-    }
-
-#ifdef ASR_WINDOWS
-    const wchar_t* w_path;
-    if (const auto get_result = p_path->GetW(&w_path); IsFailed(get_result))
-    {
-        AsrException::Throw(get_result);
-    }
-    std::filesystem::path path{w_path};
-#else
-    const char* u8_path;
-    if (const auto get_result = p_path->GetUtf8(&u8_path); IsFailed(get_result))
-    {
-        AsrException::Throw(get_result);
-    }
-    std::filesystem::path path{u8_path};
-#endif // ASR_WINDOWS
-
-    std::ifstream ifs;
-    Utils::EnableStreamException(
-        ifs,
-        std::ios::badbit | std::ios::failbit,
-        [&path](auto& stream) { stream.open(path); });
-    settings_ = nlohmann::json::parse(ifs);
 }
 
 int64_t AsrSettings::AddRef() { return 1; }
@@ -459,6 +426,40 @@ AsrResult AsrSettings::FromString(IAsrReadOnlyString* p_in_settings)
     }
 }
 
+AsrResult AsrSettings::SaveTo(IAsrReadOnlyString* p_path)
+{
+    ASR_UTILS_CHECK_POINTER(p_path)
+
+    std::filesystem::path path{};
+    if (const auto to_path_result = Utils::ToPath(p_path, path);
+        IsFailed(to_path_result))
+    {
+        return to_path_result;
+    }
+    std::ofstream ofs{};
+
+    try
+    {
+        Utils::EnableStreamException(
+            ofs,
+            std::ios::badbit | std::ios::failbit,
+            [&path](auto& stream) { stream.open(path); });
+        std::lock_guard guard{mutex_};
+        ofs << settings_;
+        ofs.flush();
+        return ASR_S_OK;
+    }
+    catch (const std::ios_base::failure& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        ASR_CORE_LOG_INFO(
+            "Error happened when saving settings. Error code = " ASR_STR(
+                ASR_E_INVALID_FILE) ".");
+        ASR_CORE_LOG_INFO("NOTE: Path = {}.", AsrPtr{p_path});
+        return ASR_E_INVALID_FILE;
+    }
+}
+
 AsrResult AsrSettings::SetDefaultValues(nlohmann::json&& rv_json)
 {
     std::lock_guard lock{mutex_};
@@ -468,5 +469,56 @@ AsrResult AsrSettings::SetDefaultValues(nlohmann::json&& rv_json)
     return ASR_S_OK;
 }
 
-ASR_CORE_SETTINGSMANAGER_NS_END
+AsrResult AsrSettings::LoadSettings(IAsrReadOnlyString* p_path)
+{
+    try
+    {
+        if (p_path == nullptr) [[unlikely]]
+        {
+            ASR_CORE_LOG_ERROR("Null pointer found! Variable name is p_path."
+                               " Please check your code.");
+            AsrException::Throw(ASR_E_INVALID_POINTER);
+        }
 
+        std::filesystem::path path;
+        if (const auto to_path_result = Utils::ToPath(p_path, path);
+            IsFailed(to_path_result))
+        {
+            AsrException::Throw(to_path_result);
+        }
+
+        std::ifstream ifs;
+        Utils::EnableStreamException(
+            ifs,
+            std::ios::badbit | std::ios::failbit,
+            [&path](auto& stream) { stream.open(path); });
+        settings_ = nlohmann::json::parse(ifs);
+
+        return ASR_S_OK;
+    }
+    catch (const AsrException& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        return ex.GetErrorCode();
+    }
+    catch (const std::ios_base::failure& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        ASR_CORE_LOG_INFO(
+            "Error happened when reading settings file. Error code = " ASR_STR(
+                ASR_E_INVALID_FILE) ".");
+        return ASR_E_INVALID_FILE;
+    }
+    catch (const nlohmann::json::exception& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        ASR_CORE_LOG_INFO(
+            "Error happened when reading settings json. Error code = " ASR_STR(
+                ASR_E_INVALID_JSON) ".");
+        return ASR_E_INVALID_JSON;
+    }
+}
+
+ASR_DEFINE_VARIABLE(g_settings);
+
+ASR_CORE_SETTINGSMANAGER_NS_END
