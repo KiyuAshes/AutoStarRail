@@ -27,6 +27,7 @@ function(asr_add_plugin_library SUB_DIRECTORY_NAME PRIVATE_EX_LIBS)
         $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
     )
     target_link_libraries(${SUB_DIRECTORY_NAME} PUBLIC ${PRIVATE_EX_LIBS})
+    target_link_libraries(${SUB_DIRECTORY_NAME} PRIVATE AsrCore)
 endfunction()
 
 function(asr_add_core_component SUB_DIRECTORY_NAME)
