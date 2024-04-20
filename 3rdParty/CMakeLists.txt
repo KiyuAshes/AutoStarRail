@@ -180,6 +180,8 @@ function(_download_and_config_spdlog)
     target_link_libraries(Asr3rdParty INTERFACE spdlog::spdlog)
 endfunction()
 
+_download_and_config_spdlog()
+
 # for OpenCV compatibility
 if (POLICY CMP0148)
     cmake_policy(SET CMP0148 OLD)

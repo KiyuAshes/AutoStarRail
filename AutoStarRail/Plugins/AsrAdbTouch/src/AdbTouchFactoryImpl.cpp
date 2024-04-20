@@ -10,6 +10,9 @@ ASR_NS_BEGIN
 
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
+ASR_DISABLE_WARNING_BEGIN
+ASR_IGNORE_UNUSED_FUNCTION
+
 struct AdbConnectionDesc
 {
     std::string type{};
@@ -18,6 +21,8 @@ struct AdbConnectionDesc
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(AdbConnectionDesc, type, url, adbPath);
 };
+
+ASR_DISABLE_WARNING_END
 
 // {6B36D95E-96D1-4642-8426-3EA0514662E6}
 const AsrGuid ASR_IID_ADB_INPUT_FACTORY = {

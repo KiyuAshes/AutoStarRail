@@ -3,7 +3,6 @@
 
 #include <AutoStarRail/Core/SettingsManager/Config.h>
 #include <AutoStarRail/ExportInterface/IAsrSettings.h>
-#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/Expected.h>
 #include <mutex>
 #include <nlohmann/json.hpp>
@@ -124,5 +123,7 @@ public:
 };
 
 ASR_CORE_SETTINGSMANAGER_NS_END
+
+extern ASR::Core::SettingsManager::AsrSettings g_settings;
 
 #endif // ASR_CORE_SETTINGSMANAGER_GLOBALSETTINGSMANAGER_H
