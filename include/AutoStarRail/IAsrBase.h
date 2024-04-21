@@ -3,10 +3,10 @@
 
 #include <AutoStarRail/AsrConfig.h>
 #include <AutoStarRail/AsrGuidHolder.h>
-#include <type_traits>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <type_traits>
 
 template <class T>
 void _asr_internal_Release(T& resource) noexcept
@@ -207,28 +207,21 @@ CreateIAsrReadOnlyStringVector(AsrGuid** p_in_guid_array, const size_t size);
 
 #endif // SWIG
 
-class AsrSwigBaseWrapper
+class ASR_EXPORT AsrSwigBaseWrapper
 {
     void* p_object_{nullptr};
 
 public:
-    AsrSwigBaseWrapper() = default;
+    AsrSwigBaseWrapper();
+    ~AsrSwigBaseWrapper();
 #ifndef SWIG
-    explicit AsrSwigBaseWrapper(void* p_object) noexcept : p_object_{p_object}
-    {
-    }
+    explicit AsrSwigBaseWrapper(void* p_object) noexcept;
 #endif // SWIG
-    explicit AsrSwigBaseWrapper(ASR_INTERFACE IAsrSwigBase* p_base) noexcept
-        : p_object_{p_base}
-    {
-    }
-    ASR_INTERFACE IAsrSwigBase* Get() const noexcept
-    {
-        return static_cast<IAsrSwigBase*>(p_object_);
-    }
+    explicit AsrSwigBaseWrapper(ASR_INTERFACE IAsrSwigBase* p_base) noexcept;
+    ASR_INTERFACE IAsrSwigBase* Get() const noexcept;
 #ifndef SWIG
-    void* GetVoid() const noexcept { return p_object_; }
-    operator void*() const noexcept { return p_object_; }
+    void* GetVoid() const noexcept;
+    operator void*() const noexcept;
 #endif // SWIG
 };
 
@@ -251,8 +244,7 @@ ASR_DEFINE_GUID(
     0x3,
     0x50,
     0xa2)
-ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigBase)
-ASR_INTERFACE IAsrSwigBase
+ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigBase) ASR_INTERFACE IAsrSwigBase
 {
     virtual int64_t AddRef() = 0;
     virtual int64_t Release() = 0;

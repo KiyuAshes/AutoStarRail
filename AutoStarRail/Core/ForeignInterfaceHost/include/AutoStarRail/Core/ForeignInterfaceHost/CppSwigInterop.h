@@ -244,14 +244,12 @@ public:
     }
 
     [[nodiscard]]
-    T*
-    operator->() const noexcept
+    T* operator->() const noexcept
     {
         return static_cast<T*>(this);
     }
     [[nodiscard]]
-    T&
-    operator*() const noexcept
+    T& operator*() const noexcept
     {
         return static_cast<T&>(*this);
     }
@@ -346,7 +344,7 @@ public:
 
     AsrResult OnRequestExit() override;
     AsrResult Do(
-        IAsrReadOnlyString* p_connection_json,
+        IAsrContext*        p_connection_json,
         IAsrReadOnlyString* p_task_settings_json) override;
     AsrResult GetNextExecutionTime(AsrDate* p_out_date) override;
     AsrResult GetName(IAsrReadOnlyString** pp_out_name) override;

@@ -4,6 +4,9 @@
 #include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/IAsrTypeInfo.h>
 
+ASR_INTERFACE IAsrContext;
+ASR_INTERFACE IAsrSwigContext;
+
 struct AsrDate
 {
     uint16_t year;
@@ -43,7 +46,7 @@ ASR_INTERFACE IAsrTask : public IAsrTypeInfo
 {
     ASR_METHOD OnRequestExit() = 0;
     ASR_METHOD Do(
-        IAsrReadOnlyString * p_connection_json,
+        IAsrContext * p_context,
         IAsrReadOnlyString * p_task_settings_json) = 0;
     ASR_METHOD GetNextExecutionTime(AsrDate * p_out_date) = 0;
     ASR_METHOD GetName(IAsrReadOnlyString * *pp_out_name) = 0;
@@ -79,7 +82,7 @@ ASR_INTERFACE IAsrSwigTask : public IAsrSwigTypeInfo
 {
     virtual AsrResult OnRequestExit() = 0;
     virtual AsrResult Do(
-        AsrReadOnlyString connection_json,
+        IAsrSwigContext * p_context,
         AsrReadOnlyString task_settings_json) = 0;
     virtual AsrRetDate           GetNextExecutionTime() = 0;
     virtual AsrRetReadOnlyString GetName() = 0;

@@ -1,5 +1,6 @@
 #include <AutoStarRail/AsrPtr.hpp>
 #include <AutoStarRail/Core/ForeignInterfaceHost/CppSwigInterop.h>
+#include <AutoStarRail/ExportInterface/IAsrContext.h>
 #include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
@@ -199,13 +200,26 @@ AsrResult SwigToCpp<IAsrSwigTask>::OnRequestExit()
 }
 
 AsrResult SwigToCpp<IAsrSwigTask>::Do(
-    IAsrReadOnlyString* p_connection_json,
+    IAsrContext*        p_context,
     IAsrReadOnlyString* p_task_settings_json)
 {
     try
     {
-        const auto result =
-            p_impl_->Do(p_connection_json, p_task_settings_json);
+        void*      p_void_context{nullptr};
+        const auto qi_result = p_context->QueryInterface(
+            AsrIidOf<IAsrSwigContext>(),
+            &p_void_context);
+        if (IsFailed(qi_result))
+        {
+            ASR_CORE_LOG_ERROR(
+                "Error when query interface IAsrSwigContext in IAsrContext object.");
+            return qi_result;
+        }
+
+        const auto p_swig_context =
+            static_cast<IAsrSwigContext*>(p_void_context);
+
+        const auto result = p_impl_->Do(p_swig_context, p_task_settings_json);
         return result;
     }
     catch (const std::exception& ex)
