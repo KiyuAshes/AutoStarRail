@@ -19,6 +19,7 @@ ASR_DEFINE_GUID(
     0x3d,
     0x19,
     0x97);
+SWIG_IGNORE(IAsrContext)
 ASR_INTERFACE IAsrContext : public IAsrBase
 {
     ASR_METHOD GetString(
@@ -50,6 +51,7 @@ ASR_DEFINE_GUID(
     0x2b,
     0x82,
     0x47);
+ASR_SWIG_EXPORT_ATTRIBUTE(IAsrSwigContext)
 ASR_INTERFACE IAsrSwigContext : public IAsrSwigBase
 {
     virtual AsrRetReadOnlyString GetString(AsrReadOnlyString key) = 0;
