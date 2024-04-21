@@ -1,13 +1,13 @@
 #ifndef ASR_CORE_FOREIGNINTERFACEHOST_ASRSTRINGIMPL_H
 #define ASR_CORE_FOREIGNINTERFACEHOST_ASRSTRINGIMPL_H
 
-#include <AutoStarRail/Utils/Config.h>
 #include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
+#include <AutoStarRail/Utils/Config.h>
+#include <AutoStarRail/Utils/Expected.h>
 #include <AutoStarRail/Utils/fmt.h>
 #include <array>
 #include <filesystem>
-#include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <unicode/unistr.h>
 
@@ -109,6 +109,11 @@ ASR_UTILS_NS_BEGIN
 AsrResult ToPath(
     IAsrReadOnlyString*    p_string,
     std::filesystem::path& ref_out_path);
+
+auto ToU8StringWithoutOwnership(IAsrReadOnlyString* p_string)
+    -> Expected<const char*>;
+
+auto ToU8String(IAsrReadOnlyString* p_string) -> Utils::Expected<std::string>;
 
 ASR_UTILS_NS_END
 

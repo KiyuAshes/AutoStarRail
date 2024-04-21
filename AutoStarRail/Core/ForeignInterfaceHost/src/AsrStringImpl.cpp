@@ -81,6 +81,36 @@ AsrResult ToPath(
 #endif // ASR_WINDOWS
     return get_result;
 }
+auto ToU8StringWithoutOwnership(IAsrReadOnlyString* p_string)
+    -> Expected<const char*>
+{
+    const char* result{nullptr};
+    if (const auto get_u8_string_result = p_string->GetUtf8(&result);
+        IsFailed(get_u8_string_result))
+    {
+        ASR_CORE_LOG_ERROR(
+            "GetUtf8 failed with error code = {}.",
+            get_u8_string_result);
+        return tl::make_unexpected(get_u8_string_result);
+    }
+
+    return result;
+}
+
+auto ToU8String(IAsrReadOnlyString* p_string) -> Expected<std::string>
+{
+    const char* p_u8_string{nullptr};
+    if (const auto get_u8_string_result = p_string->GetUtf8(&p_u8_string);
+        IsFailed(get_u8_string_result))
+    {
+        ASR_CORE_LOG_ERROR(
+            "GetUtf8 failed with error code = {}.",
+            get_u8_string_result);
+        return tl::make_unexpected(get_u8_string_result);
+    }
+
+    return std::string{p_u8_string};
+}
 
 ASR_UTILS_NS_END
 
