@@ -1,3 +1,4 @@
+#include "AutoStarRail/IAsrBase.h"
 #include <AutoStarRail/Core/Exceptions/AsrException.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
@@ -191,7 +192,8 @@ ASR_IMPL IAsrSettingsForUiImpl::FromString(IAsrReadOnlyString* p_in_settings)
 
 ASR_IMPL IAsrSettingsForUiImpl::SaveTo(IAsrReadOnlyString* p_path)
 {
-
+(void) p_path;
+return ASR_E_NO_IMPLEMENTATION;
 }
 
     auto AsrSettings::GetKey(const char* p_type_name, const char* key)
