@@ -20,7 +20,7 @@ class ProfileDesc : public oatpp::DTO
     DTO_FIELD(Boolean, is_run, "is_run");
 };
 
-using ProfileDescList = ApiResult<oatpp::List<oatpp::Object<ProfileDesc>>>;
+using ProfileDescList = ApiResponse<oatpp::List<oatpp::Object<ProfileDesc>>>;
 
 #include OATPP_CODEGEN_END(DTO)
 

@@ -14,15 +14,15 @@
 // 定义统一响应包装类型
 // Define unified response wrapper type
 template <class T>
-class ApiResult : public oatpp::DTO
+class ApiResponse : public oatpp::DTO
 {
 
-    DTO_INIT(ApiResult, DTO)
+    DTO_INIT(ApiResponse, DTO)
 
     DTO_FIELD(Int32, code);
     DTO_FIELD(String, message);
 
-    DTO_FIELD(T, data);
+    DTO_FIELD(T, result);
 };
 
 #include OATPP_CODEGEN_END(DTO)
