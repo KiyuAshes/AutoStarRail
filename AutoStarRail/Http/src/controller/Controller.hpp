@@ -2,6 +2,7 @@
 #define Controller_hpp
 
 #include "AutoStarRail/IAsrBase.h"
+#include "oatpp/core/base/Environment.hpp"
 #include "oatpp/core/macro/codegen.hpp"
 #include "oatpp/core/macro/component.hpp"
 #include "oatpp/parser/json/mapping/ObjectMapper.hpp"
@@ -13,6 +14,7 @@
 #include "dto/Settings.hpp"
 
 #include "ControllerUtils.hpp"
+#include <string>
 
 #include OATPP_CODEGEN_BEGIN(ApiController)
 
@@ -45,7 +47,7 @@ public:
     // 获取日志
     // Get logs
 
-    ENDPOINT("GET", "/logs", get_logs)
+    ENDPOINT("GET", "/api/logs", get_logs)
     {
 
         auto response = Logs::createShared();
@@ -55,27 +57,39 @@ public:
 
         const auto error_code = p_requester->RequestOne(p_reader.Get());
 
-        while (true)
-        {
-            const auto error_code = p_requester->RequestOne(p_reader.Get());
+        // error_code = p_requester->RequestOne(p_reader.Get());
+        // OATPP_LOGD("日志接口", std::to_string(i).c_str());
+        std::string str = sp_one_message->data();
+        OATPP_LOGD("日志接口", str.c_str());
+        response->result->logs->push_back(reinterpret_cast<const char*>(str.c_str()));
 
-            if (error_code == ASR_S_OK)
-            {
-                response->result->logs->push_back(sp_one_message->data());
-            }
-            else if (
-                !response->result->logs->empty()
-                && error_code == ASR_E_OUT_OF_RANGE)
-            {
-                response->code = ASR_S_OK;
-                break;
-            }
-            else
-            {
-                response->code = error_code;
-                break;
-            }
-        }
+        // int i = 0;
+        // while (true)
+        // {
+        //     const auto error_code = p_requester->RequestOne(p_reader.Get());
+        //     OATPP_LOGD("日志接口", std::to_string(i).c_str());
+        //     OATPP_LOGD("日志接口", sp_one_message->data());
+
+        //     if (error_code == ASR_S_OK)
+        //     {
+        //         OATPP_LOGD("日志接口", "1");
+        //         response->result->logs->push_back(sp_one_message->data());
+        //     }
+        //     else if (
+        //         !response->result->logs->empty()
+        //         && error_code == ASR_E_OUT_OF_RANGE)
+        //     {
+        //         OATPP_LOGD("日志接口", "2");
+        //         response->code = ASR_S_OK;
+        //         break;
+        //     }
+        //     else
+        //     {
+        //         OATPP_LOGD("日志接口", "3");
+        //         response->code = error_code;
+        //         break;
+        //     }
+        // }
 
         return createDtoResponse(
             Status::CODE_200,
@@ -93,25 +107,22 @@ public:
     {
 
         auto response = ProfileDescList::createShared();
-        response->code = 200;
+        response->code = ASR_S_OK;
         response->message = "";
 
         // temp test code
         auto profile1 = ProfileDesc::createShared();
         profile1->name = reinterpret_cast<const char*>(u8"配置0");
-        profile1->pid = "0";
-        profile1->is_run = true;
+        profile1->profile_id = "0";
 
         auto profile2 = ProfileDesc::createShared();
         profile2->name = reinterpret_cast<const char*>(u8"様式ファイル1");
-        profile2->pid = "1";
-        profile2->is_run = false;
+        profile2->profile_id = "1";
 
         auto profile3 = ProfileDesc::createShared();
         profile3->name = reinterpret_cast<const char*>(
             u8"様式ファイル2 長さが制限を超えています");
-        profile3->pid = "2";
-        profile3->is_run = false;
+        profile3->profile_id = "2";
 
         response->result = {profile1, profile2, profile3};
         // temp test code
@@ -121,6 +132,86 @@ public:
             jsonObjectMapper->writeToString(response));
     }
 
+    // 获取配置文件状态
+    // Get profile status
+    ENDPOINT("GET", "/api/profile/status", get_profile_status)
+    {
+
+        auto response = ProfileStatusList::createShared();
+        response->code = ASR_S_OK;
+        response->message = "";
+
+        // temp test code
+        auto profile1_status = ProfileStatus::createShared();
+        profile1_status->profile_id = "0";
+        profile1_status->run = false;
+        profile1_status->enable = true;
+
+        auto profile2_status = ProfileStatus::createShared();
+        profile2_status->profile_id = "1";
+        profile2_status->run = false;
+        profile2_status->enable = false;
+
+        auto profile3_status = ProfileStatus::createShared();
+        profile3_status->profile_id = "2";
+        profile3_status->run = false;
+        profile3_status->enable = false;
+
+        response->result = {profile1_status, profile2_status, profile3_status};
+        // temp test code
+
+        return createDtoResponse(
+            Status::CODE_200,
+            jsonObjectMapper->writeToString(response));
+    }
+
+    // 获取配置文件状态
+    // Get profile status
+    // ENDPOINT(
+    //     "GET",
+    //     "/api/profile/status",
+    //     get_profile_status,
+    //     QUERIES(QueryParams, queryParams))
+    // {
+
+    //     auto response = ProfileStatusList::createShared();
+    //     response->code = ASR_S_OK;
+    //     response->message = "";
+
+    //     if (queryParams.getSize() == 0)
+    //     {
+    //         // temp test code
+    //         auto profile1_status = ProfileStatus::createShared();
+    //         profile1_status->run = false;
+    //         profile1_status->enable = true;
+
+    //         auto profile2_status = ProfileStatus::createShared();
+    //         profile2_status->run = false;
+    //         profile2_status->enable = false;
+
+    //         auto profile3_status = ProfileStatus::createShared();
+    //         profile3_status->run = false;
+    //         profile3_status->enable = false;
+
+    //         response->result = {
+    //             profile1_status,
+    //             profile2_status,
+    //             profile3_status};
+    //         // temp test code
+
+    //         return createDtoResponse(
+    //             Status::CODE_200,
+    //             jsonObjectMapper->writeToString(response));
+    //     }
+    //     else
+    //     {
+    //         response->message = "配置文件接口:参数数量错误";
+    //         return createDtoResponse(
+    //             Status::CODE_200,
+    //             jsonObjectMapper->writeToString(response));
+    //     }
+    // }
+
     /**
      *  定义设置相关API
      *  Define settings related APIs
@@ -128,11 +219,11 @@ public:
 
     // 获取应用列表
     // Get app list
-    ENDPOINT("GET", "/api/settings/app", get_app_list)
+    ENDPOINT("GET", "/api/settings/app/list", get_app_list)
     {
 
         auto response = AppDescList::createShared();
-        response->code = 200;
+        response->code = ASR_S_OK;
         response->message = "";
 
         // temp test code
@@ -142,9 +233,97 @@ public:
 
         auto app2 = AppDesc::createShared(); // Resonance
         app2->name = reinterpret_cast<const char*>(u8"雷索纳斯-国服");
-        app1->package_name = "com.hermes.goda";
+        app2->package_name = "com.hermes.goda";
 
         response->result = {app1, app2};
+        // temp test code
+
+        return createDtoResponse(
+            Status::CODE_200,
+            jsonObjectMapper->writeToString(response));
+    }
+
+    // 获取插件列表
+    // Get plugin list
+    ENDPOINT("GET", "/api/settings/plugin/list", get_plugin_list)
+    {
+
+        auto response = PluginDescList::createShared();
+        response->code = ASR_S_OK;
+        response->message = "";
+
+        // temp test code
+        auto plugin1 = PluginDesc::createShared(); // AzurPromilia1
+        plugin1->name = reinterpret_cast<const char*>(u8"蓝色星原-国服-插件1");
+        plugin1->plugin_id = "4227E5C2-D23B-6CEA-407A-5EA189019626";
+
+        auto plugin2 = PluginDesc::createShared(); // Resonance1
+        plugin2->name = reinterpret_cast<const char*>(u8"雷索纳斯-国服-插件1");
+        plugin2->plugin_id = "CF6F77EC-8378-0FA6-9A5B-46B12ADC14A3";
+
+        auto plugin3 = PluginDesc::createShared(); // AzurPromilia2
+        plugin3->name = reinterpret_cast<const char*>(u8"蓝色星原-国服-插件2");
+        plugin3->plugin_id = "C90CE541-E04D-1908-F6A4-62F81AE695CE";
+
+        auto plugin4 = PluginDesc::createShared(); // Resonance2
+        plugin4->name = reinterpret_cast<const char*>(u8"雷索纳斯-国服-插件2");
+        plugin4->plugin_id = "2FA49598-7DFF-7D3C-CC51-AE539EA41DEB";
+
+        response->result = {plugin1, plugin2, plugin3, plugin4};
+        // temp test code
+
+        return createDtoResponse(
+            Status::CODE_200,
+            jsonObjectMapper->writeToString(response));
+    }
+
+    // 获取任务列表
+    // Get task list
+    ENDPOINT("GET", "/api/settings/task/list", get_task_list)
+    {
+
+        auto response = TaskDescList::createShared();
+        response->code = ASR_S_OK;
+        response->message = "";
+
+        // temp test code
+        auto task1 = TaskDesc::createShared();
+        task1->name = reinterpret_cast<const char*>(u8"主线关卡");
+        task1->plugin_id = "4227E5C2-D23B-6CEA-407A-5EA189019626";
+        task1->package_name = "com.manjuu.azurpromilia";
+        task1->sub_group = reinterpret_cast<const char*>(u8"每日");
+
+        auto task2 = TaskDesc::createShared();
+        task2->name = reinterpret_cast<const char*>(u8"困难关卡");
+        task2->plugin_id = "C90CE541-E04D-1908-F6A4-62F81AE695CE";
+        task2->package_name = "com.manjuu.azurpromilia";
+        task2->sub_group = reinterpret_cast<const char*>(u8"每日");
+
+        auto task3 = TaskDesc::createShared();
+        task3->name = reinterpret_cast<const char*>(u8"任务奖励");
+        task3->plugin_id = "4227E5C2-D23B-6CEA-407A-5EA189019626";
+        task3->package_name = "com.manjuu.azurpromilia";
+        task3->sub_group = reinterpret_cast<const char*>(u8"收获");
+
+        auto task4 = TaskDesc::createShared();
+        task4->name = reinterpret_cast<const char*>(u8"每日悬赏");
+        task4->plugin_id = "CF6F77EC-8378-0FA6-9A5B-46B12ADC14A3";
+        task4->package_name = "com.hermes.goda";
+        task4->sub_group = reinterpret_cast<const char*>(u8"每日");
+
+        auto task5 = TaskDesc::createShared();
+        task5->name = reinterpret_cast<const char*>(u8"每日悬赏");
+        task5->plugin_id = "2FA49598-7DFF-7D3C-CC51-AE539EA41DEB";
+        task5->package_name = "com.hermes.goda";
+        task5->sub_group = reinterpret_cast<const char*>(u8"倒垃圾");
+
+        auto task6 = TaskDesc::createShared();
+        task6->name = reinterpret_cast<const char*>(u8"每日悬赏");
+        task6->plugin_id = "CF6F77EC-8378-0FA6-9A5B-46B12ADC14A3";
+        task6->package_name = "com.hermes.goda";
+        task6->sub_group = reinterpret_cast<const char*>(u8"每日");
+
+        response->result = {task1, task2, task3, task4, task5, task6};
         // temp test code
 
         return createDtoResponse(
