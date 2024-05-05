@@ -1,9 +1,7 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/IAsrBase.h>
-#include <array>
 #include <cstring>
-
 
 AsrRetGuid AsrMakeAsrGuid(const char* p_guid_string)
 {
@@ -31,11 +29,38 @@ AsrRetGuid AsrMakeAsrGuid(const char* p_guid_string)
 
 AsrSwigBaseWrapper::AsrSwigBaseWrapper() = default;
 
+AsrSwigBaseWrapper::AsrSwigBaseWrapper(const AsrSwigBaseWrapper& other)
+    : p_object_{other}
+{
+    if (p_object_)
+    {
+        reinterpret_cast<IAsrSwigBase*>(p_object_)->AddRef();
+    }
+}
+
+AsrSwigBaseWrapper::AsrSwigBaseWrapper(AsrSwigBaseWrapper&& other) noexcept
+    : p_object_{std::exchange(other.p_object_, nullptr)}
+{
+}
+
+AsrSwigBaseWrapper& AsrSwigBaseWrapper::operator=(
+    const AsrSwigBaseWrapper& other)
+{
+    return *this = AsrSwigBaseWrapper{other};
+}
+
+AsrSwigBaseWrapper& AsrSwigBaseWrapper::operator=(
+    AsrSwigBaseWrapper&& other) noexcept
+{
+    p_object_ = std::exchange(other.p_object_, nullptr);
+    return *this;
+}
+
 AsrSwigBaseWrapper::~AsrSwigBaseWrapper()
 {
     if (p_object_)
     {
-        static_cast<IAsrSwigBase*>(p_object_)->Release();
+        reinterpret_cast<IAsrSwigBase*>(p_object_)->Release();
     }
 }
 
@@ -51,8 +76,11 @@ AsrSwigBaseWrapper::AsrSwigBaseWrapper(
 }
 IAsrSwigBase* AsrSwigBaseWrapper::Get() const noexcept
 {
-    return static_cast<IAsrSwigBase*>(p_object_);
+    auto* const p_result = static_cast<IAsrSwigBase*>(p_object_);
+    p_result->AddRef();
+    return p_result;
 }
 
 void* AsrSwigBaseWrapper::GetVoid() const noexcept { return p_object_; }
+
 AsrSwigBaseWrapper::operator void*() const noexcept { return p_object_; }

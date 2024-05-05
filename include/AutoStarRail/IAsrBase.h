@@ -8,26 +8,6 @@
 #include <string.h>
 #include <type_traits>
 
-template <class T>
-void _asr_internal_Release(T& resource) noexcept
-{
-    if constexpr (std::is_pointer_v<
-                      std::remove_reference_t<decltype(resource)>>)
-    {
-        resource->Release();
-    }
-}
-
-#define ASR_RET_TYPE_DECLARE_BEGIN(type_name)                                  \
-    struct type_name                                                           \
-    {                                                                          \
-        ~type_name() { _asr_internal_Release(value); }                         \
-        AsrResult error_code{ASR_E_UNDEFINED_RETURN_VALUE};
-
-#define ASR_RET_TYPE_DECLARE_END                                               \
-    }                                                                          \
-    ;
-
 // clang-format off
 #ifdef SWIG
 #define SWIG_IGNORE(x) %ignore x;
@@ -44,6 +24,7 @@ void _asr_internal_Release(T& resource) noexcept
 #define ASR_DEFINE_CLASS_GUID(name, type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
     static const AsrGuid name =                                                      \
         {l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}};
+#define SWIG_PRIVATE private:
 #else
 #define SWIG_IGNORE(x)
 #define SWIG_ENABLE_DIRECTOR(x)
@@ -62,8 +43,58 @@ void _asr_internal_Release(T& resource) noexcept
 #define ASR_DEFINE_CLASS_IN_NAMESPACE(ns, type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
     namespace ns { class type; }\
     ASR_DEFINE_CLASS_GUID_HOLDER_IN_NAMESPACE(ns ,type, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8);
+#define SWIG_PRIVATE
 #endif
 // clang-format on
+
+template <class T>
+void _asr_internal_DelayAddRef(T* pointer)
+{
+    pointer->AddRef();
+}
+
+#define ASR_DEFINE_RET_TYPE(type_name, type)                                   \
+    struct type_name                                                           \
+    {                                                                          \
+        SWIG_PRIVATE                                                           \
+        AsrResult error_code;                                                  \
+        type      value{};                                                     \
+                                                                               \
+    public:                                                                    \
+        AsrResult GetErrorCode() noexcept { return error_code; }               \
+        void      SetErrorCode(AsrResult error_code) noexcept                  \
+        {                                                                      \
+            this->error_code = error_code;                                     \
+        }                                                                      \
+        type GetValue() { return value; }                                      \
+        void SetValue(const type& input_value) { value = input_value; }        \
+    }
+
+/**
+ * @brief 注意：GetValue将取得指针所有权
+ *
+ */
+#define ASR_DEFINE_RET_POINTER(type_name, pointer_type)                        \
+    struct type_name                                                           \
+    {                                                                          \
+        SWIG_PRIVATE                                                           \
+        AsrResult                 error_code;                                  \
+        ASR::AsrPtr<pointer_type> value{};                                     \
+                                                                               \
+    public:                                                                    \
+        AsrResult GetErrorCode() noexcept { return error_code; }               \
+        void      SetErrorCode(AsrResult error_code) noexcept                  \
+        {                                                                      \
+            this->error_code = error_code;                                     \
+        }                                                                      \
+        pointer_type* GetValue() noexcept                                      \
+        {                                                                      \
+            auto* const result = value.Get();                                  \
+            _asr_internal_DelayAddRef(result);                                 \
+            return result;                                                     \
+        }                                                                      \
+        void SetValue(pointer_type* input_value) { value = input_value; }      \
+    }
 
 #define ASR_SWIG_DIRECTOR_ATTRIBUTE(x)                                         \
     SWIG_ENABLE_DIRECTOR(x)                                                    \
@@ -207,13 +238,23 @@ CreateIAsrReadOnlyStringVector(AsrGuid** p_in_guid_array, const size_t size);
 
 #endif // SWIG
 
+/**
+ * @brief 注意：此类获取指针后不增加引用计数，因此提供指针时应该是已经执行过AddRef的指针
+ *  这一特性使得它可以被QueryInterface参数中返回的指针正确初始化
+ */
 class ASR_EXPORT AsrSwigBaseWrapper
 {
     void* p_object_{nullptr};
 
 public:
     AsrSwigBaseWrapper();
-    ~AsrSwigBaseWrapper();
+    AsrSwigBaseWrapper(const AsrSwigBaseWrapper& other);
+#ifndef SWIG
+    AsrSwigBaseWrapper(AsrSwigBaseWrapper&& other) noexcept;
+    AsrSwigBaseWrapper& operator=(const AsrSwigBaseWrapper& other);
+    AsrSwigBaseWrapper& operator=(AsrSwigBaseWrapper&& other) noexcept;
+#endif // SWIG
+        ~AsrSwigBaseWrapper();
 #ifndef SWIG
     explicit AsrSwigBaseWrapper(void* p_object) noexcept;
 #endif // SWIG
@@ -225,9 +266,7 @@ public:
 #endif // SWIG
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetSwigBase)
-    AsrSwigBaseWrapper value{};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_TYPE(AsrRetSwigBase, AsrSwigBaseWrapper);
 
 // {FAF64DEB-0C0A-48CC-BA10-FCDE420350A2}
 ASR_DEFINE_GUID(
@@ -249,9 +288,9 @@ ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigBase) ASR_INTERFACE IAsrSwigBase
     virtual int64_t AddRef() = 0;
     virtual int64_t Release() = 0;
     /**
-     * @brief Implementation should only return ASR_S_OK or ASR_E_NO_INTERFACE.
-     * NOTICE: If returned value is not equal to ASR_S_OK, then the interface is
-     * considered not supported.
+     * @brief Implementation should only return ASR_S_OK or
+     * ASR_E_NO_INTERFACE. NOTICE: If returned value is not equal to
+     * ASR_S_OK, then the interface is considered not supported.
      *
      * @param iid
      * @return AsrResult
@@ -265,20 +304,12 @@ ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigBase) ASR_INTERFACE IAsrSwigBase
 #endif // SWIG
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetBool)
-    bool value;
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_TYPE(AsrRetBool, bool);
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetInt)
-    int64_t value;
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_TYPE(AsrRetInt, int64_t);
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetUInt)
-    uint64_t value;
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_TYPE(AsrRetUInt, uint64_t);
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetFloat)
-    float value;
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_TYPE(AsrRetFloat, float);
 
 #endif // ASR_BASE_H

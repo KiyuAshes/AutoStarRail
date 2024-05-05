@@ -93,9 +93,8 @@ ASR_INTERFACE IAsrSwigPluginInfo : public IAsrSwigBase
     virtual AsrRetGuid           GetPluginIid() = 0;
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetPluginInfo)
-    IAsrSwigPluginInfo* value{};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_POINTER(AsrRetPluginInfo, IAsrSwigPluginInfo);
+
 
 // {30CCAE61-3884-43F4-AE78-976410156370}
 ASR_DEFINE_GUID(

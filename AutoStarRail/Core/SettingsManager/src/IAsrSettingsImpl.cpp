@@ -710,7 +710,6 @@ AsrRetGlobalSettings GetPluginSettins(IAsrSwigTypeInfo* p_plugin)
                             ASR::Core::SettingsManager::g_settings,
                             p_u8_name);
                         result.value = p_result.Get();
-                        p_result->AddRef();
                     });
         result.error_code = ASR::Utils::GetResult(expected_result);
         return result;

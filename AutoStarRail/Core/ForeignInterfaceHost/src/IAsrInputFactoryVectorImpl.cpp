@@ -179,7 +179,6 @@ auto AsrInputFactoryVectorImpl::At(size_t index) -> AsrRetInputFactory
     if (index < input_factory_vector_.size())
     {
         const auto p_result = input_factory_vector_[index].second.Get();
-        p_result->AddRef();
         return {ASR_S_OK, p_result};
     }
     return {ASR_E_OUT_OF_RANGE, nullptr};
@@ -191,7 +190,6 @@ auto AsrInputFactoryVectorImpl::Find(const AsrGuid& iid) -> AsrRetInputFactory
     if (it != input_factory_vector_.end())
     {
         const auto p_result = it->second.Get();
-        p_result->AddRef();
         return {ASR_S_OK, p_result};
     }
     return {ASR_E_OUT_OF_RANGE, nullptr};

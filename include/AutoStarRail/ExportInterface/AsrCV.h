@@ -37,9 +37,7 @@ ASR_C_API AsrResult TemplateMatchBest(
 
 #endif // SWIG
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetTemplateMatchResult)
-    AsrTemplateMatchResult value;
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_TYPE(AsrRetTemplateMatchResult, AsrTemplateMatchResult);
 
 ASR_API AsrRetTemplateMatchResult TemplateMatchBest(
     AsrSwigImage         image,

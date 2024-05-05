@@ -2,8 +2,9 @@
 #define ASR_ICAPTURE_H
 
 #include <AutoStarRail/AsrString.hpp>
-#include <AutoStarRail/IAsrTypeInfo.h>
 #include <AutoStarRail/ExportInterface/IAsrImage.h>
+#include <AutoStarRail/IAsrTypeInfo.h>
+
 
 ASR_INTERFACE IAsrImage;
 
@@ -59,9 +60,8 @@ ASR_INTERFACE IAsrCaptureFactory : public IAsrTypeInfo
 };
 
 ASR_INTERFACE IAsrSwigCapture;
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetCapture)
-    IAsrSwigCapture* value{};
-ASR_RET_TYPE_DECLARE_END
+
+ASR_DEFINE_RET_POINTER(AsrRetCapture, IAsrSwigCapture);
 
 // {FC326FB1-9669-4D41-8003-27709071DA10}
 ASR_DEFINE_GUID(

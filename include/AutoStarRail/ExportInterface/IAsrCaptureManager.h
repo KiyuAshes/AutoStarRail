@@ -1,8 +1,8 @@
 #ifndef ASR_ASRCAPTUREMANAGER_H
 #define ASR_ASRCAPTUREMANAGER_H
 
-#include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/IAsrBase.h>
+#include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/PluginInterface/IAsrCapture.h>
 
 // {9ED8685E-050E-4FF5-9E6C-2A2C25CAC117}
@@ -66,9 +66,7 @@ ASR_INTERFACE IAsrSwigCaptureManager : public IAsrSwigBase
     virtual AsrRetCapture EnumCaptureInterface(const size_t index) = 0;
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetCaptureManager)
-    IAsrSwigCaptureManager* value{};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_POINTER(AsrRetCaptureManager, IAsrSwigCaptureManager);
 
 SWIG_IGNORE(CreateIAsrCaptureManager)
 ASR_C_API AsrResult CreateIAsrCaptureManager(

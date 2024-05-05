@@ -25,5 +25,3 @@ AlwaysBreakAfterDefinitionReturnType: None
 PenaltyReturnTypeOnItsOwnLine: 220
 AlignConsecutiveDeclarations: Consecutive
 BreakStringLiterals: false
-MacroBlockBegin: "ASR_RET_TYPE_DECLARE_BEGIN"
-MacroBlockEnd: "ASR_RET_TYPE_DECLARE_END"

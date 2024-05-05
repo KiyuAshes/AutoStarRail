@@ -67,13 +67,11 @@ ASR_INTERFACE IAsrSwigContext : public IAsrSwigBase
     virtual AsrResult SetFloat(AsrReadOnlyString key, float value) = 0;
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetContext)
-    IAsrSwigContext* value{nullptr};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_POINTER(AsrRetContext, IAsrSwigContext);
 
 SWIG_IGNORE(CreateIAsrContext)
 ASR_C_API AsrResult CreateIAsrContext(IAsrContext** pp_out_context);
 
-ASR_API AsrResult CreateIAsrSwigContext(IAsrSwigContext** pp_out_context);
+ASR_API AsrRetContext CreateIAsrSwigContext();
 
 #endif // ASR_ASRCONTEXT_H

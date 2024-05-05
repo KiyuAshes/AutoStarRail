@@ -323,8 +323,7 @@ AsrRetPluginInfo AsrPluginInfoVectorImpl::At(size_t index)
     AsrRetPluginInfo result{};
     if (index < plugin_info_vector_.size())
     {
-        result.value = *plugin_info_vector_[index];
-        result.value->AddRef();
+        result.SetValue(*plugin_info_vector_[index]);
         result.error_code = ASR_S_OK;
         return result;
     }

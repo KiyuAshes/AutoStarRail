@@ -110,7 +110,6 @@ auto CreateSwigToCppObjectImpl(void* p_cpp_object) -> AsrRetSwigBase
         using SwigType = CppToSwig<T>::SwigType;
         auto* const p_swig_object =
             new CppToSwig<T>(static_cast<T*>(p_cpp_object));
-        p_swig_object->AddRef();
         result.error_code = ASR_S_OK;
         // explicit 导致要decltype来显式写出类型，似乎没有必要explicit了
         result.value = decltype(result.value){
@@ -392,15 +391,15 @@ AsrResult SwigToCpp<IAsrSwigInputFactory>::CreateInstance(
     ASR_UTILS_CHECK_POINTER(pp_out_input)
 
     const auto swig_result = p_impl_->CreateInstance({p_json_config});
-    const auto exptcted_result = MakeInterop<IAsrInput>(swig_result.value);
-    if (exptcted_result)
+    const auto expected_result = MakeInterop<IAsrInput>(swig_result.value);
+    if (expected_result)
     {
-        const auto& value = exptcted_result.value();
+        const auto& value = expected_result.value();
         *pp_out_input = value.Get();
         value->AddRef();
         return ASR_S_OK;
     }
-    return exptcted_result.error();
+    return expected_result.error();
 }
 
 // TODO: IAsrSwigCaptureFactory CreateInstance
@@ -487,7 +486,6 @@ AsrRetReadOnlyGuidVector CppToSwig<IAsrGuidVector>::ToConst()
         return {ASR_E_OUT_OF_MEMORY};
     }
 
-    p_result->AddRef();
     return {ASR_S_OK, p_result.Get()};
 }
 

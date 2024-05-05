@@ -113,14 +113,12 @@ ASR_C_API AsrResult InitializeGlobalSettings(
     IAsrReadOnlyString* p_settings_path,
     IAsrSettingsForUi** pp_out_settings);
 
+ASR_C_API AsrResult
+GetPluginSettings(IAsrTypeInfo* p_plugin, IAsrSettings** pp_out_settings);
+
 #endif // SWIG
 
-ASR_C_API AsrResult
-GetPluginSettins(IAsrTypeInfo* p_plugin, IAsrSettings** pp_out_settings);
-
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetGlobalSettings)
-    IAsrSwigSettings* value{nullptr};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_POINTER(AsrRetGlobalSettings, IAsrSwigSettings);
 
 ASR_API AsrRetGlobalSettings GetPluginSettins(IAsrSwigTypeInfo* p_plugin);
 

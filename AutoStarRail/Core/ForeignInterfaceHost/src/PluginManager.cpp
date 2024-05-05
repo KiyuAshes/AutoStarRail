@@ -205,8 +205,8 @@ auto CreateInterface(
                         u8_plugin_name);
                     return {};
                 }
-                AsrPtr<IAsrSwigBase> result{};
-                *result.PutVoid() = cfi_result.value.GetVoid();
+                AsrPtr<IAsrSwigBase> result{reinterpret_cast<IAsrSwigBase*>(
+                    cfi_result.value.GetVoid())};
                 return result;
             }},
         common_p_plugin);
@@ -250,8 +250,7 @@ auto QueryTypeInfoFrom(
                         p_plugin_name);
                     return {};
                 }
-                AsrPtr<IAsrSwigTypeInfo> result;
-                *result.PutVoid() = qi_result.value.GetVoid();
+                AsrPtr<IAsrSwigTypeInfo> result{qi_result.value.GetVoid()};
                 return result;
             }},
         common_p_base);
@@ -466,8 +465,6 @@ auto QueryErrorLensFrom(
                 AsrPtr<IAsrErrorLens> result{new SwigToCpp<IAsrSwigErrorLens>{
                     static_cast<IAsrSwigErrorLens*>(
                         qi_result.value.GetVoid())}};
-
-                qi_result.value.Get()->Release();
 
                 return result;
             }},

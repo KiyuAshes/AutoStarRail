@@ -428,7 +428,7 @@ AsrRetCaptureManager CreateIAsrSwigCaptureManager(AsrReadOnlyString json_config)
         return result;
     }
 
-    result.value = static_cast<decltype(result.value)>(*p_capture_manager_impl);
-    result.value->AddRef();
+    result.SetValue(
+        static_cast<IAsrSwigCaptureManager*>(*p_capture_manager_impl));
     return result;
 }

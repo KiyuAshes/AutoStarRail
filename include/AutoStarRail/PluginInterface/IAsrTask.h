@@ -55,13 +55,9 @@ ASR_INTERFACE IAsrTask : public IAsrTypeInfo
     ASR_METHOD GetType(AsrTaskType * p_out_type) = 0;
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetDate)
-    AsrDate value;
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_TYPE(AsrRetDate, AsrDate);
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetTaskType)
-    AsrTaskType value;
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_TYPE(AsrRetTaskType, AsrTaskType);
 
 // {3DE2D502-9621-4AF7-B88F-86458E0DDA46}
 ASR_DEFINE_GUID(
