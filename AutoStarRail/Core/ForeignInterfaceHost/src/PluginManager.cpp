@@ -250,7 +250,8 @@ auto QueryTypeInfoFrom(
                         p_plugin_name);
                     return {};
                 }
-                AsrPtr<IAsrSwigTypeInfo> result{qi_result.value.GetVoid()};
+                AsrPtr<IAsrSwigTypeInfo> result{
+                    static_cast<IAsrSwigTypeInfo*>(qi_result.value.GetVoid())};
                 return result;
             }},
         common_p_base);
