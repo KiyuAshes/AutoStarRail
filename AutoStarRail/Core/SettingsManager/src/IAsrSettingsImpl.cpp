@@ -229,12 +229,7 @@ ASR_IMPL IAsrSettingsForUiImpl::FromString(IAsrReadOnlyString* p_in_settings)
 
 ASR_IMPL IAsrSettingsForUiImpl::SaveTo(IAsrReadOnlyString* p_path)
 {
-<<<<<<< HEAD
-(void) p_path;
-return ASR_E_NO_IMPLEMENTATION;
-=======
     return impl_.SaveTo(p_path);
->>>>>>> origin/HEAD
 }
 
 auto AsrSettings::GetKey(const char* p_type_name, const char* key)
