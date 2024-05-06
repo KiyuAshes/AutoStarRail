@@ -1,6 +1,7 @@
 #ifndef Controller_hpp
 #define Controller_hpp
 
+#include "AutoStarRail/ExportInterface/AsrLogger.h"
 #include "AutoStarRail/IAsrBase.h"
 #include "oatpp/core/base/Environment.hpp"
 #include "oatpp/core/macro/codegen.hpp"
@@ -53,43 +54,52 @@ public:
         auto response = Logs::createShared();
         response->code = ASR_S_OK;
         response->message = "";
-        response->result = {};
-
-        const auto error_code = p_requester->RequestOne(p_reader.Get());
+        response->result = LogsData::createShared();
+        response->result->logs = {};
+        // const auto error_code = p_requester->RequestOne(p_reader.Get());
 
         // error_code = p_requester->RequestOne(p_reader.Get());
         // OATPP_LOGD("日志接口", std::to_string(i).c_str());
-        std::string str = sp_one_message->data();
-        OATPP_LOGD("日志接口", str.c_str());
-        response->result->logs->push_back(reinterpret_cast<const char*>(str.c_str()));
+        // std::string str = sp_one_message->data();
+        // OATPP_LOGD("日志接口", str.c_str());
+        // response->result->logs->push_back(reinterpret_cast<const
+        // char*>(str.c_str()));
 
         // int i = 0;
-        // while (true)
-        // {
-        //     const auto error_code = p_requester->RequestOne(p_reader.Get());
-        //     OATPP_LOGD("日志接口", std::to_string(i).c_str());
-        //     OATPP_LOGD("日志接口", sp_one_message->data());
 
-        //     if (error_code == ASR_S_OK)
-        //     {
-        //         OATPP_LOGD("日志接口", "1");
-        //         response->result->logs->push_back(sp_one_message->data());
-        //     }
-        //     else if (
-        //         !response->result->logs->empty()
-        //         && error_code == ASR_E_OUT_OF_RANGE)
-        //     {
-        //         OATPP_LOGD("日志接口", "2");
-        //         response->code = ASR_S_OK;
-        //         break;
-        //     }
-        //     else
-        //     {
-        //         OATPP_LOGD("日志接口", "3");
-        //         response->code = error_code;
-        //         break;
-        //     }
-        // }
+        // ASR_LOG_INFO("访问日志接口");
+
+        while (true)
+        {
+            const auto error_code = p_requester->RequestOne(p_reader.Get());
+            // OATPP_LOGD("日志接口", std::to_string(i).c_str());
+            // OATPP_LOGD("日志接口", sp_one_message->data());
+
+            if (error_code == ASR_S_OK)
+            {
+                OATPP_LOGD("日志接口", "1");
+                // OATPP_LOGD("日志接口", sp_one_message->data());
+                response->result->logs->push_back(sp_one_message->data());
+            }
+            // else if (
+            //     !response->result->logs->empty()
+            //     && error_code == ASR_E_OUT_OF_RANGE)
+            // {
+            else if (error_code == ASR_E_OUT_OF_RANGE)
+            {
+                OATPP_LOGD("日志接口", "2");
+                OATPP_LOGD("日志接口", std::to_string(error_code).c_str());
+                response->code = ASR_S_OK;
+                break;
+            }
+            else
+            {
+                OATPP_LOGD("日志接口", "3");
+                OATPP_LOGD("日志接口", std::to_string(error_code).c_str());
+                response->code = error_code;
+                break;
+            }
+        }
 
         return createDtoResponse(
             Status::CODE_200,
@@ -211,6 +221,106 @@ public:
     //             jsonObjectMapper->writeToString(response));
     //     }
     // }
+
+    // 启动配置文件
+    // Start profile
+    ENDPOINT(
+        "POST",
+        "/api/profile/start",
+        start_profile,
+        // BODY_DTO(Int32, profile_id)
+        // BODY_STRING(String, profile_id))
+        BODY_DTO(Object<ProfileId>, profile_id))
+    {
+        // std::string a = "启动配置文件" + std::to_string(profile_id);
+        std::string a = "启动配置文件" + profile_id->profile_id;
+        ASR_LOG_INFO(a.c_str());
+
+        auto response =
+            ApiResponse<oatpp::Object<ProfileRunning>>::createShared();
+        response->code = ASR_S_OK;
+        response->message = "";
+        response->result = ProfileRunning::createShared();
+
+        response->result->profile_id = profile_id->profile_id;
+        response->result->run = true;
+
+        // // temp test code
+        // auto profile1_status = ProfileStatus::createShared();
+        // profile1_status->profile_id = "0";
+        // profile1_status->run = false;
+        // profile1_status->enable = true;
+
+        // auto profile2_status = ProfileStatus::createShared();
+        // profile2_status->profile_id = "1";
+        // profile2_status->run = false;
+        // profile2_status->enable = false;
+
+        // auto profile3_status = ProfileStatus::createShared();
+        // profile3_status->profile_id = "2";
+        // profile3_status->run = false;
+        // profile3_status->enable = false;
+
+        // response->result = {profile1_status, profile2_status,
+        // profile3_status};
+        // // temp test code
+
+        return createDtoResponse(
+            Status::CODE_200,
+            jsonObjectMapper->writeToString(response));
+    }
+
+    // 启动配置文件
+    // Start profile
+    ENDPOINT(
+        "POST",
+        "/api/profile/stop",
+        stop_profile,
+        // BODY_DTO(Int32, profile_id)
+        // BODY_STRING(String, profile_id))
+        BODY_DTO(Object<ProfileId>, profile_id))
+    {
+
+        // std::string a = "停止配置文件" + std::to_string(profile_id);
+        std::string a = "停止配置文件" + profile_id->profile_id;
+        ASR_LOG_INFO(a.c_str());
+
+        auto response =
+            ApiResponse<oatpp::Object<ProfileRunning>>::createShared();
+        response->code = ASR_S_OK;
+        response->message = "";
+        response->result = ProfileRunning::createShared();
+
+        response->result->profile_id = profile_id->profile_id;
+        response->result->run = false;
+
+        // // temp test code
+        // auto profile1_status = ProfileStatus::createShared();
+        // profile1_status->profile_id = "0";
+        // profile1_status->run = false;
+        // profile1_status->enable = true;
+
+        // auto profile2_status = ProfileStatus::createShared();
+        // profile2_status->profile_id = "1";
+        // profile2_status->run = false;
+        // profile2_status->enable = false;
+
+        // auto profile3_status = ProfileStatus::createShared();
+        // profile3_status->profile_id = "2";
+        // profile3_status->run = false;
+        // profile3_status->enable = false;
+
+        // response->result = {profile1_status, profile2_status,
+        // profile3_status};
+        // // temp test code
+
+        return createDtoResponse(
+            Status::CODE_200,
+            jsonObjectMapper->writeToString(response));
+    }
+
+    // 停止配置文件
+    // Stop profile
 
     /**
      *  定义设置相关API

@@ -38,6 +38,25 @@ class ProfileStatus : public oatpp::DTO
 
 using ProfileStatusList = ApiResponse<oatpp::List<oatpp::Object<ProfileStatus>>>;
 
+// 配置文件运行状态
+// Profile is runing
+class ProfileRunning : public oatpp::DTO
+{
+
+    DTO_INIT(ProfileRunning, DTO)
+
+    DTO_FIELD(String, profile_id, "profile_id");
+    DTO_FIELD(Boolean, run, "run");
+};
+
+class ProfileId : public oatpp::DTO
+{
+
+    DTO_INIT(ProfileRunning, DTO)
+
+    DTO_FIELD(String, profile_id, "profile_id");
+};
+
 #include OATPP_CODEGEN_END(DTO)
 
 #endif
