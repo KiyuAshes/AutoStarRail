@@ -588,6 +588,6 @@ function(_download_and_config_oatpp)
     FetchContent_MakeAvailable(oatpp)
 endfunction()
 
-
+_download_and_config_oatpp()
 
 message("================================================================")
