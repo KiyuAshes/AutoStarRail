@@ -74,7 +74,11 @@ ASR_DEFINE_GUID(
     0x68);
 ASR_INTERFACE IAsrLogReader : public IAsrBase
 {
+<<<<<<< HEAD
     ASR_METHOD ReadOne(const char* message) = 0;
+=======
+    ASR_METHOD ReadOne(const char* message, size_t size) = 0;
+>>>>>>> origin/HEAD
 };
 
 // {806E244C-CCF0-4DC3-AD54-6886FDF9B1F4}

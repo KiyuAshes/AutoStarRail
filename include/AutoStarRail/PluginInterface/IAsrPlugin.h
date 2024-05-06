@@ -53,9 +53,7 @@ ASR_INTERFACE IAsrPlugin : public IAsrBase
 
 using AsrCoCreatePluginFunction = AsrResult (*)(IAsrPlugin** pp_out_plugin);
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetPluginFeature)
-    AsrPluginFeature value;
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_TYPE(AsrRetPluginFeature, AsrPluginFeature);
 
 // {3F11FBB2-B19F-4C3E-9502-B6D7F1FF9DAA}
 ASR_DEFINE_GUID(
@@ -84,9 +82,7 @@ ASR_INTERFACE IAsrSwigPlugin : public IAsrSwigBase
     virtual AsrResult           CanUnloadPlugin() = 0;
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetPlugin)
-    IAsrSwigPlugin* value{};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_POINTER(AsrRetPlugin, IAsrSwigPlugin);
 
 ASR_API AsrResult AsrRegisterPluginObject(AsrRetSwigBase result_and_p_object);
 

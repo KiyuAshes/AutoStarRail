@@ -1,6 +1,7 @@
 #ifndef ASR_GUIDVECTOR_H
 #define ASR_GUIDVECTOR_H
 
+#include <AutoStarRail/AsrPtr.hpp>
 #include <AutoStarRail/IAsrBase.h>
 
 // {8AE436FE-590B-4B70-B24F-ED1327E9841C}
@@ -80,9 +81,7 @@ ASR_INTERFACE IAsrSwigReadOnlyGuidVector : public IAsrSwigBase
     virtual AsrResult  Find(const AsrGuid& p_iid) = 0;
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetReadOnlyGuidVector)
-    IAsrSwigReadOnlyGuidVector* value{};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_POINTER(AsrRetReadOnlyGuidVector, IAsrSwigReadOnlyGuidVector);
 
 // {E00E7F36-A7BC-4E35-8E98-5C9BB6B1D19B}
 ASR_DEFINE_GUID(
@@ -109,9 +108,7 @@ ASR_INTERFACE IAsrSwigGuidVector : public IAsrSwigBase
     virtual AsrRetReadOnlyGuidVector ToConst() = 0;
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetGuidVector)
-    IAsrSwigGuidVector* value{};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_POINTER(AsrRetGuidVector, IAsrSwigGuidVector);
 
 ASR_API AsrRetGuidVector CreateIAsrSwigGuidVector();
 

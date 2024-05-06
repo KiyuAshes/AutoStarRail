@@ -49,8 +49,6 @@ ASR_INTERFACE IAsrSwigInputFactoryVector : public IAsrSwigBase
     virtual AsrRetInputFactory Find(const AsrGuid& iid) = 0;
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetInputFactoryVector)
-    IAsrSwigInputFactoryVector* value{};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_POINTER(AsrRetInputFactoryVector, IAsrSwigInputFactoryVector);
 
 #endif // ASR_IASRINPUTFACTORYVECTOR_H

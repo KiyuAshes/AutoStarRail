@@ -107,9 +107,7 @@ ASR_INTERFACE IAsrSwigTouch : public IAsrSwigInput
     ASR_METHOD Swipe(AsrPoint from, AsrPoint to, int32_t duration_ms) = 0;
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetInput)
-    IAsrSwigInput* value{};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_POINTER(AsrRetInput, IAsrSwigInput);
 
 // {B03F0BB5-B328-45C4-99D1-04DBC7FC5BA7}
 ASR_DEFINE_GUID(
@@ -154,8 +152,6 @@ ASR_INTERFACE IAsrSwigInputFactory : public IAsrSwigTypeInfo
     virtual AsrRetInput CreateInstance(AsrReadOnlyString json_config) = 0;
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetInputFactory)
-    IAsrSwigInputFactory* value{};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_POINTER(AsrRetInputFactory, IAsrSwigInputFactory);
 
 #endif // ASR_IINPUT_H

@@ -118,13 +118,9 @@ public:
 #endif // SWIG
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetImage)
-    AsrSwigImage value{};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_TYPE(AsrRetImage, AsrSwigImage);
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetRect)
-    AsrRect value;
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_TYPE(AsrRetRect, AsrRect);
 
 ASR_API AsrRetImage AsrPluginLoadImageFromResource(
     ASR_INTERFACE IAsrSwigTypeInfo* p_type_info,

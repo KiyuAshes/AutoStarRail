@@ -205,8 +205,8 @@ auto CreateInterface(
                         u8_plugin_name);
                     return {};
                 }
-                AsrPtr<IAsrSwigBase> result{};
-                *result.PutVoid() = cfi_result.value.GetVoid();
+                AsrPtr<IAsrSwigBase> result{reinterpret_cast<IAsrSwigBase*>(
+                    cfi_result.value.GetVoid())};
                 return result;
             }},
         common_p_plugin);
@@ -250,8 +250,7 @@ auto QueryTypeInfoFrom(
                         p_plugin_name);
                     return {};
                 }
-                AsrPtr<IAsrSwigTypeInfo> result;
-                *result.PutVoid() = qi_result.value.GetVoid();
+                AsrPtr<IAsrSwigTypeInfo> result{qi_result.value.GetVoid()};
                 return result;
             }},
         common_p_base);
@@ -467,8 +466,6 @@ auto QueryErrorLensFrom(
                     static_cast<IAsrSwigErrorLens*>(
                         qi_result.value.GetVoid())}};
 
-                qi_result.value.Get()->Release();
-
                 return result;
             }},
         common_p_base);
@@ -488,14 +485,14 @@ auto RegisterErrorLensFromPlugin(
     const auto& [u8_plugin_name, common_p_base] = param;
 
     AsrPtr<IAsrReadOnlyGuidVector> p_guid_vector{};
-    const auto                     exptected_p_error_lens =
+    const auto                     expected_p_error_lens =
         QueryErrorLensFrom(u8_plugin_name, common_p_base);
-    if (!exptected_p_error_lens)
+    if (!expected_p_error_lens)
     {
-        return exptected_p_error_lens.error();
+        return expected_p_error_lens.error();
     }
 
-    const auto& p_error_lens = exptected_p_error_lens.value();
+    const auto& p_error_lens = expected_p_error_lens.value();
 
     if (const auto get_iids_result =
             p_error_lens->GetSupportedIids(p_guid_vector.Put());

@@ -180,7 +180,7 @@ AsrResult IAsrSwigGuidVectorImpl::PushBack(const AsrGuid& iid)
 
 AsrRetReadOnlyGuidVector IAsrSwigGuidVectorImpl::ToConst()
 {
-    return {ASR_S_OK, impl_};
+    return {ASR_S_OK, {impl_}};
 }
 
 auto IAsrSwigGuidVectorImpl::Get()
@@ -273,8 +273,7 @@ AsrRetGuidVector CreateIAsrSwigGuidVector()
     {
         const auto p_result =
             new ASR::Core::ForeignInterfaceHost::AsrGuidVectorImpl{};
-        result.value = *p_result;
-        p_result->AddRef();
+        result.value = {static_cast<IAsrSwigGuidVector*>(*p_result)};
     }
     catch (const std::bad_alloc&)
     {

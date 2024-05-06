@@ -195,7 +195,7 @@ public:
             IsOk(get_swig_query_interface_result.error_code)
             || get_swig_query_interface_result.error_code != ASR_E_NO_INTERFACE)
         {
-            *pp_out_object = get_swig_query_interface_result.value;
+            *pp_out_object = get_swig_query_interface_result.value.Get();
             return get_swig_query_interface_result.error_code;
         }
         // 最后看是不是要转换到子类
@@ -244,14 +244,12 @@ public:
     }
 
     [[nodiscard]]
-    T*
-    operator->() const noexcept
+    T* operator->() const noexcept
     {
         return static_cast<T*>(this);
     }
     [[nodiscard]]
-    T&
-    operator*() const noexcept
+    T& operator*() const noexcept
     {
         return static_cast<T&>(*this);
     }
@@ -346,7 +344,7 @@ public:
 
     AsrResult OnRequestExit() override;
     AsrResult Do(
-        IAsrReadOnlyString* p_connection_json,
+        IAsrContext*        p_connection_json,
         IAsrReadOnlyString* p_task_settings_json) override;
     AsrResult GetNextExecutionTime(AsrDate* p_out_date) override;
     AsrResult GetName(IAsrReadOnlyString** pp_out_name) override;
@@ -576,7 +574,6 @@ AsrRetT CallCppMethod(T* p_cpp_object, InputArgs&&... input_args)
     // 注意：如出现对象会在SWIG和C++之间反复转换的情况，可能还要处理实现类同时提供C++和SWIG接口的情况
     if constexpr (std::is_pointer_v<ValueType>)
     {
-        p_result->AddRef();
         result.value = p_result.Get();
     }
     else
@@ -730,6 +727,12 @@ auto MakeInterop(FromSwig* p_from) -> Utils::Expected<AsrPtr<ToCpp>>
     }
 }
 
+template <is_asr_interface ToCpp, is_asr_swig_interface FromSwig>
+auto MakeInterop(AsrPtr<FromSwig> p_from) -> Utils::Expected<AsrPtr<ToCpp>>
+{
+    return MakeInterop<ToCpp>(p_from.Get());
+}
+
 template <is_asr_swig_interface ToSwig, is_asr_interface FromCpp>
 auto MakeInterop(FromCpp* p_from) -> Utils::Expected<AsrPtr<ToSwig>>
 {
@@ -753,6 +756,12 @@ auto MakeInterop(FromCpp* p_from) -> Utils::Expected<AsrPtr<ToSwig>>
     }
 }
 
+template <is_asr_swig_interface ToSwig, is_asr_interface FromCpp>
+auto MakeInterop(AsrPtr<FromCpp> p_from) -> Utils::Expected<AsrPtr<ToSwig>>
+{
+    return MakeInterop<ToSwig>(p_from.Get());
+}
+
 template <class RetType, is_asr_swig_interface SwigT>
 auto ToAsrRetType(
     const Utils::Expected<AsrPtr<SwigT>>& expected_result,
@@ -761,7 +770,6 @@ auto ToAsrRetType(
     if (expected_result)
     {
         const auto& value = expected_result.value();
-        value->AddRef();
         ref_out_result = RetType{ASR_S_OK, value.Get()};
     }
     else

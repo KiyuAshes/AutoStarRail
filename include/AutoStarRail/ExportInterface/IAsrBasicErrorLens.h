@@ -59,9 +59,7 @@ ASR_INTERFACE IAsrSwigBasicErrorLens : public IAsrSwigErrorLens
     virtual AsrRetGuidVector GetWritableSupportedIids() = 0;
 };
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetBasicErrorLens)
-    IAsrSwigErrorLens* value{};
-ASR_RET_TYPE_DECLARE_END
+ASR_DEFINE_RET_POINTER(AsrRetBasicErrorLens, IAsrSwigErrorLens);
 
 SWIG_IGNORE(CreateIAsrBasicErrorLens)
 ASR_C_API AsrResult

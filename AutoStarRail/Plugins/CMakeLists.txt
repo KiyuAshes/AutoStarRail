@@ -17,10 +17,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/bin/MinSizeRel
 asr_add_plugin_library(AsrAdbCapture ASR_EX_PRIVATE_LIBS)
 asr_add_plugin_library(AsrAdbTouch ASR_EX_PRIVATE_LIBS)
 
-target_link_libraries(AsrAdbCapture PRIVATE zlib AsrCore)
+target_link_libraries(AsrAdbCapture PRIVATE zlib)
 
 if(WIN32)
     target_link_libraries(AsrAdbCapture PRIVATE Ws2_32)
+    target_link_libraries(AsrAdbTouch PRIVATE Ws2_32)
 endif()
 
 target_include_directories(AsrAdbCapture PRIVATE ${gzip-hpp_SOURCE_DIR}/include)

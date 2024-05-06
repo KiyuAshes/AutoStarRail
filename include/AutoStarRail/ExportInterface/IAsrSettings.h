@@ -40,6 +40,12 @@ ASR_INTERFACE IAsrSettings : public IAsrBase
     ASR_METHOD GetBool(IAsrReadOnlyString * key, bool* p_out_bool) = 0;
     ASR_METHOD GetInt(IAsrReadOnlyString * key, int64_t * p_out_int) = 0;
     ASR_METHOD GetFloat(IAsrReadOnlyString * key, float* p_out_float) = 0;
+
+    ASR_METHOD SetString(IAsrReadOnlyString * key, IAsrReadOnlyString * value) =
+        0;
+    ASR_METHOD SetBool(IAsrReadOnlyString * key, bool value) = 0;
+    ASR_METHOD SetInt(IAsrReadOnlyString * key, int64_t value) = 0;
+    ASR_METHOD SetFloat(IAsrReadOnlyString * key, float value) = 0;
 };
 
 // {0552065B-8FDF-46C7-82BA-703665E769EF}
@@ -59,10 +65,17 @@ ASR_DEFINE_GUID(
     0xef)
 ASR_INTERFACE IAsrSwigSettings : public IAsrSwigBase
 {
-    virtual AsrRetReadOnlyString GetString(const AsrReadOnlyString key) = 0;
-    virtual AsrRetBool           GetBool(const AsrReadOnlyString key) = 0;
-    virtual AsrRetInt            GetInt(const AsrReadOnlyString key) = 0;
-    virtual AsrRetFloat          GetFloat(const AsrReadOnlyString key) = 0;
+    virtual AsrRetReadOnlyString GetString(AsrReadOnlyString key) = 0;
+    virtual AsrRetBool           GetBool(AsrReadOnlyString key) = 0;
+    virtual AsrRetInt            GetInt(AsrReadOnlyString key) = 0;
+    virtual AsrRetFloat          GetFloat(AsrReadOnlyString key) = 0;
+
+    virtual AsrResult SetString(
+        AsrReadOnlyString key,
+        AsrReadOnlyString value) = 0;
+    virtual AsrResult SetBool(AsrReadOnlyString key, bool value) = 0;
+    virtual AsrResult SetInt(AsrReadOnlyString key, int64_t value) = 0;
+    virtual AsrResult SetFloat(AsrReadOnlyString key, float value) = 0;
 };
 
 #ifndef SWIG
@@ -86,7 +99,7 @@ ASR_INTERFACE IAsrSettingsForUi : public IAsrBase
 {
     ASR_METHOD ToString(IAsrReadOnlyString * *pp_out_string) = 0;
     ASR_METHOD FromString(IAsrReadOnlyString * p_in_settings) = 0;
-    ASR_METHOD SaveTo(IAsrReadOnlyString* p_path) = 0;
+    ASR_METHOD SaveTo(IAsrReadOnlyString * p_path) = 0;
 };
 
 /**
@@ -100,15 +113,13 @@ ASR_C_API AsrResult InitializeGlobalSettings(
     IAsrReadOnlyString* p_settings_path,
     IAsrSettingsForUi** pp_out_settings);
 
+ASR_C_API AsrResult
+GetPluginSettings(IAsrTypeInfo* p_plugin, IAsrSettings** pp_out_settings);
+
 #endif // SWIG
 
-ASR_C_API AsrResult
-GetGlobalSettings(IAsrTypeInfo* p_plugin, IAsrSettings** pp_out_settings);
+ASR_DEFINE_RET_POINTER(AsrRetGlobalSettings, IAsrSwigSettings);
 
-ASR_RET_TYPE_DECLARE_BEGIN(AsrRetGlobalSettings)
-    IAsrSwigSettings* value{nullptr};
-ASR_RET_TYPE_DECLARE_END
-
-ASR_API AsrRetGlobalSettings GetGlobalSettings(IAsrSwigTypeInfo* p_plugin);
+ASR_API AsrRetGlobalSettings GetPluginSettins(IAsrSwigTypeInfo* p_plugin);
 
 #endif // ASR_STEEINGS_H

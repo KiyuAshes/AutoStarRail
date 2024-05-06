@@ -55,9 +55,64 @@ auto(ASR_FMT_NS::formatter<AsrReadOnlyString, char>::format)(
     return ASR_FMT_NS::format_to(ctx.out(), "{}", asr_string.GetUtf8());
 }
 
-ASR_NS_BEGIN
+ASR_UTILS_NS_BEGIN
 
-ASR_NS_END
+AsrResult ToPath(
+    IAsrReadOnlyString*    p_string,
+    std::filesystem::path& ref_out_path)
+{
+    ASR_UTILS_CHECK_POINTER(p_string);
+#ifdef ASR_WINDOWS
+    const wchar_t* w_path;
+    const auto     get_result = p_string->GetW(&w_path);
+    if (ASR::IsFailed(get_result))
+    {
+        return get_result;
+    }
+    ref_out_path = std::filesystem::path{w_path};
+#else
+    const char* u8_path;
+    const auto  get_result = p_string->GetUtf8(&u8_path);
+    if (ASR::IsFailed(get_result))
+    {
+        return get_result;
+    }
+    ref_out_path = std::filesystem::path{u8_path};
+#endif // ASR_WINDOWS
+    return get_result;
+}
+auto ToU8StringWithoutOwnership(IAsrReadOnlyString* p_string)
+    -> Expected<const char*>
+{
+    const char* result{nullptr};
+    if (const auto get_u8_string_result = p_string->GetUtf8(&result);
+        IsFailed(get_u8_string_result))
+    {
+        ASR_CORE_LOG_ERROR(
+            "GetUtf8 failed with error code = {}.",
+            get_u8_string_result);
+        return tl::make_unexpected(get_u8_string_result);
+    }
+
+    return result;
+}
+
+auto ToU8String(IAsrReadOnlyString* p_string) -> Expected<std::string>
+{
+    const char* p_u8_string{nullptr};
+    if (const auto get_u8_string_result = p_string->GetUtf8(&p_u8_string);
+        IsFailed(get_u8_string_result))
+    {
+        ASR_CORE_LOG_ERROR(
+            "GetUtf8 failed with error code = {}.",
+            get_u8_string_result);
+        return tl::make_unexpected(get_u8_string_result);
+    }
+
+    return std::string{p_u8_string};
+}
+
+ASR_UTILS_NS_END
 
 bool ASR::AsrStringLess::operator()(
     const ASR::AsrPtr<IAsrReadOnlyString>& lhs,
@@ -512,10 +567,7 @@ namespace Details
         return {&null_asr_string_impl_};
     }
 
-    AsrPtr<IAsrString> CreateAsrString()
-    {
-        return {new AsrStringCppImpl()};
-    }
+    AsrPtr<IAsrString> CreateAsrString() { return {new AsrStringCppImpl()}; }
 }
 
 ASR_NS_END

@@ -3,6 +3,7 @@
 
 #include <AutoStarRail/PluginInterface/IAsrInput.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
+#include <string>
 #include <string_view>
 
 ASR_NS_BEGIN

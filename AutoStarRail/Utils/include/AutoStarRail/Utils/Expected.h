@@ -1,12 +1,12 @@
 #ifndef ASR_UTILS_EXPECTED_H
 #define ASR_UTILS_EXPECTED_H
 
-#include <AutoStarRail/Utils/Config.h>
 #include <AutoStarRail/AsrString.hpp>
+#include <AutoStarRail/Utils/Config.h>
 #include <AutoStarRail/Utils/fmt.h>
 #include <tl/expected.hpp>
-#include <variant>
 #include <type_traits>
+#include <variant>
 
 #define ASTR_UTILS_LOG_ON_ERROR                                                \
     [](const auto& unexpected) { ASR_CORE_LOG_ERROR(unexpected.explanation); }
@@ -45,6 +45,22 @@ using ExpectedWithExplanation = tl::expected<T, ErrorAndExplanation>;
 
 template <class T>
 using Expected = tl::expected<T, AsrResult>;
+
+template <class T>
+auto Map(T&& object) -> Expected<T>
+{
+    return std::forward<T>(object);
+}
+
+template <class T>
+AsrResult GetResult(const Expected<T>& expected_result)
+{
+    if (expected_result.has_value())
+    {
+        return ASR_S_OK;
+    }
+    return expected_result.error();
+}
 
 ASR_UTILS_NS_END
 

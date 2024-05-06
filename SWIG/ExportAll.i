@@ -74,17 +74,25 @@
 %typemap(javain) (const char16_t* p_u16string, size_t length) "p_u16string"
 
 %typemap(in, numinputs=1) (const char16_t* p_u16string, size_t length) %{
-    const jchar* p_jstring = jenv->GetStringChars(jarg1, nullptr);
+    class _asr_InternalJavaString{
+        const jchar* p_jstring_;
+        JNIEnv* jenv_;
+        jstring java_string_;
+    public:
+        _asr_InternalJavaString(JNIEnv* jenv, jstring java_string)
+            : p_jstring_{jenv->GetStringChars(java_string, nullptr)},
+              jenv_{jenv}, java_string_{java_string}
+        {
+        }
+        ~_asr_InternalJavaString() { jenv_->ReleaseStringChars(java_string_, p_jstring_); }
+        const jchar* Get() noexcept { return p_jstring_; }
+    } jstring_wrapper{jenv, jarg1};
     const jsize string_length = jenv->GetStringLength(jarg1);
     static_assert(sizeof(jchar) == sizeof(char16_t), "Size of jchar is NOT equal to size of char16_t.");
-    jchar* p_non_const_jstring = const_cast<jchar*>(p_jstring);
+    jchar* p_non_const_jstring = const_cast<jchar*>(jstring_wrapper.Get());
     $1 = reinterpret_cast<decltype($1)>(p_non_const_jstring);
     $2 = string_length;
 %}
-
-%typemap(out) (const char16_t* p_u16string, size_t length) {
-    jenv->ReleaseStringChars(jarg1, p_jstring);
-}
 
 #endif
 

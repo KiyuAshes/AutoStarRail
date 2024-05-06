@@ -3,6 +3,7 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Core/SettingsManager/IAsrSettingsImpl.h>
+#include <AutoStarRail/Core/Utils/InternalUtils.h>
 #include <AutoStarRail/ExportInterface/IAsrSettings.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
@@ -72,10 +73,6 @@ IAsrSettingsImpl::IAsrSettingsImpl(
 {
 }
 
-int64_t IAsrSettingsImpl::AddRef() { return impl_.AddRef(); }
-
-int64_t IAsrSettingsImpl::Release() { return impl_.Release(); }
-
 AsrResult IAsrSettingsImpl::QueryInterface(const AsrGuid& iid, void** pp_object)
 {
     return Utils::QueryInterface<IAsrSettings>(this, iid, pp_object);
@@ -132,16 +129,34 @@ ASR_IMPL IAsrSettingsImpl::GetFloat(IAsrReadOnlyString* key, float* p_out_float)
     return ret_float.error_code;
 }
 
+AsrResult IAsrSettingsImpl::SetString(
+    IAsrReadOnlyString* key,
+    IAsrReadOnlyString* value)
+{
+    return impl_.SetString(u8_type_name_, key, value);
+}
+
+AsrResult IAsrSettingsImpl::SetBool(IAsrReadOnlyString* key, bool value)
+{
+    return impl_.SetBool(u8_type_name_, key, value);
+}
+
+AsrResult IAsrSettingsImpl::SetInt(IAsrReadOnlyString* key, int64_t value)
+{
+    return impl_.SetInt(u8_type_name_, key, value);
+}
+
+AsrResult IAsrSettingsImpl::SetFloat(IAsrReadOnlyString* key, float value)
+{
+    return impl_.SetFloat(u8_type_name_, key, value);
+}
+
 IAsrSwigSettingsImpl::IAsrSwigSettingsImpl(
     Asr::Core::SettingsManager::AsrSettings& impl,
     const char*                              u8_type_name)
     : impl_{impl}, u8_type_name_{u8_type_name}
 {
 }
-
-int64_t IAsrSwigSettingsImpl::AddRef() { return impl_.AddRef(); }
-
-int64_t IAsrSwigSettingsImpl::Release() { return impl_.Release(); }
 
 AsrRetSwigBase IAsrSwigSettingsImpl::QueryInterface(const AsrGuid& iid)
 {
@@ -165,6 +180,28 @@ AsrRetInt IAsrSwigSettingsImpl::GetInt(const AsrReadOnlyString key)
 AsrRetFloat IAsrSwigSettingsImpl::GetFloat(const AsrReadOnlyString key)
 {
     return impl_.GetFloat(u8_type_name_, key);
+}
+
+AsrResult IAsrSwigSettingsImpl::SetString(
+    AsrReadOnlyString key,
+    AsrReadOnlyString value)
+{
+    return impl_.SetString(u8_type_name_, key, value);
+}
+
+AsrResult IAsrSwigSettingsImpl::SetBool(AsrReadOnlyString key, bool value)
+{
+    return impl_.SetBool(u8_type_name_, key, value);
+}
+
+AsrResult IAsrSwigSettingsImpl::SetInt(AsrReadOnlyString key, int64_t value)
+{
+    return impl_.SetInt(u8_type_name_, key, value);
+}
+
+AsrResult IAsrSwigSettingsImpl::SetFloat(AsrReadOnlyString key, float value)
+{
+    return impl_.SetFloat(u8_type_name_, key, value);
 }
 
 IAsrSettingsForUiImpl::IAsrSettingsForUiImpl(AsrSettings& impl) : impl_{impl} {}
@@ -192,12 +229,16 @@ ASR_IMPL IAsrSettingsForUiImpl::FromString(IAsrReadOnlyString* p_in_settings)
 
 ASR_IMPL IAsrSettingsForUiImpl::SaveTo(IAsrReadOnlyString* p_path)
 {
+<<<<<<< HEAD
 (void) p_path;
 return ASR_E_NO_IMPLEMENTATION;
+=======
+    return impl_.SaveTo(p_path);
+>>>>>>> origin/HEAD
 }
 
-    auto AsrSettings::GetKey(const char* p_type_name, const char* key)
-        -> Utils::Expected<std::reference_wrapper<const nlohmann::json>>
+auto AsrSettings::GetKey(const char* p_type_name, const char* key)
+    -> Utils::Expected<std::reference_wrapper<const nlohmann::json>>
 {
     if (const auto global_setting_it = settings_.find(p_type_name);
         global_setting_it != settings_.end())
@@ -220,52 +261,15 @@ return ASR_E_NO_IMPLEMENTATION;
     return tl::make_unexpected(ASR_E_OUT_OF_RANGE);
 }
 
-auto AsrSettings::ToString(IAsrReadOnlyString* p_string)
-    -> Utils::Expected<const char*>
+auto AsrSettings::FindTypeSettings(const char* p_type_name)
+    -> Utils::Expected<std::reference_wrapper<const nlohmann::json>>
 {
-    const char* p_u8_string;
-    if (const auto get_u8_string_result = p_string->GetUtf8(&p_u8_string);
-        IsFailed(get_u8_string_result)) [[unlikely]]
+    if (const auto global_setting_it = settings_.find(p_type_name);
+        global_setting_it != settings_.end())
     {
-        ASR_CORE_LOG_ERROR(
-            "GetUtf8 failed with error code = {}.",
-            get_u8_string_result);
-        return tl::make_unexpected(get_u8_string_result);
+        return std::cref(*global_setting_it);
     }
-    return p_u8_string;
-}
-
-AsrSettings::AsrSettings(IAsrReadOnlyString* p_path)
-{
-    if (p_path == nullptr) [[unlikely]]
-    {
-        ASR_CORE_LOG_ERROR("Null pointer found! Variable name is p_path."
-                           " Please check your code.");
-        AsrException::Throw(ASR_E_INVALID_POINTER);
-    }
-
-#ifdef ASR_WINDOWS
-    const wchar_t* w_path;
-    if (const auto get_result = p_path->GetW(&w_path); IsFailed(get_result))
-    {
-        AsrException::Throw(get_result);
-    }
-    std::filesystem::path path{w_path};
-#else
-    const char* u8_path;
-    if (const auto get_result = p_path->GetUtf8(&u8_path); IsFailed(get_result))
-    {
-        AsrException::Throw(get_result);
-    }
-    std::filesystem::path path{u8_path};
-#endif // ASR_WINDOWS
-
-    std::ifstream ifs;
-    Utils::EnableStreamException(
-        ifs,
-        std::ios::badbit | std::ios::failbit,
-        [&path](auto& stream) { stream.open(path); });
-    settings_ = nlohmann::json::parse(ifs);
+    return tl::make_unexpected(ASR_E_OUT_OF_RANGE);
 }
 
 int64_t AsrSettings::AddRef() { return 1; }
@@ -279,7 +283,7 @@ AsrRetReadOnlyString AsrSettings::GetString(
     std::lock_guard guard{mutex_};
 
     AsrRetReadOnlyString result{};
-    ToString(key.Get())
+    Utils::ToU8StringWithoutOwnership(key.Get())
         .and_then(
             [this, p_type_string = u8_type_string.data()](const char* p_key)
             { return GetKey(p_type_string, p_key); })
@@ -324,7 +328,7 @@ AsrRetBool AsrSettings::GetBool(
 {
     std::lock_guard guard{mutex_};
     AsrRetBool      result{};
-    ToString(key.Get())
+    Utils::ToU8StringWithoutOwnership(key.Get())
         .and_then(
             [this, p_type_string = u8_type_string.data()](const char* p_key)
             { return GetKey(p_type_string, p_key); })
@@ -354,7 +358,7 @@ AsrRetInt AsrSettings::GetInt(
 {
     std::lock_guard guard{mutex_};
     AsrRetInt       result{};
-    ToString(key.Get())
+    Utils::ToU8StringWithoutOwnership(key.Get())
         .and_then(
             [this, p_type_string = u8_type_string.data()](const char* p_key)
             { return GetKey(p_type_string, p_key); })
@@ -384,7 +388,7 @@ AsrRetFloat AsrSettings::GetFloat(
 {
     std::lock_guard guard{mutex_};
     AsrRetFloat     result{};
-    ToString(key.Get())
+    Utils::ToU8StringWithoutOwnership(key.Get())
         .and_then(
             [this, p_type_string = u8_type_string.data()](const char* p_key)
             { return GetKey(p_type_string, p_key); })
@@ -406,6 +410,74 @@ AsrRetFloat AsrSettings::GetFloat(
         .or_else([&result](AsrResult error_code)
                  { result.error_code = error_code; });
     return result;
+}
+
+AsrResult AsrSettings::SetString(
+    std::string_view  u8_type_string,
+    AsrReadOnlyString key,
+    AsrReadOnlyString value)
+{
+    const auto expected_u8_key = Utils::ToU8StringWithoutOwnership(key.Get());
+    if (!expected_u8_key)
+    {
+        return expected_u8_key.error();
+    }
+
+    const auto expected_u8_value =
+        Utils::ToU8StringWithoutOwnership(value.Get());
+    if (!expected_u8_value)
+    {
+        return expected_u8_value.error();
+    }
+
+    std::lock_guard guard{mutex_};
+
+    settings_[u8_type_string.data()][expected_u8_key.value()] =
+        expected_u8_value.value();
+
+    return ASR_S_OK;
+}
+
+AsrResult AsrSettings::SetBool(
+    std::string_view  u8_type_string,
+    AsrReadOnlyString key,
+    bool              value)
+{
+    const auto expected_u8_key = Utils::ToU8StringWithoutOwnership(key.Get());
+    if (!expected_u8_key)
+    {
+        return expected_u8_key.error();
+    }
+    settings_[u8_type_string.data()][expected_u8_key.value()] = value;
+    return ASR_S_OK;
+}
+
+AsrResult AsrSettings::SetInt(
+    std::string_view  u8_type_string,
+    AsrReadOnlyString key,
+    int64_t           value)
+{
+    const auto expected_u8_key = Utils::ToU8StringWithoutOwnership(key.Get());
+    if (!expected_u8_key)
+    {
+        return expected_u8_key.error();
+    }
+    settings_[u8_type_string.data()][expected_u8_key.value()] = value;
+    return ASR_S_OK;
+}
+
+AsrResult AsrSettings::SetFloat(
+    std::string_view  u8_type_string,
+    AsrReadOnlyString key,
+    float             value)
+{
+    const auto expected_u8_key = Utils::ToU8StringWithoutOwnership(key.Get());
+    if (!expected_u8_key)
+    {
+        return expected_u8_key.error();
+    }
+    settings_[u8_type_string.data()][expected_u8_key.value()] = value;
+    return ASR_S_OK;
 }
 
 AsrResult AsrSettings::ToString(IAsrReadOnlyString** pp_out_string)
@@ -461,6 +533,40 @@ AsrResult AsrSettings::FromString(IAsrReadOnlyString* p_in_settings)
     }
 }
 
+AsrResult AsrSettings::SaveTo(IAsrReadOnlyString* p_path)
+{
+    ASR_UTILS_CHECK_POINTER(p_path)
+
+    std::filesystem::path path{};
+    if (const auto to_path_result = Utils::ToPath(p_path, path);
+        IsFailed(to_path_result))
+    {
+        return to_path_result;
+    }
+    std::ofstream ofs{};
+
+    try
+    {
+        Utils::EnableStreamException(
+            ofs,
+            std::ios::badbit | std::ios::failbit,
+            [&path](auto& stream) { stream.open(path); });
+        std::lock_guard guard{mutex_};
+        ofs << settings_;
+        ofs.flush();
+        return ASR_S_OK;
+    }
+    catch (const std::ios_base::failure& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        ASR_CORE_LOG_INFO(
+            "Error happened when saving settings. Error code = " ASR_STR(
+                ASR_E_INVALID_FILE) ".");
+        ASR_CORE_LOG_INFO("NOTE: Path = {}.", AsrPtr{p_path});
+        return ASR_E_INVALID_FILE;
+    }
+}
+
 AsrResult AsrSettings::SetDefaultValues(nlohmann::json&& rv_json)
 {
     std::lock_guard lock{mutex_};
@@ -470,5 +576,157 @@ AsrResult AsrSettings::SetDefaultValues(nlohmann::json&& rv_json)
     return ASR_S_OK;
 }
 
+AsrResult AsrSettings::LoadSettings(IAsrReadOnlyString* p_path)
+{
+    try
+    {
+        if (p_path == nullptr) [[unlikely]]
+        {
+            ASR_CORE_LOG_ERROR("Null pointer found! Variable name is p_path."
+                               " Please check your code.");
+            AsrException::Throw(ASR_E_INVALID_POINTER);
+        }
+
+        std::filesystem::path path;
+        if (const auto to_path_result = Utils::ToPath(p_path, path);
+            IsFailed(to_path_result))
+        {
+            AsrException::Throw(to_path_result);
+        }
+
+        std::ifstream ifs;
+        Utils::EnableStreamException(
+            ifs,
+            std::ios::badbit | std::ios::failbit,
+            [&path](auto& stream) { stream.open(path); });
+        settings_ = nlohmann::json::parse(ifs);
+
+        return ASR_S_OK;
+    }
+    catch (const AsrException& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        return ex.GetErrorCode();
+    }
+    catch (const std::ios_base::failure& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        ASR_CORE_LOG_INFO(
+            "Error happened when reading settings file. Error code = " ASR_STR(
+                ASR_E_INVALID_FILE) ".");
+        return ASR_E_INVALID_FILE;
+    }
+    catch (const nlohmann::json::exception& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        ASR_CORE_LOG_INFO(
+            "Error happened when reading settings json. Error code = " ASR_STR(
+                ASR_E_INVALID_JSON) ".");
+        return ASR_E_INVALID_JSON;
+    }
+}
+
+AsrSettings::operator IAsrSettingsForUiImpl*() noexcept
+{
+    return &cpp_projection_for_ui_;
+}
+
+ASR_DEFINE_VARIABLE(g_settings);
+
 ASR_CORE_SETTINGSMANAGER_NS_END
 
+AsrResult InitializeGlobalSettings(
+    IAsrReadOnlyString* p_settings_path,
+    IAsrSettingsForUi** pp_out_settings)
+{
+    if (const auto set_result =
+            ASR::Core::SettingsManager::g_settings.LoadSettings(
+                p_settings_path);
+        ASR::IsFailed(set_result))
+    {
+        return set_result;
+    }
+
+    ASR_UTILS_CHECK_POINTER(pp_out_settings);
+    *pp_out_settings = ASR::Core::SettingsManager::g_settings;
+    return ASR_S_OK;
+}
+
+AsrResult GetPluginSettins(
+    IAsrTypeInfo*  p_plugin,
+    IAsrSettings** pp_out_settings)
+{
+    ASR_UTILS_CHECK_POINTER(p_plugin)
+    ASR_UTILS_CHECK_POINTER(pp_out_settings)
+
+    try
+    {
+        const auto type_name =
+            ASR::Core::Utils::GetRuntimeClassNameFrom(p_plugin);
+
+        const auto expected_result =
+            ASR::Utils::ToU8StringWithoutOwnership(type_name.Get())
+                .map(
+                    [&](const char* p_u8_name)
+                    {
+                        const auto p_result = ASR::MakeAsrPtr<
+                            IAsrSettings,
+                            ASR::Core::SettingsManager::IAsrSettingsImpl>(
+                            ASR::Core::SettingsManager::g_settings,
+                            p_u8_name);
+                        *pp_out_settings = p_result.Get();
+                        p_result->AddRef();
+                    });
+        return ASR::Utils::GetResult(expected_result);
+    }
+    catch (const Asr::Core::AsrException& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        return ex.GetErrorCode();
+    }
+    catch (const std::bad_alloc&)
+    {
+        return ASR_E_OUT_OF_MEMORY;
+    }
+}
+
+AsrRetGlobalSettings GetPluginSettins(IAsrSwigTypeInfo* p_plugin)
+{
+    if (p_plugin == nullptr)
+    {
+        ASR_CORE_LOG_ERROR("Nullptr found!");
+        return {ASR_E_INVALID_POINTER, nullptr};
+    }
+
+    AsrRetGlobalSettings result{};
+
+    try
+    {
+        const auto type_name =
+            ASR::Core::Utils::GetRuntimeClassNameFrom(p_plugin);
+
+        const auto expected_result =
+            ASR::Utils::ToU8StringWithoutOwnership(type_name.Get())
+                .map(
+                    [&](const char* p_u8_name)
+                    {
+                        const auto p_result = ASR::MakeAsrPtr<
+                            IAsrSwigSettings,
+                            ASR::Core::SettingsManager::IAsrSwigSettingsImpl>(
+                            ASR::Core::SettingsManager::g_settings,
+                            p_u8_name);
+                        result.value = p_result.Get();
+                    });
+        result.error_code = ASR::Utils::GetResult(expected_result);
+        return result;
+    }
+    catch (const Asr::Core::AsrException& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        return {ex.GetErrorCode(), nullptr};
+    }
+    catch (const std::bad_alloc&)
+    {
+        return {ASR_E_OUT_OF_MEMORY, nullptr};
+    }
+}
