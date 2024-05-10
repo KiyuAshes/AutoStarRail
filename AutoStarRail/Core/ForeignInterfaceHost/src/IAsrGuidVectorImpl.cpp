@@ -180,7 +180,7 @@ AsrResult IAsrSwigGuidVectorImpl::PushBack(const AsrGuid& iid)
 
 AsrRetReadOnlyGuidVector IAsrSwigGuidVectorImpl::ToConst()
 {
-    return {ASR_S_OK, {impl_}};
+    return {ASR_S_OK, {static_cast<IAsrSwigReadOnlyGuidVector*>(impl_)}};
 }
 
 auto IAsrSwigGuidVectorImpl::Get()

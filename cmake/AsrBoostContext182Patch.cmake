@@ -155,6 +155,8 @@ set(ASM_SOURCES
     src/asm/ontop_${_asm_suffix}
 )
 
+set_source_files_properties(${ASM_SOURCES} PROPERTIES LANGUAGE ${BOOST_CONTEXT_ASM_TYPE})
+
 unset(_asm_suffix)
 
 #

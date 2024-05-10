@@ -62,9 +62,9 @@ void _asr_internal_DelayAddRef(T* pointer)
                                                                                \
     public:                                                                    \
         AsrResult GetErrorCode() noexcept { return error_code; }               \
-        void      SetErrorCode(AsrResult error_code) noexcept                  \
+        void      SetErrorCode(AsrResult in_error_code) noexcept               \
         {                                                                      \
-            this->error_code = error_code;                                     \
+            this->error_code = in_error_code;                                  \
         }                                                                      \
         type GetValue() { return value; }                                      \
         void SetValue(const type& input_value) { value = input_value; }        \
@@ -83,9 +83,9 @@ void _asr_internal_DelayAddRef(T* pointer)
                                                                                \
     public:                                                                    \
         AsrResult GetErrorCode() noexcept { return error_code; }               \
-        void      SetErrorCode(AsrResult error_code) noexcept                  \
+        void      SetErrorCode(AsrResult in_error_code) noexcept               \
         {                                                                      \
-            this->error_code = error_code;                                     \
+            this->error_code = in_error_code;                                  \
         }                                                                      \
         pointer_type* GetValue() noexcept                                      \
         {                                                                      \
@@ -239,7 +239,8 @@ CreateIAsrReadOnlyStringVector(AsrGuid** p_in_guid_array, const size_t size);
 #endif // SWIG
 
 /**
- * @brief 注意：此类获取指针后不增加引用计数，因此提供指针时应该是已经执行过AddRef的指针
+ * @brief
+ * 注意：此类获取指针后不增加引用计数，因此提供指针时应该是已经执行过AddRef的指针
  *  这一特性使得它可以被QueryInterface参数中返回的指针正确初始化
  */
 class ASR_EXPORT AsrSwigBaseWrapper
@@ -254,7 +255,7 @@ public:
     AsrSwigBaseWrapper& operator=(const AsrSwigBaseWrapper& other);
     AsrSwigBaseWrapper& operator=(AsrSwigBaseWrapper&& other) noexcept;
 #endif // SWIG
-        ~AsrSwigBaseWrapper();
+    ~AsrSwigBaseWrapper();
 #ifndef SWIG
     explicit AsrSwigBaseWrapper(void* p_object) noexcept;
 #endif // SWIG

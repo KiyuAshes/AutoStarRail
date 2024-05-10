@@ -372,7 +372,9 @@ function(_download_and_config_boost)
     FetchContent_Declare(
         AsrBoost
         URL ${GITHUB_MIRROR_URL}/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.7z
-        URL_HASH SHA256=CE132F85FC706AA8B5C7E6E52A8338DE33A688E92E7C8FADA3713194B109232E)
+        URL_HASH SHA256=CE132F85FC706AA8B5C7E6E52A8338DE33A688E92E7C8FADA3713194B109232E
+        PATCH_COMMAND ${CMAKE_COMMAND} -E copy
+        "${CMAKE_SOURCE_DIR}/cmake/AsrBoostContext182Patch.cmake" <SOURCE_DIR>/libs/context/CMakeLists.txt)
 
     # See [Symbol redefinition on latest mingw gcc](https://github.com/boostorg/stacktrace/issues/133)
     # You should use boost from msys package manager to avoid this error.
