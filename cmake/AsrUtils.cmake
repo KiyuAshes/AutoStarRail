@@ -50,6 +50,7 @@ function(asr_add_additional_test ADDITIONAL_TEST_DIRECTORY_NAME)
     aux_source_directory(${ADDITIONAL_TEST_DIRECTORY_NAME} SOURCES)
     add_executable(AdditionalTest ${SOURCES})
     target_link_libraries(AdditionalTest PRIVATE GTest::gtest_main GTest::gtest)
+    add_dependencies(AdditionalTest AsrAutoCopyDll)
 
     # force cmake output test executable to ${CMAKE_BINARY_DIR}/Test
     set_target_properties(AdditionalTest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Test)
