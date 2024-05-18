@@ -175,11 +175,7 @@ private:
     uint8_t  data4[8];
 } AsrGuid;
 
-typedef struct _asr_RetGuid
-{
-    AsrResult error_code;
-    AsrGuid   value;
-} AsrRetGuid;
+ASR_DEFINE_RET_TYPE(AsrRetGuid, AsrGuid);
 
 typedef char AsrBool;
 
@@ -190,9 +186,18 @@ typedef char AsrBool;
  * @brief input format should be "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
  *
  * @param p_guid_string
- * @return ASR_C_API
+ * @return ASR_S_OK if success.
  */
-ASR_C_API AsrRetGuid AsrMakeAsrGuid(const char* p_guid_string);
+ASR_API AsrRetGuid AsrMakeAsrGuid(const char* p_guid_string);
+
+/**
+ * @brief input format should be "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+ *
+ * @param p_guid_string
+ * @return ASR_S_OK if success.
+ */
+SWIG_IGNORE(AsrMakeAsrGuid)
+ASR_C_API AsrResult AsrMakeAsrGuid(const char* p_guid_string, AsrGuid* p_out_guid);
 
 #ifndef SWIG
 
