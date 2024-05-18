@@ -197,7 +197,8 @@ ASR_API AsrRetGuid AsrMakeAsrGuid(const char* p_guid_string);
  * @return ASR_S_OK if success.
  */
 SWIG_IGNORE(AsrMakeAsrGuid)
-ASR_C_API AsrResult AsrMakeAsrGuid(const char* p_guid_string, AsrGuid* p_out_guid);
+ASR_C_API AsrResult
+AsrMakeAsrGuid(const char* p_guid_string, AsrGuid* p_out_guid);
 
 #ifndef SWIG
 
@@ -289,7 +290,8 @@ ASR_DEFINE_GUID(
     0x3,
     0x50,
     0xa2)
-ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigBase) ASR_INTERFACE IAsrSwigBase
+ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigBase)
+ASR_INTERFACE IAsrSwigBase
 {
     virtual int64_t AddRef() = 0;
     virtual int64_t Release() = 0;
