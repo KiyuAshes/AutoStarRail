@@ -16,9 +16,9 @@ class AsrHttpLogReader : public IAsrLogReader
 {
     std::shared_ptr<std::string> sp_message;
 
-    AsrResult ReadOne(const char* message) override
+    AsrResult ReadOne(const char* message, size_t size) override
     {
-        *sp_message = message;
+        *sp_message = {message, size};
         return ASR_S_OK;
     }
 
