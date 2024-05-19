@@ -1,5 +1,5 @@
-#ifndef Logs_DTOs_hpp
-#define Logs_DTOs_hpp
+#ifndef DAS_HTTP_DTO_LOG_HPP
+#define DAS_HTTP_DTO_LOG_HPP
 
 #include "Global.hpp"
 
@@ -22,4 +22,4 @@ using Logs = ApiResponse<oatpp::Object<LogsData>>;
 
 #include OATPP_CODEGEN_END(DTO)
 
-#endif
+#endif // DAS_HTTP_DTO_LOG_HPP

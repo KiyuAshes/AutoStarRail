@@ -1,5 +1,5 @@
-#ifndef Profile_DTOs_hpp
-#define Profile_DTOs_hpp
+#ifndef DAS_HTTP_DTO_PROFILE_HPP
+#define DAS_HTTP_DTO_PROFILE_HPP
 
 #include "Global.hpp"
 
@@ -59,4 +59,4 @@ class ProfileId : public oatpp::DTO
 
 #include OATPP_CODEGEN_END(DTO)
 
-#endif
+#endif // DAS_HTTP_DTO_PROFILE_HPP

@@ -1,5 +1,5 @@
-#ifndef Settings_DTOs_hpp
-#define Settings_DTOs_hpp
+#ifndef DAS_HTTP_DTO_SETTINGS_HPP
+#define DAS_HTTP_DTO_SETTINGS_HPP
 
 #include "Global.hpp"
 
@@ -57,5 +57,4 @@ using TaskDescList = ApiResponse<oatpp::List<oatpp::Object<TaskDesc>>>;
 
 #include OATPP_CODEGEN_END(DTO)
 
-#endif
-
+#endif // DAS_HTTP_DTO_SETTINGS_HPP

@@ -1,5 +1,5 @@
-#ifndef Controller_hpp
-#define Controller_hpp
+#ifndef DAS_HTTP_CONTROLLER_CONTROLLER_HPP
+#define DAS_HTTP_CONTROLLER_CONTROLLER_HPP
 
 #include "AutoStarRail/ExportInterface/AsrLogger.h"
 #include "AutoStarRail/IAsrBase.h"
@@ -444,4 +444,4 @@ public:
 
 #include OATPP_CODEGEN_END(ApiController)
 
-#endif
+#endif // DAS_HTTP_CONTROLLER_CONTROLLER_HPP

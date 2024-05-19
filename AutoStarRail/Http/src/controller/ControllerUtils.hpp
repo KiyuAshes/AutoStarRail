@@ -1,5 +1,5 @@
-#ifndef Controller_Utils_hpp
-#define Controller_Utils_hpp
+#ifndef DAS_HTTP_CONTROLLER_CONTROLLERUTILS_HPP
+#define DAS_HTTP_CONTROLLER_CONTROLLERUTILS_HPP
 
 
 #include <memory>
@@ -34,4 +34,4 @@ class AsrHttpLogReader : public IAsrLogReader
     };
 };
 
-#endif
+#endif // DAS_HTTP_CONTROLLER_CONTROLLERUTILS_HPP
