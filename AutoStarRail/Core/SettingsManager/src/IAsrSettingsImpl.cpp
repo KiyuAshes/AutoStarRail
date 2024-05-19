@@ -1,3 +1,4 @@
+#include "AutoStarRail/IAsrBase.h"
 #include <AutoStarRail/Core/Exceptions/AsrException.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
