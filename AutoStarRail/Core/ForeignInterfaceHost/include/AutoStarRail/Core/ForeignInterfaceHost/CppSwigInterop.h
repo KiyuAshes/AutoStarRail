@@ -343,9 +343,7 @@ public:
     ASR_USING_BASE_CTOR(SwigToCppTypeInfo);
 
     AsrResult OnRequestExit() override;
-    AsrResult Do(
-        IAsrContext*        p_connection_json,
-        IAsrReadOnlyString* p_task_settings_json) override;
+    AsrResult Do(IAsrReadOnlyString* p_task_settings_json) override;
     AsrResult GetNextExecutionTime(AsrDate* p_out_date) override;
     AsrResult GetName(IAsrReadOnlyString** pp_out_name) override;
     AsrResult GetDescription(IAsrReadOnlyString** pp_out_settings) override;

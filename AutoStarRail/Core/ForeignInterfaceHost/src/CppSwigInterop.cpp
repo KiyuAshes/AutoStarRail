@@ -57,15 +57,13 @@ auto CreateCppToSwigObjectImpl(void* p_swig_object, void** pp_out_cpp_object)
 ASR_NS_ANONYMOUS_DETAILS_END
 
 #define ASR_CORE_FOREIGNINTERFACEHOST_CREATE_CPP_TO_SWIG_OBJECT(SwigType)      \
-    {                                                                          \
-        AsrIidOf<SwigType>(),                                                  \
-            [](void* p_swig_object, void** pp_out_cpp_object)                  \
-        {                                                                      \
-            return Details::CreateCppToSwigObjectImpl<SwigType>(               \
-                p_swig_object,                                                 \
-                pp_out_cpp_object);                                            \
-        }                                                                      \
-    }
+    {AsrIidOf<SwigType>(),                                                     \
+     [](void* p_swig_object, void** pp_out_cpp_object)                         \
+     {                                                                         \
+         return Details::CreateCppToSwigObjectImpl<SwigType>(                  \
+             p_swig_object,                                                    \
+             pp_out_cpp_object);                                               \
+     }}
 
 // TODO: 添加所有PluginInterface中的导出类型
 const static std::unordered_map<
@@ -127,10 +125,9 @@ auto CreateSwigToCppObjectImpl(void* p_cpp_object) -> AsrRetSwigBase
 ASR_NS_ANONYMOUS_DETAILS_END
 
 #define ASR_CORE_FOREIGNINTERFACEHOST_CREATE_SWIG_TO_CPP_OBJECT(Type)          \
-    {                                                                          \
-        AsrIidOf<Type>(), [](void* p_cpp_object)                               \
-        { return Details::CreateSwigToCppObjectImpl<Type>(p_cpp_object); }     \
-    }
+    {AsrIidOf<Type>(), [](void* p_cpp_object) {                                \
+         return Details::CreateSwigToCppObjectImpl<Type>(p_cpp_object);        \
+     }}
 
 // TODO: 添加所有PluginInterface中的导出类型
 const static std::unordered_map<AsrGuid, AsrRetSwigBase (*)(void* p_cpp_object)>
@@ -198,27 +195,11 @@ AsrResult SwigToCpp<IAsrSwigTask>::OnRequestExit()
     return p_impl_->OnRequestExit();
 }
 
-AsrResult SwigToCpp<IAsrSwigTask>::Do(
-    IAsrContext*        p_context,
-    IAsrReadOnlyString* p_task_settings_json)
+AsrResult SwigToCpp<IAsrSwigTask>::Do(IAsrReadOnlyString* p_task_settings_json)
 {
     try
     {
-        void*      p_void_context{nullptr};
-        const auto qi_result = p_context->QueryInterface(
-            AsrIidOf<IAsrSwigContext>(),
-            &p_void_context);
-        if (IsFailed(qi_result))
-        {
-            ASR_CORE_LOG_ERROR(
-                "Error when query interface IAsrSwigContext in IAsrContext object.");
-            return qi_result;
-        }
-
-        const auto p_swig_context =
-            static_cast<IAsrSwigContext*>(p_void_context);
-
-        const auto result = p_impl_->Do(p_swig_context, p_task_settings_json);
+        const auto result = p_impl_->Do({p_task_settings_json});
         return result;
     }
     catch (const std::exception& ex)
