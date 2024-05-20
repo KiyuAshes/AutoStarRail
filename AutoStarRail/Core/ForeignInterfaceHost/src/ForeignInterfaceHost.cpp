@@ -1,14 +1,14 @@
-#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHost.h>
-#include <AutoStarRail/Utils/CommonUtils.hpp>
-#include <AutoStarRail/Utils/UnexpectedEnumException.h>
-#include <AutoStarRail/Utils/EnumUtils.hpp>
 #include <AutoStarRail/AsrConfig.h>
-#include <AutoStarRail/ExportInterface/IAsrSettings.h>
-#include <AutoStarRail/Core/Logger/Logger.h>
-#include <stdexcept>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
-#include <magic_enum_format.hpp>
+#include <AutoStarRail/Core/ForeignInterfaceHost/ForeignInterfaceHost.h>
+#include <AutoStarRail/Core/Logger/Logger.h>
+#include <AutoStarRail/ExportInterface/IAsrSettings.h>
+#include <AutoStarRail/Utils/CommonUtils.hpp>
+#include <AutoStarRail/Utils/EnumUtils.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
+#include <AutoStarRail/Utils/UnexpectedEnumException.h>
+#include <magic_enum_format.hpp>
+#include <stdexcept>
 
 template <class T>
 struct ASR_FMT_NS::formatter<std::vector<T>, char>
@@ -153,9 +153,6 @@ auto(ASR_FMT_NS::formatter<ASR::Core::ForeignInterfaceHost::PluginDesc, char>::
 {
     auto result = ctx.out();
 
-    ASR_FMT_NS::format_to(
-        result,
-        ASR_CORE_FOREIGNINTERFACEHOST_VAR(plugin_metadata_version));
     ASR_FMT_NS::format_to(result, ASR_CORE_FOREIGNINTERFACEHOST_VAR(language));
     ASR_FMT_NS::format_to(result, ASR_CORE_FOREIGNINTERFACEHOST_VAR(name));
     ASR_FMT_NS::format_to(
@@ -213,8 +210,8 @@ void from_json(const nlohmann::json& input, PluginSettingDesc& output)
 {
     ASR_CORE_TRACE_SCOPE;
 
-    output.name = input.at("name").get<std::string>();
-    output.type = Utils::JsonToEnum<AsrType>(input, "type");
+    input.at("name").get_to(output.name);
+    input.at("type").get_to(output.type);
     switch (output.type)
     {
     case ASR_TYPE_BOOL:
@@ -248,7 +245,6 @@ void from_json(const nlohmann::json& input, PluginDesc& output)
 {
     ASR_CORE_TRACE_SCOPE;
 
-    input.at("pluginMetadataVersion").get_to(output.plugin_metadata_version);
     input.at("language").get_to(output.language);
     input.at("name").get_to(output.name);
     input.at("description").get_to(output.description);
@@ -269,6 +265,11 @@ void from_json(const nlohmann::json& input, PluginDesc& output)
     }
     const auto guid_string = input.at("guid").get<std::string>();
     output.guid = MakeAsrGuid(guid_string);
+    if (const auto it_settings = input.find("settings");
+        it_settings == input.end())
+    {
+        return;
+    }
     input.at("settings").get_to(output.settings);
 }
 

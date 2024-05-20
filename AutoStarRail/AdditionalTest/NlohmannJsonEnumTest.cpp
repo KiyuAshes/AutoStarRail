@@ -1,6 +1,7 @@
+#include <AutoStarRail/Utils/CommonUtils.hpp>
+#include <AutoStarRail/Utils/EnumUtils.hpp>
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
-#include <string>
 
 namespace
 {
@@ -50,4 +51,21 @@ TEST(NlohmannJsonTest, UserDefinedEnumDeserialization)
     EXPECT_EQ(TestEnum2::Value1, j.at("int_enum_test1").get<TestEnum2>());
     EXPECT_EQ(TestEnum2::Value1, j.at("int_enum_test2").get<TestEnum2>());
     EXPECT_EQ(TestEnum2::Value1, j.at("int_enum_test3").get<TestEnum2>());
+}
+
+TEST(NlohmannJsonTest, MagicEnumConverter)
+{
+    EXPECT_EQ(
+        TestEnum::Value1,
+        ASR::Utils::StringToEnum<TestEnum>(
+            j.at("enum_test1").get<std::string>()));
+    EXPECT_EQ(
+        TestEnum::Value2,
+        ASR::Utils::StringToEnum<TestEnum>(
+            j.at("enum_test2").get<std::string>()));
+
+    EXPECT_THROW(
+        ASR::Utils::StringToEnum<TestEnum>(
+            j.at("enum_test3").get<std::string>()),
+        ASR::Utils::UnexpectedEnumException);
 }
