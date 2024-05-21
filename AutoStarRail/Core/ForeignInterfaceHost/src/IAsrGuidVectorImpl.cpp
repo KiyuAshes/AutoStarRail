@@ -92,7 +92,16 @@ AsrResult IAsrGuidVectorImpl::ToConst(IAsrReadOnlyGuidVector** pp_out_object)
 {
     ASR_UTILS_CHECK_POINTER(pp_out_object)
 
-    *pp_out_object = impl_;
+    auto expected_p_impl = impl_.ToConst();
+    if (!expected_p_impl)
+    {
+        return expected_p_impl.error();
+    }
+    const auto p_result =
+        ASR::MakeAsrPtr<IAsrReadOnlyGuidVector, IAsrReadOnlyGuidVectorImpl>(
+            *expected_p_impl.value());
+    *pp_out_object = p_result.Get();
+    p_result->AddRef();
 
     return ASR_S_OK;
 }
@@ -180,7 +189,16 @@ AsrResult IAsrSwigGuidVectorImpl::PushBack(const AsrGuid& iid)
 
 AsrRetReadOnlyGuidVector IAsrSwigGuidVectorImpl::ToConst()
 {
-    return {ASR_S_OK, {static_cast<IAsrSwigReadOnlyGuidVector*>(impl_)}};
+    auto expected_p_impl = impl_.ToConst();
+    if (!expected_p_impl)
+    {
+        return {expected_p_impl.error()};
+    }
+    return {
+        ASR_S_OK,
+        ASR::MakeAsrPtr<
+            IAsrSwigReadOnlyGuidVector,
+            IAsrSwigReadOnlyGuidVectorImpl>(*expected_p_impl.value())};
 }
 
 auto IAsrSwigGuidVectorImpl::Get()
@@ -190,6 +208,11 @@ auto IAsrSwigGuidVectorImpl::Get()
 }
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
+
+AsrGuidVectorImpl::AsrGuidVectorImpl(const std::vector<AsrGuid>& iids)
+    : ref_counter_{}, iids_{iids}
+{
+}
 
 int64_t AsrGuidVectorImpl::AddRef() { return ref_counter_.AddRef(); }
 
@@ -234,6 +257,20 @@ auto AsrGuidVectorImpl::GetImpl() noexcept -> std::vector<AsrGuid>&
     return iids_;
 }
 
+auto AsrGuidVectorImpl::ToConst() noexcept
+    -> Utils::Expected<AsrPtr<AsrGuidVectorImpl>>
+{
+    try
+    {
+        return MakeAsrPtr<AsrGuidVectorImpl>(iids_);
+    }
+    catch (const std::bad_alloc& ex)
+    {
+        ASR_CORE_LOG_EXCEPTION(ex);
+        return tl::make_unexpected(ASR_E_OUT_OF_MEMORY);
+    }
+}
+
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
 
 AsrResult CreateIAsrGuidVector(
@@ -247,9 +284,15 @@ AsrResult CreateIAsrGuidVector(
         auto* const result =
             new ASR::Core::ForeignInterfaceHost::AsrGuidVectorImpl{};
         result->AddRef();
-        auto& impl = result->GetImpl();
-        impl.resize(iid_count);
-        ASR::Utils::CopyArray(p_iids, iid_count, impl.data());
+
+        if (iid_count > 0)
+        {
+            auto& impl = result->GetImpl();
+            impl.resize(iid_count);
+            ASR_UTILS_CHECK_POINTER(p_iids)
+            ASR::Utils::CopyArray(p_iids, iid_count, impl.data());
+        }
+
         *pp_out_iid_vector = *result;
         return ASR_S_OK;
     }

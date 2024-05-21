@@ -4,6 +4,7 @@
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
 #include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
+#include <AutoStarRail/Utils/Expected.h>
 #include <vector>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
@@ -100,6 +101,8 @@ class AsrGuidVectorImpl : ASR_UTILS_MULTIPLE_PROJECTION_GENERATORS(
     std::vector<AsrGuid>                 iids_{};
 
 public:
+    AsrGuidVectorImpl() = default;
+    explicit AsrGuidVectorImpl(const std::vector<AsrGuid>& iids);
     int64_t AddRef();
     int64_t Release();
     auto    Size() const noexcept -> size_t;
@@ -108,6 +111,7 @@ public:
     auto    PushBack(const AsrGuid guid) noexcept -> AsrResult;
 
     auto GetImpl() noexcept -> std::vector<AsrGuid>&;
+    auto ToConst() noexcept -> Utils::Expected<AsrPtr<AsrGuidVectorImpl>>;
 };
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
