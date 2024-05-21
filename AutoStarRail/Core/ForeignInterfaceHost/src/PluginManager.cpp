@@ -947,7 +947,7 @@ int64_t PluginManager::Release()
     return ref_counter_;
 }
 
-AsrResult PluginManager::Refresh(IAsrGuidVector* p_ignored_guid_vector)
+AsrResult PluginManager::Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector)
 {
     AsrResult result{ASR_S_OK};
 
@@ -1276,8 +1276,8 @@ PluginManager::operator IAsrPluginManagerImpl*() noexcept
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
 
 AsrResult LoadPluginAndGetResult(
-    IAsrGuidVector*     p_ignore_plugins_guid,
-    IAsrPluginManager** pp_out_result)
+    IAsrReadOnlyGuidVector* p_ignore_plugins_guid,
+    IAsrPluginManager**     pp_out_result)
 {
     ASR_UTILS_CHECK_POINTER(p_ignore_plugins_guid)
     ASR_UTILS_CHECK_POINTER(pp_out_result)
