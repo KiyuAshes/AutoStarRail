@@ -2,6 +2,7 @@
 #define DAS_HTTP_CONTROLLER_CONTROLLER_HPP
 
 #include "AutoStarRail/ExportInterface/AsrLogger.h"
+#include "AutoStarRail/ExportInterface/IAsrPluginManager.h"
 #include "AutoStarRail/IAsrBase.h"
 #include "oatpp/core/base/Environment.hpp"
 #include "oatpp/core/macro/codegen.hpp"
@@ -22,11 +23,7 @@
 class Controller : public oatpp::web::server::api::ApiController
 {
 private:
-    std::shared_ptr<std::string> sp_one_message{
-        std::make_shared<std::string>()};
-
-    ASR::AsrPtr<AsrHttpLogReader> p_reader{
-        new AsrHttpLogReader{sp_one_message}};
+    ASR::AsrPtr<AsrHttpLogReader> p_reader{Asr::MakeAsrPtr<AsrHttpLogReader>()};
 
     ASR::AsrPtr<IAsrLogRequester> p_requester{};
 
@@ -79,7 +76,7 @@ public:
             {
                 OATPP_LOGD("日志接口", "1");
                 // OATPP_LOGD("日志接口", sp_one_message->data());
-                response->result->logs->push_back(sp_one_message->data());
+                response->result->logs->push_back(p_reader->GetMessage().data());
             }
             // else if (
             //     !response->result->logs->empty()
