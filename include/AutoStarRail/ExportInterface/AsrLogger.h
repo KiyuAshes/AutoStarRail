@@ -13,23 +13,13 @@ typedef struct _asr_SourceLocation
     const char* function_name;
 } AsrSourceLocation;
 
-#ifdef __cplusplus
-#ifdef _MSC_VER
-#define ASR_INTERNAL_FUNCTION_NAME __FUNCSIG__
-#else
-#define ASR_INTERNAL_FUNCTION_NAME __PRETTY_FUNCTION__
-#endif // _MSC_VER
-#else
-#define ASR_INTERNAL_FUNCTION_NAME __func__
-#endif // __cplusplus
-
 #define ASR_LOG_WITH_SOURCE_LOCATION(type, ...)                                \
     do                                                                         \
     {                                                                          \
         AsrSourceLocation _asr_internal_source_location = {                    \
             __FILE__,                                                          \
             __LINE__,                                                          \
-            ASR_INTERNAL_FUNCTION_NAME};                                       \
+            __func__};                                                         \
         AsrLog##type##U8WithSourceLocation(                                    \
             __VA_ARGS__,                                                       \
             &_asr_internal_source_location);                                   \

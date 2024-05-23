@@ -4,10 +4,10 @@
 
 #include "PythonHost.h"
 #include "TemporaryPluginObjectStorage.h"
-#include <AutoStarRail/Utils/CommonUtils.hpp>
 #include <AutoStarRail/Core/Exceptions/PythonException.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
+#include <AutoStarRail/Utils/CommonUtils.hpp>
 
 ASR_DISABLE_WARNING_BEGIN
 ASR_IGNORE_UNUSED_PARAMETER
@@ -504,9 +504,8 @@ auto PythonRuntime::ImportPluginModule(
 auto PythonRuntime::GetPluginInitializer(PyObject& py_module) -> PyObjectPtr
 {
     return PythonResult{
-        PyObjectPtr::Attach(PyObject_GetAttrString(
-            &py_module,
-            ASR_CORE_FOREIGNINTERFACEHOST_ASRCOCREATEPLUGIN_NAME))}
+        PyObjectPtr::Attach(
+            PyObject_GetAttrString(&py_module, ASRCOCREATEPLUGIN_NAME))}
         .CheckAndGet();
 }
 

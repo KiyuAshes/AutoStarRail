@@ -1,12 +1,15 @@
-#include "AutoStarRail/IAsrBase.h"
 #include <AutoStarRail/ExportInterface/AsrLogger.h>
+#include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/Utils/QueryInterface.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
+
 #define ASR_BUILD_SHARED
 
+#include "AdbCaptureFactoryImpl.h"
 #include "PluginImpl.h"
 
+#include <array>
 #include <stdexcept>
 
 ASR_NS_BEGIN
@@ -46,13 +49,21 @@ AsrResult AdbCapturePlugin::CreateFeatureInterface(
     size_t index,
     void** pp_out_interface)
 {
-    // TODO: Create instance for every feature.
+    ASR_UTILS_CHECK_POINTER_FOR_PLUGIN(pp_out_interface);
     switch (index)
     {
         // Capture Factory
     case 0:
-        // Error lens
+    {
+        const auto p_result =
+            MakeAsrPtr<IAsrCaptureFactory, AdbCaptureFactoryImpl>();
+        *pp_out_interface = p_result.Get();
+        p_result->AddRef();
+        return ASR_S_OK;
+    }
+        // Error lens 暂时用不到，先不启用
     case 1:
+        [[fallthrough]];
     default:
         *pp_out_interface = nullptr;
         return ASR_E_OUT_OF_RANGE;

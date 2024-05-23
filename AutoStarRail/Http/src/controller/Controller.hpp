@@ -4,6 +4,7 @@
 #include "AutoStarRail/ExportInterface/AsrLogger.h"
 #include "AutoStarRail/ExportInterface/IAsrPluginManager.h"
 #include "AutoStarRail/IAsrBase.h"
+#include "AutoStarRail/Utils/fmt.h"
 #include "oatpp/core/base/Environment.hpp"
 #include "oatpp/core/macro/codegen.hpp"
 #include "oatpp/core/macro/component.hpp"
@@ -23,18 +24,41 @@
 class Controller : public oatpp::web::server::api::ApiController
 {
 private:
-    ASR::AsrPtr<AsrHttpLogReader> p_reader{Asr::MakeAsrPtr<AsrHttpLogReader>()};
-
+    ASR::AsrPtr<AsrHttpLogReader> p_reader{ASR::MakeAsrPtr<AsrHttpLogReader>()};
     ASR::AsrPtr<IAsrLogRequester> p_requester{};
+
+    ASR::AsrPtr<IAsrPluginManager> p_plugin_manager{};
 
     std::shared_ptr<ObjectMapper> jsonObjectMapper{
         oatpp::parser::json::mapping::ObjectMapper::createShared()};
 
+    static auto CreatePluginManager() -> ASR::AsrPtr<IAsrPluginManager>
+    {
+        ASR::AsrPtr<IAsrPluginManager> result;
+        ASR::AsrPtr<IAsrGuidVector>    p_empty_guids{};
+        ::CreateIAsrGuidVector(nullptr, 0, p_empty_guids.Put());
+        ASR::AsrPtr<IAsrReadOnlyGuidVector> p_const_empty_guids{};
+        p_empty_guids->ToConst(p_const_empty_guids.Put());
+        const auto error_code = ::CreateIAsrPluginManagerAndGetResult(
+            p_const_empty_guids.Get(),
+            result.Put());
+
+        const auto create_message = ASR_FMT_NS::format(
+            "CreateIAsrPluginManagerAndGetResult return {}.",
+            error_code);
+        ASR_LOG_INFO(create_message.c_str());
+
+        return result;
+    }
+
 public:
     Controller(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper))
-        : oatpp::web::server::api::ApiController(objectMapper)
+        : oatpp::web::server::api::ApiController{objectMapper}
     {
         ::CreateIAsrLogRequester(32, p_requester.Put());
+        // TODO:
+        // 自此开始获取日志，未来要必须将日志单独一个Controller并最早初始化
+        p_plugin_manager = CreatePluginManager();
     }
 
     /**
@@ -76,7 +100,8 @@ public:
             {
                 OATPP_LOGD("日志接口", "1");
                 // OATPP_LOGD("日志接口", sp_one_message->data());
-                response->result->logs->push_back(p_reader->GetMessage().data());
+                response->result->logs->push_back(
+                    p_reader->GetMessage().data());
             }
             // else if (
             //     !response->result->logs->empty()

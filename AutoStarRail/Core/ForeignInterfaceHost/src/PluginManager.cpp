@@ -17,6 +17,7 @@
 #include <AutoStarRail/Utils/StreamUtils.hpp>
 #include <AutoStarRail/Utils/StringUtils.h>
 #include <AutoStarRail/Utils/UnexpectedEnumException.h>
+#include <algorithm>
 #include <boost/pfr/core.hpp>
 #include <fstream>
 #include <functional>
@@ -673,6 +674,16 @@ auto RegisterInputFactoryFromPlugin(
         expected_common_p_input_factory.value());
 }
 
+const std::string UPPER_CURRENT_PLATFORM = []
+{
+    std::string result{ASR_PLATFORM};
+    std::transform(
+        ASR_FULL_RANGE_OF(result),
+        result.begin(),
+        [](unsigned char c) { return toupper(c); });
+    return result;
+}();
+
 ASR_NS_ANONYMOUS_DETAILS_END
 
 IAsrPluginManagerImpl::IAsrPluginManagerImpl(PluginManager& impl) : impl_{impl}
@@ -981,7 +992,8 @@ AsrResult PluginManager::Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector)
 
     NamePluginMap map{};
 
-    for (const auto  current_path = std::filesystem::path{"./plugins"};
+    for (const auto current_path =
+             std::filesystem::canonical(std::filesystem::path{"./plugins"});
          const auto& it : std::filesystem::directory_iterator{current_path})
     {
         std::filesystem::path it_path;
@@ -998,7 +1010,7 @@ AsrResult PluginManager::Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector)
             it_path = it.path();
         }
         const auto extension = it_path.extension();
-        if (ASR_UTILS_STRINGUTILS_COMPARE_STRING(extension, "json"))
+        if (ASR_UTILS_STRINGUTILS_COMPARE_STRING(extension, ".json"))
         {
             AsrResult plugin_create_result{ASR_E_UNDEFINED_RETURN_VALUE};
             std::unique_ptr<PluginDesc> up_plugin_desc{};
@@ -1014,11 +1026,10 @@ AsrResult PluginManager::Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector)
                     continue;
                 }
 
-                if (const auto* const CURRENT_PLATFORM =
-                        static_cast<const char*>(
-                            ASR_UTILS_STRINGUTILS_DEFINE_U8STR(ASR_PLATFORM));
-                    up_plugin_desc->supported_system.find_first_of(
-                        CURRENT_PLATFORM)
+                if (const auto upper_supported_system =
+                        Utils::ToUpper(up_plugin_desc->supported_system);
+                    upper_supported_system.find_first_of(
+                        Details::UPPER_CURRENT_PLATFORM)
                     == decltype(up_plugin_desc->supported_system)::npos)
                 {
                     plugin_create_result = ASR_E_UNSUPPORTED_SYSTEM;
@@ -1097,7 +1108,8 @@ AsrResult PluginManager::Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector)
             std::filesystem::path plugin_path =
                 it_path.parent_path()
                 / std::filesystem::path{
-                    it_path.stem().u8string()
+                    std::u8string{ASR_FULL_RANGE_OF(up_plugin_desc->name)}
+                    + std::u8string{u8"."}
                     + std::u8string{ASR_FULL_RANGE_OF(
                         up_plugin_desc->plugin_filename_extension)}};
             if (!std::filesystem::exists(plugin_path))
@@ -1112,9 +1124,12 @@ AsrResult PluginManager::Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector)
                     plugin_name.Get(),
                     plugin_create_result};
 
+                const auto u8_plugin_path = plugin_path.u8string();
                 ASR_CORE_LOG_INFO(
-                    "Expected file path:\"{}\".",
-                    MakeAsrPtr<IAsrReadOnlyString, AsrStringCppImpl>(it_path));
+                    "NOTE: Plugin metadate file path:\"{}\". "
+                    "Expected plugin file path \"{}\"",
+                    MakeAsrPtr<IAsrReadOnlyString, AsrStringCppImpl>(it_path),
+                    reinterpret_cast<const char*>(u8_plugin_path.c_str()));
 
                 failed_plugin.AddPluginTo(map);
                 result = ASR_S_FALSE;
@@ -1147,7 +1162,7 @@ AsrResult PluginManager::Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector)
             auto expected_p_plugin = runtime->LoadPlugin(plugin_path);
             if (!expected_p_plugin)
             {
-                plugin_create_result = expected_p_runtime.error();
+                plugin_create_result = expected_p_plugin.error();
 
                 Details::FailedPluginProxy failed_plugin{
                     plugin_name.Get(),
@@ -1157,12 +1172,15 @@ AsrResult PluginManager::Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector)
                 continue;
             }
 
-            map.emplace(
-                plugin_name,
-                Plugin{
-                    runtime,
-                    expected_p_plugin.value(),
-                    std::move(up_plugin_desc)});
+            // ! 注意：这里是堆内存，且没有对name进写入，否则会出现问题
+            const auto p_u8_plugin_name = up_plugin_desc->name.c_str();
+            auto plugin = Plugin{
+                runtime,
+                expected_p_plugin.value(),
+                std::move(up_plugin_desc)};
+            AddInterface(plugin, p_u8_plugin_name);
+
+            map.emplace(plugin_name, std::move(plugin));
         }
     }
 
@@ -1240,7 +1258,7 @@ auto PluginManager::GetInterfaceStaticStorage(IAsrTypeInfo* p_type_info) const
 
 auto PluginManager::GetInterfaceStaticStorage(IAsrSwigTypeInfo* p_type_info)
     const -> Asr::Utils::Expected<
-              std::reference_wrapper<const InterfaceStaticStorage>>
+        std::reference_wrapper<const InterfaceStaticStorage>>
 {
     if (p_type_info == nullptr)
     {
@@ -1275,7 +1293,7 @@ PluginManager::operator IAsrPluginManagerImpl*() noexcept
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END
 
-AsrResult LoadPluginAndGetResult(
+AsrResult CreateIAsrPluginManagerAndGetResult(
     IAsrReadOnlyGuidVector* p_ignore_plugins_guid,
     IAsrPluginManager**     pp_out_result)
 {

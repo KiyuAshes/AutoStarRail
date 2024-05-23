@@ -51,7 +51,10 @@ ASR_INTERFACE IAsrPlugin : public IAsrBase
     ASR_METHOD CanUnloadNow() = 0;
 };
 
-using AsrCoCreatePluginFunction = AsrResult (*)(IAsrPlugin** pp_out_plugin);
+SWIG_IGNORE(ASRCOCREATEPLUGIN_NAME)
+#define ASRCOCREATEPLUGIN_NAME "AsrCoCreatePlugin"
+SWIG_IGNORE(AsrCoCreatePluginFunction)
+using AsrCoCreatePluginFunction = AsrResult(IAsrPlugin** pp_out_plugin);
 
 ASR_DEFINE_RET_TYPE(AsrRetPluginFeature, AsrPluginFeature);
 

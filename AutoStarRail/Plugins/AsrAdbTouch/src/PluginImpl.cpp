@@ -5,7 +5,9 @@
 #include <stdexcept>
 
 #define ASR_BUILD_SHARED
+#include "AdbTouchFactoryImpl.h"
 #include "PluginImpl.h"
+
 
 ASR_NS_BEGIN
 
@@ -52,8 +54,9 @@ ASR_IMPL AsrAdbTouchPlugin::CreateFeatureInterface(
     {
         try
         {
-            const auto p_factory = new AdbTouchFactory{};
-            *pp_out_interface = p_factory;
+            const auto p_factory =
+                MakeAsrPtr<IAsrInputFactory, AdbTouchFactory>();
+            *pp_out_interface = p_factory.Get();
             p_factory->AddRef();
             return ASR_S_OK;
         }
