@@ -84,7 +84,7 @@ namespace Core
         g_logger->log(
             spdlog::source_loc{file_, line_, func_},
             spdlog::level::trace,
-            "Scope in.");
+            "In.");
     }
 
     TraceScope::~TraceScope()
@@ -92,7 +92,7 @@ namespace Core
         g_logger->log(
             spdlog::source_loc{file_, line_, func_},
             spdlog::level::trace,
-            "Scope out.");
+            "Out.");
     }
 }
 

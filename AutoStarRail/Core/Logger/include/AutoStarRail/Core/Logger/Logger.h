@@ -29,19 +29,13 @@
         ::spdlog::level::err,                                                  \
         __VA_ARGS__)
 
-#ifdef _MSC_VER
-#define ASR_FUNCTION __FUNCSIG__
-#else
-#define ASR_FUNCTION __PRETTY_FUNCTION__
-#endif // _MSC_VER
-
 #define ASR_CORE_TRACE_SCOPE                                                   \
     ASR::Core::TraceScope ASR_TOKEN_PASTE(                                     \
         _asr_reserved_logger_tracer_,                                          \
         __LINE__)                                                              \
     {                                                                          \
         static_cast<const char*>(__FILE__), __LINE__,                          \
-            static_cast<const char*>(ASR_FUNCTION)                             \
+            static_cast<const char*>(__FUNCTION__)                             \
     }
 
 #define ASR_CORE_LOG_EXCEPTION(ex) ASR_CORE_LOG_ERROR(ex.what())
@@ -67,7 +61,7 @@ namespace Core
         const char* const func_;
 
     public:
-         TraceScope(const char* const file, int line, const char* const func);
+        TraceScope(const char* const file, int line, const char* const func);
         ~TraceScope();
     };
 

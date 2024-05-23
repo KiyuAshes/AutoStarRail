@@ -60,7 +60,7 @@ namespace Details
                     || long_result < std::numeric_limits<std::int32_t>::min())
                 {
                     ASR_CORE_LOG_WARN_USING_EXTRA_FUNCTION_NAME(
-                        ASR_FUNCTION,
+                        static_cast<const char*>(__FUNCTION__),
                         "Overflow detected: expected {}, std::int32_t value is {}.",
                         long_result,
                         result);
@@ -79,7 +79,7 @@ namespace Details
         else
         {
             static_assert(
-                 ASR::Utils::value<false, T>,
+                ASR::Utils::value<false, T>,
                 "Incompatible type detected!");
         }
     }
