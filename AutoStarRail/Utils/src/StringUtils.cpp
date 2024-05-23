@@ -20,6 +20,16 @@ void ToLowerInPlace(std::vector<std::string>& in_out_str_vector)
     }
 }
 
+auto ToUpper(const std::string_view in_string) -> std::string
+{
+    std::string result{in_string};
+    std::transform(
+        ASR_FULL_RANGE_OF(result),
+        result.begin(),
+        [](const auto c) { return std::toupper(c); });
+    return result;
+}
+
 ASR_NS_ANONYMOUS_DETAILS_BEGIN
 
 [[nodiscard]]
