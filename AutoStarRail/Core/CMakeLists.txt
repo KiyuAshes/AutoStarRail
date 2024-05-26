@@ -125,6 +125,11 @@ if(${EXPORT_PYTHON})
 
     target_link_libraries(AsrCorePythonExport PUBLIC AsrCore)
     add_dependencies(AsrCorePythonExport AsrCore)
+    set_target_properties(
+        AsrCorePythonExport
+        PROPERTIES
+        DEBUG_POSTFIX "_d"
+    )
     list(APPEND ASR_EXPORT_MACRO_LIST ASR_EXPORT_PYTHON)
 endif()
 
