@@ -18,7 +18,6 @@
 #include <AutoStarRail/IAsrBase.h>
 #include <cstddef>
 
-
 // {8179F162-5E1A-4248-AC67-758D2AFF18A7}
 ASR_DEFINE_GUID(
     ASR_IID_PLUGIN_INFO,
@@ -138,6 +137,7 @@ ASR_INTERFACE IAsrPluginManager : public IAsrBase
 {
     ASR_METHOD GetAllPluginInfo(
         IAsrPluginInfoVector * *pp_out_plugin_info_vector) = 0;
+    ASR_METHOD FindInterface(const AsrGuid& iid, void** pp_object) = 0;
 };
 
 /**

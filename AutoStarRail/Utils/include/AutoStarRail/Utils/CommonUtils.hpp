@@ -214,6 +214,7 @@ public:
         ref_count_ -= 1;
         if (ref_count_ == 0)
         {
+            // 避免析构过程中，有对象意外AddRef/Release后导致双重释放
             ref_count_ = 1;
             delete p_managed_object;
             return 0;

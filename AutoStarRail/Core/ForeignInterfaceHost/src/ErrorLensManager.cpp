@@ -109,6 +109,20 @@ AsrResult ErrorLensManager::Register(
         SwigToCpp<IAsrSwigReadOnlyGuidVector>>(p_guid_vector);
     return Register(p_cpp_guid_vector.Get(), p_cpp_error_lens.Get());
 }
+AsrResult ErrorLensManager::FindInterface(
+    const AsrGuid&  iid,
+    IAsrErrorLens** pp_out_lens)
+{
+    ASR_UTILS_CHECK_POINTER(pp_out_lens)
+    if (const auto it = map_.find(iid); it != map_.end())
+    {
+        const auto& p_factory = it->second;
+        *pp_out_lens = p_factory.Get();
+        p_factory->AddRef();
+        return ASR_S_OK;
+    }
+    return ASR_E_NO_INTERFACE;
+}
 
 auto ErrorLensManager::GetErrorMessage(
     const AsrGuid&      iid,

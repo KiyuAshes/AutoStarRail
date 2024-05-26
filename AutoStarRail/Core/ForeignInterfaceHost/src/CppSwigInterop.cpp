@@ -6,6 +6,13 @@
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <DAS/_autogen/CppSwigBiMap.h>
 
+ASR_DISABLE_WARNING_BEGIN
+ASR_IGNORE_UNUSED_PARAMETER
+
+#include <Python.h>
+
+ASR_DISABLE_WARNING_END
+
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 auto ConvertCppIidToSwigIid(const AsrGuid& cpp_iid)

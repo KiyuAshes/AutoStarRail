@@ -4,12 +4,14 @@
 #include "AutoStarRail/ExportInterface/AsrLogger.h"
 #include "AutoStarRail/ExportInterface/IAsrPluginManager.h"
 #include "AutoStarRail/IAsrBase.h"
+#include "AutoStarRail/PluginInterface/IAsrTask.h"
 #include "AutoStarRail/Utils/fmt.h"
 #include "oatpp/core/base/Environment.hpp"
 #include "oatpp/core/macro/codegen.hpp"
 #include "oatpp/core/macro/component.hpp"
 #include "oatpp/parser/json/mapping/ObjectMapper.hpp"
 #include "oatpp/web/server/api/ApiController.hpp"
+
 
 #include "dto/Global.hpp"
 #include "dto/Log.hpp"
@@ -34,7 +36,7 @@ private:
 
     static auto CreatePluginManager() -> ASR::AsrPtr<IAsrPluginManager>
     {
-        ASR::AsrPtr<IAsrPluginManager> result;
+        ASR::AsrPtr<IAsrPluginManager> result{};
         ASR::AsrPtr<IAsrGuidVector>    p_empty_guids{};
         ::CreateIAsrGuidVector(nullptr, 0, p_empty_guids.Put());
         ASR::AsrPtr<IAsrReadOnlyGuidVector> p_const_empty_guids{};
@@ -257,6 +259,24 @@ public:
         // std::string a = "启动配置文件" + std::to_string(profile_id);
         std::string a = "启动配置文件" + profile_id->profile_id;
         ASR_LOG_INFO(a.c_str());
+
+        AsrGuid    touch_iid;
+        const auto create_result =
+            AsrMakeAsrGuid("6C78DCAD-9173-4EE3-84CC-546973658460", &touch_iid);
+        ASR::AsrPtr<IAsrTask> p_task{};
+        p_plugin_manager->FindInterface(touch_iid, p_task.PutVoid());
+        ASR::AsrPtr<IAsrReadOnlyString> p_profile{};
+        ::CreateIAsrReadOnlyStringFromUtf8(
+            R"(
+{
+    "input": {
+        "x": 100,
+        "y": 200
+    }
+}
+        )",
+            p_profile.Put());
+        p_task->Do(p_profile.Get());
 
         auto response =
             ApiResponse<oatpp::Object<ProfileRunning>>::createShared();

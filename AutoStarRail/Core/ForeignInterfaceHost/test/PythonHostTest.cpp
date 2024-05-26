@@ -1,7 +1,7 @@
 #ifdef ASR_EXPORT_PYTHON
 
+#include <AutoStarRail/Core/ForeignInterfaceHost/PythonHost.h>
 #include <gtest/gtest.h>
-#include "../src/PythonHost.h"
 
 #include <AutoStarRail/Utils/StringUtils.h>
 #include <boost/nowide/quoted.hpp>

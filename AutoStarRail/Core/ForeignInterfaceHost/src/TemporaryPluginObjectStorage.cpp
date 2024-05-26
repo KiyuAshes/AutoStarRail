@@ -15,9 +15,9 @@ Asr::Core::ForeignInterfaceHost::TemporaryPluginObjectStorage::
 }
 
 auto Asr::Core::ForeignInterfaceHost::TemporaryPluginObjectStorage::
-    TemporaryPluginObjectStorageReader::GetObject() -> CommonPluginPtr
+    TemporaryPluginObjectStorageReader::GetObject() -> AsrPtr<IAsrSwigPlugin>
 {
-    return storage_.p_plugin_;
+    return std::exchange(storage_.p_plugin_, {});
 }
 
 auto Asr::Core::ForeignInterfaceHost::TemporaryPluginObjectStorage::

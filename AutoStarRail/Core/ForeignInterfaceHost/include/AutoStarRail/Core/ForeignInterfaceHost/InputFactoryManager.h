@@ -22,6 +22,8 @@ public:
     AsrResult Register(IAsrInputFactory* p_factory);
     AsrResult Register(IAsrSwigInputFactory* p_factory);
 
+    AsrResult FindInterface(const AsrGuid& iid, IAsrInputFactory** pp_out_factory);
+
     // 反正都是在自己模块中调用，直接内部用at实现，外面记得接异常
     void At(size_t index, AsrPtr<IAsrInputFactory>& ref_out_factory);
     void At(size_t index, AsrPtr<IAsrSwigInputFactory>& ref_out_factory);

@@ -3,12 +3,16 @@
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 
-AsrResult AsrRegisterPluginObject(AsrRetSwigBase result_and_p_object)
+AsrResult AsrRegisterPluginObject(AsrResult error_code, IAsrSwigPlugin* p_swig_plugin)
 {
     AsrResult result{ASR_S_OK};
 
-    ASR::AsrPtr p_plugin{
-        static_cast<IAsrSwigPlugin*>(result_and_p_object.value.GetVoid())};
+    if (ASR::IsFailed(error_code))
+    {
+        return error_code;
+    }
+
+    ASR::AsrPtr p_plugin{p_swig_plugin};
 
     switch (const auto ref_count = p_plugin->AddRef())
     {

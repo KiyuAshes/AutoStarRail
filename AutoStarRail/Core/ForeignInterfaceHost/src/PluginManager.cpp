@@ -1,3 +1,4 @@
+#include "AutoStarRail/Core/Exceptions/PythonException.h"
 #include <AutoStarRail/AsrString.hpp>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
@@ -26,6 +27,13 @@
 #include <nlohmann/json.hpp>
 #include <unordered_set>
 #include <utility>
+
+ASR_DISABLE_WARNING_BEGIN
+ASR_IGNORE_UNUSED_PARAMETER
+
+#include <Python.h>
+
+ASR_DISABLE_WARNING_END
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
@@ -197,7 +205,8 @@ auto CreateInterface(
             [index, u8_plugin_name](
                 AsrPtr<IAsrSwigPlugin> p_plugin) -> std::optional<CommonBasePtr>
             {
-                const auto cfi_result = p_plugin->CreateFeatureInterface(index);
+                AsrRetSwigBase cfi_result{};
+                cfi_result = p_plugin->CreateFeatureInterface(index);
                 if (IsFailed(cfi_result.error_code))
                 {
                     ASR_CORE_LOG_ERROR(
@@ -207,7 +216,7 @@ auto CreateInterface(
                     return {};
                 }
                 AsrPtr<IAsrSwigBase> result{reinterpret_cast<IAsrSwigBase*>(
-                    cfi_result.value.GetVoid())};
+                    cfi_result.value.GetVoidNoAddRef())};
                 return result;
             }},
         common_p_plugin);
@@ -251,8 +260,8 @@ auto QueryTypeInfoFrom(
                         p_plugin_name);
                     return {};
                 }
-                AsrPtr<IAsrSwigTypeInfo> result{
-                    static_cast<IAsrSwigTypeInfo*>(qi_result.value.GetVoid())};
+                AsrPtr<IAsrSwigTypeInfo> result{static_cast<IAsrSwigTypeInfo*>(
+                    qi_result.value.GetVoidNoAddRef())};
                 return result;
             }},
         common_p_base);
@@ -413,7 +422,8 @@ auto QueryInterfaceFrom(
                 }
 
                 auto result = MakeAsrPtr<SwigToCpp<SwigT>>(
-                    static_cast<IAsrSwigErrorLens*>(qi_result.value.GetVoid()));
+                    static_cast<IAsrSwigErrorLens*>(
+                        qi_result.value.GetVoidNoAddRef()));
 
                 qi_result.value.Get()->Release();
 
@@ -466,7 +476,7 @@ auto QueryErrorLensFrom(
 
                 AsrPtr<IAsrErrorLens> result{new SwigToCpp<IAsrSwigErrorLens>{
                     static_cast<IAsrSwigErrorLens*>(
-                        qi_result.value.GetVoid())}};
+                        qi_result.value.GetVoidNoAddRef())}};
 
                 return result;
             }},
@@ -534,14 +544,22 @@ auto RegisterTaskFromPlugin(T& task_manager, GetInterfaceFromPluginParam param)
             },
             [](const AsrPtr<IAsrSwigBase>& p_base) -> ExpectedCommonTaskPointer
             {
-                const auto qi_result =
-                    p_base->QueryInterface(AsrIidOf<IAsrSwigTask>());
-                if (IsFailed(qi_result.error_code))
+                try
                 {
-                    return tl::make_unexpected(qi_result.error_code);
+                    const auto qi_result =
+                        p_base->QueryInterface(AsrIidOf<IAsrSwigTask>());
+                    if (IsFailed(qi_result.error_code))
+                    {
+                        return tl::make_unexpected(qi_result.error_code);
+                    }
+                    return AsrPtr{static_cast<IAsrSwigTask*>(
+                        qi_result.value.GetVoidNoAddRef())};
                 }
-                return AsrPtr{
-                    static_cast<IAsrSwigTask*>(qi_result.value.GetVoid())};
+                catch (...)
+                {
+                    PyErr_Print();
+                    return tl::make_unexpected(ASR_E_INTERNAL_FATAL_ERROR);
+                }
             }},
         common_p_base);
     if (!expected_common_p_task)
@@ -655,7 +673,7 @@ auto RegisterInputFactoryFromPlugin(
                         return tl::make_unexpected(qi_result.error_code);
                     }
                     return AsrPtr{static_cast<IAsrSwigInputFactory*>(
-                        qi_result.value.GetVoid())};
+                        qi_result.value.GetVoidNoAddRef())};
                 }},
             common_p_base);
 
@@ -705,6 +723,13 @@ AsrResult IAsrPluginManagerImpl::GetAllPluginInfo(
     IAsrPluginInfoVector** pp_out_plugin_info_vector)
 {
     return impl_.GetAllPluginInfo(pp_out_plugin_info_vector);
+}
+
+AsrResult IAsrPluginManagerImpl::FindInterface(
+    const AsrGuid& iid,
+    void**         pp_object)
+{
+    return impl_.FindInterface(iid, pp_object);
 }
 
 AsrResult PluginManager::AddInterface(
@@ -980,7 +1005,7 @@ AsrResult PluginManager::Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector)
             if (error_code != ASR_E_OUT_OF_RANGE)
             {
                 ASR_CORE_LOG_ERROR(
-                    "Unexpected error happend when reading ignored guid."
+                    "Unexpected error happened when reading ignored guid."
                     "Error code = {}.",
                     error_code);
             }
@@ -1126,7 +1151,7 @@ AsrResult PluginManager::Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector)
 
                 const auto u8_plugin_path = plugin_path.u8string();
                 ASR_CORE_LOG_INFO(
-                    "NOTE: Plugin metadate file path:\"{}\". "
+                    "NOTE: Plugin metadata file path:\"{}\". "
                     "Expected plugin file path \"{}\"",
                     MakeAsrPtr<IAsrReadOnlyString, AsrStringCppImpl>(it_path),
                     reinterpret_cast<const char*>(u8_plugin_path.c_str()));
@@ -1174,7 +1199,7 @@ AsrResult PluginManager::Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector)
 
             // ! 注意：这里是堆内存，且没有对name进写入，否则会出现问题
             const auto p_u8_plugin_name = up_plugin_desc->name.c_str();
-            auto plugin = Plugin{
+            auto       plugin = Plugin{
                 runtime,
                 expected_p_plugin.value(),
                 std::move(up_plugin_desc)};
@@ -1284,6 +1309,84 @@ auto PluginManager::GetAllCaptureFactory() const noexcept
     -> const std::vector<AsrPtr<IAsrCaptureFactory>>&
 {
     return capture_factory_vector_;
+}
+
+ASR_NS_ANONYMOUS_DETAILS_BEGIN
+
+bool CheckIsFindInterfaceResultSucceed(
+    const AsrResult error_code,
+    const char*     variable_name)
+{
+    if (IsFailed(error_code) && error_code != ASR_E_NO_INTERFACE)
+    {
+        ASR_CORE_LOG_ERROR(
+            "Error happend. Code = {}. Variable name = {}",
+            error_code,
+            variable_name);
+        return false;
+    }
+    return true;
+}
+
+ASR_NS_ANONYMOUS_DETAILS_END
+
+AsrResult PluginManager::FindInterface(const AsrGuid& iid, void** pp_out_object)
+{
+    AsrResult result{};
+
+    result = task_manager_.FindInterface(
+        iid,
+        reinterpret_cast<IAsrTask**>(pp_out_object));
+
+    if (Details::CheckIsFindInterfaceResultSucceed(result, "task_manager_"))
+    {
+        return result;
+    }
+
+    if (const auto factory_it = std::find_if(
+            ASR_FULL_RANGE_OF(capture_factory_vector_),
+            [&iid](const AsrPtr<IAsrCaptureFactory>& p_factory)
+            {
+                try
+                {
+                    const auto factory_iid =
+                        Utils::GetGuidFrom(p_factory.Get());
+                    return factory_iid == iid;
+                }
+                catch (const AsrException& ex)
+                {
+                    ASR_CORE_LOG_EXCEPTION(ex);
+                    return false;
+                }
+            });
+        factory_it != capture_factory_vector_.end())
+    {
+        *pp_out_object = factory_it->Get();
+        factory_it->Get()->AddRef();
+        return ASR_S_OK;
+    }
+
+    result = error_lens_manager_.FindInterface(
+        iid,
+        reinterpret_cast<IAsrErrorLens**>(pp_out_object));
+    if (Details::CheckIsFindInterfaceResultSucceed(
+            result,
+            "error_lens_manager_"))
+    {
+        return result;
+    }
+
+    result = input_factory_manager_.FindInterface(
+        iid,
+        reinterpret_cast<IAsrInputFactory**>(pp_out_object));
+    if (Details::CheckIsFindInterfaceResultSucceed(
+            result,
+            "input_factory_manager_"))
+    {
+        return result;
+    }
+
+    return ASR_E_NO_INTERFACE;
 }
 
 PluginManager::operator IAsrPluginManagerImpl*() noexcept

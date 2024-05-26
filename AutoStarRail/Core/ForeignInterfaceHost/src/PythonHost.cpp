@@ -2,10 +2,10 @@
 
 #ifdef ASR_EXPORT_PYTHON
 
-#include "PythonHost.h"
 #include "TemporaryPluginObjectStorage.h"
 #include <AutoStarRail/Core/Exceptions/PythonException.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrStringImpl.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/PythonHost.h>
 #include <AutoStarRail/Core/Logger/Logger.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
 
@@ -22,6 +22,7 @@ ASR_DISABLE_WARNING_END
 #include <stdexcept>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 static_assert(
     std::is_same_v<_object*, PyObject*>,
@@ -237,29 +238,95 @@ public:
      */
     void Check() { CheckPointer(); };
 
+    [[noreturn]]
     static void RaiseIfError()
     {
-        PyObject*   p_type{nullptr};
-        PyObject*   p_value{nullptr};
-        PyObject*   p_trace_back{nullptr};
-        const char* p_py_error_msg{nullptr};
-        Py_ssize_t  error_text_size{0};
+        PyObject* p_type{nullptr};
+        PyObject* p_value{nullptr};
+        PyObject* p_trace_back{nullptr};
 
-        PyErr_Fetch(&p_type, &p_value, &p_trace_back);
+        // TODO: 这些C_API已经在Python 3.12中弃用
+        // TODO: 请在未来提供对Python3.12版本的支持
+        ::PyErr_Fetch(&p_type, &p_value, &p_trace_back);
+
+        const auto traceback =
+            PyObjectPtr::Attach(::PyImport_ImportModule("traceback"));
+        const auto traceback_format_exception = PyObjectPtr::Attach(
+            ::PyObject_GetAttrString(traceback.Get(), "format_exception"));
+
+        const auto format_args = PyObjectPtr::Attach(PyTuple_New(3));
+
         if (p_type == nullptr)
         {
-            goto on_error_not_found;
+            // 未知错误，直接Print试试
+            ::PyErr_Print();
+            throw PythonException{
+                "Error happened when calling python code,"
+                "but it seems that no error is set in Python."};
         }
-        p_py_error_msg = PyUnicode_AsUTF8AndSize(p_value, &error_text_size);
-        if (p_py_error_msg == nullptr)
+        ::PyErr_NormalizeException(&p_type, &p_value, &p_trace_back);
+        Py_INCREF(p_type);
+        ::PyTuple_SetItem(format_args.Get(), 0, p_type);
+        Py_IncRef(p_value);
+        ::PyTuple_SetItem(format_args.Get(), 1, p_value);
+        if (p_trace_back != nullptr)
         {
-            goto on_error_not_found;
+            Py_INCREF(p_trace_back);
+            ::PyException_SetTraceback(p_value, p_trace_back);
+            ::PyTuple_SetItem(format_args.Get(), 2, p_trace_back);
         }
-        throw PythonException{p_py_error_msg};
+        else
+        {
+            Py_INCREF(Py_None);
+            ::PyTuple_SetItem(format_args.Get(), 2, Py_None);
+        }
+        const auto formatted_list = PyObjectPtr::Attach(PyObject_Call(
+            traceback_format_exception.Get(),
+            format_args.Get(),
+            nullptr));
+        if (::PyList_Check(formatted_list.Get()) == false)
+        {
+            throw PythonException{"Error happened when calling python code,"
+                                  "but formatted_list is not a list."};
+        }
 
-    on_error_not_found:
-        ASR_CORE_LOG_WARN("Error happened when calling python code,"
-                          "but it seems that no error is set in Python.");
+        size_t stack_trace_message_size{0};
+        auto   string_list = ASR::Utils::MakeEmptyCOntainerOfReservedSize<
+            std::vector<std::pair<const char*, size_t>>>(10);
+
+        const auto list_size = ::PyList_Size(formatted_list.Get());
+        for (Py_ssize_t i = 0; i < list_size; ++i)
+        {
+            const auto formatted_string =
+                ::PyList_GetItem(formatted_list.Get(), i);
+            if (::PyUnicode_Check(formatted_string) == false)
+            {
+                continue;
+            }
+            Py_ssize_t a_line_message_size{0};
+            const auto a_line_message = ::PyUnicode_AsUTF8AndSize(
+                formatted_string,
+                &a_line_message_size);
+            if (a_line_message != nullptr)
+            {
+                string_list.emplace_back(a_line_message, a_line_message_size);
+                stack_trace_message_size += a_line_message_size;
+            }
+        }
+        std::string stack_trace_message{};
+        stack_trace_message.reserve(stack_trace_message_size);
+        std::for_each(
+            ASR_FULL_RANGE_OF(string_list),
+            [&stack_trace_message](auto string_size_pair)
+            {
+                stack_trace_message.append(
+                    string_size_pair.first,
+                    string_size_pair.second);
+            });
+
+        ::PyErr_Restore(p_type, p_value, p_trace_back);
+
+        throw PythonException{stack_trace_message};
     }
 };
 
@@ -363,10 +430,44 @@ class PyInterpreter
     }
 };
 
+ASR_NS_ANONYMOUS_DETAILS_BEGIN
+
+class PythonRuntimeSingleton
+{
+    PythonRuntimeSingleton() = delete;
+    ~PythonRuntimeSingleton() = delete;
+
+public:
+    static bool Initialize()
+    {
+        static bool is_initialized = []
+        {
+            ::Py_Initialize();
+            if (!::Py_IsInitialized())
+            {
+                throw std::runtime_error("Failed to initialize Python");
+            }
+            return true;
+        }();
+        return is_initialized;
+    }
+};
+
+ASR_NS_ANONYMOUS_DETAILS_END
+
+PythonRuntime::PythonRuntime()
+{
+    Details::PythonRuntimeSingleton::Initialize();
+}
+
+PythonRuntime::~PythonRuntime() = default;
+
 auto PythonRuntime::LoadPlugin(const std::filesystem::path& path)
     -> ASR::Utils::Expected<CommonPluginPtr>
 {
-    CommonPluginPtr result{};
+    ASR::Utils::OnExit on_exit{
+        [] { ::PyEval_ReleaseThread(::PyThreadState_Get()); }};
+    AsrPtr<IAsrSwigPlugin> result{};
 
     const auto expected_py_module = ImportPluginModule(path);
     if (!expected_py_module)
@@ -421,12 +522,12 @@ auto PythonRuntime::ResolveClassName(const std::filesystem::path& relative_path)
     const auto it_end = std::end(relative_path);
     auto       it = relative_path.begin();
 
-    const auto                        part_string = it->u8string();
-    static AsrPtr<IAsrReadOnlyString> perfered_sperator{};
+    std::u8string part_string{};
 
     for (auto it_next = std::next(relative_path.begin()); it_next != it_end;
          ++it, ++it_next)
     {
+        part_string = it->u8string();
         if (part_string == Details::GetPreferredSeparator())
         {
             return tl::make_unexpected(ASR_E_INVALID_PATH);
@@ -508,6 +609,8 @@ auto PythonRuntime::GetPluginInitializer(PyObject& py_module) -> PyObjectPtr
             PyObject_GetAttrString(&py_module, ASRCOCREATEPLUGIN_NAME))}
         .CheckAndGet();
 }
+
+void RaisePythonInterpreterException() { PythonResult::RaiseIfError(); }
 
 ASR_NS_PYTHONHOST_END
 

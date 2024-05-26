@@ -15,6 +15,7 @@ class TaskManager
 public:
     AsrResult Register(IAsrTask* p_task, AsrGuid guid);
     AsrResult Register(IAsrSwigTask* p_swig_task, AsrGuid guid);
+    AsrResult FindInterface(const AsrGuid& guid, IAsrTask** pp_out_task);
 };
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

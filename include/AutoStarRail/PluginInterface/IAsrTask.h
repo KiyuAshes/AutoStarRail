@@ -72,6 +72,7 @@ ASR_DEFINE_GUID(
     0xd,
     0xda,
     0x46)
+ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigTask)
 ASR_INTERFACE IAsrSwigTask : public IAsrSwigTypeInfo
 {
     virtual AsrResult            OnRequestExit() = 0;

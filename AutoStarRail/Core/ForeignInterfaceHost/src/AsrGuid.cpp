@@ -1,12 +1,12 @@
 #include "AutoStarRail/AsrString.hpp"
 #include <AutoStarRail/Core/ForeignInterfaceHost/AsrGuid.h>
-#include <cstdio>
 #include <array>
+#include <bit>
+#include <boost/container_hash/hash.hpp>
+#include <cstdio>
 #include <cstring>
 #include <functional>
-#include <bit>
 #include <nlohmann/json.hpp>
-#include <boost/container_hash/hash.hpp>
 
 std::size_t std::hash<AsrGuid>::operator()(const AsrGuid& guid) const noexcept
 {
@@ -20,7 +20,7 @@ std::size_t std::hash<AsrGuid>::operator()(const AsrGuid& guid) const noexcept
     return boost::hash_range(guid_data.cbegin(), guid_data.cend());
 }
 
-auto (ASR_FMT_NS::formatter<AsrGuid, char>::format)(
+auto(ASR_FMT_NS::formatter<AsrGuid, char>::format)(
     const AsrGuid&  guid,
     format_context& ctx) const ->
     typename std::remove_reference_t<decltype(ctx)>::iterator

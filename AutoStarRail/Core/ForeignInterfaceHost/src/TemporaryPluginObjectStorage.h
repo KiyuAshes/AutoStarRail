@@ -1,20 +1,21 @@
 #ifndef ASR_CORE_FOREIGNINTERFACEHOST_TEMPORARYPLUGINOBJECTSTORAGE_H
 #define ASR_CORE_FOREIGNINTERFACEHOST_TEMPORARYPLUGINOBJECTSTORAGE_H
 
-#include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/Core/ForeignInterfaceHost/Config.h>
-#include <mutex>
 #include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
+#include <AutoStarRail/PluginInterface/IAsrPlugin.h>
+#include <mutex>
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 class TemporaryPluginObjectStorage
 {
-    std::mutex      mutex_{};
-    CommonPluginPtr p_plugin_{};
+    std::mutex             mutex_{};
+    AsrPtr<IAsrSwigPlugin> p_plugin_{};
 
     friend AsrResult(::AsrRegisterPluginObject)(
-        AsrRetSwigBase result_and_p_object);
+        AsrResult       error_code,
+        IAsrSwigPlugin* p_swig_plugin);
 
     void ObtainOwnership();
     void ReleaseOwnership();
@@ -29,7 +30,7 @@ public:
             TemporaryPluginObjectStorage& storage);
         ~TemporaryPluginObjectStorageReader();
 
-        auto GetObject() -> CommonPluginPtr;
+        auto GetObject() -> AsrPtr<IAsrSwigPlugin>;
     };
 
     friend TemporaryPluginObjectStorageReader;

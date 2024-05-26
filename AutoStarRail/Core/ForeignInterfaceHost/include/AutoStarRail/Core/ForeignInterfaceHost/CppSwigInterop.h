@@ -711,7 +711,7 @@ auto MakeInterop(FromSwig* p_from) -> Utils::Expected<AsrPtr<ToCpp>>
     if (const auto qi_result = p_from->QueryInterface(AsrIidOf<ToCpp>());
         IsOk(qi_result.error_code))
     {
-        return AsrPtr{static_cast<ToCpp*>(qi_result.value.GetVoid())};
+        return AsrPtr{static_cast<ToCpp*>(qi_result.value.GetVoidNoAddRef())};
     }
 
     try

@@ -87,6 +87,7 @@ ASR_INTERFACE IAsrSwigPlugin : public IAsrSwigBase
 
 ASR_DEFINE_RET_POINTER(AsrRetPlugin, IAsrSwigPlugin);
 
-ASR_API AsrResult AsrRegisterPluginObject(AsrRetSwigBase result_and_p_object);
+ASR_API AsrResult
+AsrRegisterPluginObject(AsrResult error_code, IAsrSwigPlugin* p_swig_plugin);
 
 #endif // ASR_IPLUGIN_H

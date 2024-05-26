@@ -204,7 +204,7 @@ AsrMakeAsrGuid(const char* p_guid_string, AsrGuid* p_out_guid);
 #ifndef SWIG
 
 #ifdef __cplusplus
-inline bool operator==(const AsrGuid& lhs, const AsrGuid& rhs)
+inline bool operator==(const AsrGuid& lhs, const AsrGuid& rhs) noexcept
 {
     const auto result = ::memcmp(&lhs, &rhs, sizeof(lhs));
     return result == 0;
@@ -245,6 +245,13 @@ CreateIAsrReadOnlyStringVector(AsrGuid** p_in_guid_array, const size_t size);
 
 #endif // SWIG
 
+ASR_API inline bool IsAsrGuidEqual(
+    const AsrGuid& lhs,
+    const AsrGuid& rhs) noexcept
+{
+    return lhs == rhs;
+}
+
 /**
  * @brief
  * 注意：此类获取指针后不增加引用计数，因此提供指针时应该是已经执行过AddRef的指针
@@ -253,6 +260,8 @@ CreateIAsrReadOnlyStringVector(AsrGuid** p_in_guid_array, const size_t size);
 class ASR_EXPORT AsrSwigBaseWrapper
 {
     void* p_object_{nullptr};
+
+    void InternalAddRef();
 
 public:
     AsrSwigBaseWrapper();
@@ -269,7 +278,7 @@ public:
     explicit AsrSwigBaseWrapper(ASR_INTERFACE IAsrSwigBase* p_base) noexcept;
     ASR_INTERFACE IAsrSwigBase* Get() const noexcept;
 #ifndef SWIG
-    void* GetVoid() const noexcept;
+    void* GetVoidNoAddRef() const noexcept;
     operator void*() const noexcept;
 #endif // SWIG
 };
