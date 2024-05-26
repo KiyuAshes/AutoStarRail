@@ -103,12 +103,6 @@ if (${ASR_BUILD_TEST})
     _download_and_config_gtest()
 endif ()
 
-# config QT5
-if (${ASR_BUILD_QT5_GUI})
-    message(STATUS "Option ASR_BUILD_QT5_GUI=ON. Qt5 is required.")
-    find_package(Qt5 COMPONENTS Widgets Qml Quick REQUIRED)
-endif ()
-
 message(STATUS "Downloading and collecting headers in tl::expected")
 FetchContent_Declare(
         tl_expected
