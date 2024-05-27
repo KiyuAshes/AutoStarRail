@@ -28,13 +28,6 @@
 #include <unordered_set>
 #include <utility>
 
-ASR_DISABLE_WARNING_BEGIN
-ASR_IGNORE_UNUSED_PARAMETER
-
-#include <Python.h>
-
-ASR_DISABLE_WARNING_END
-
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 using CommonBasePtr = std::variant<AsrPtr<IAsrBase>, AsrPtr<IAsrSwigBase>>;
@@ -557,7 +550,6 @@ auto RegisterTaskFromPlugin(T& task_manager, GetInterfaceFromPluginParam param)
                 }
                 catch (...)
                 {
-                    PyErr_Print();
                     return tl::make_unexpected(ASR_E_INTERNAL_FATAL_ERROR);
                 }
             }},
