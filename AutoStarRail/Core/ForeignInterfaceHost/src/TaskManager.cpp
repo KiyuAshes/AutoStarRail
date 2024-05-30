@@ -36,12 +36,12 @@ AsrResult TaskManager::Register(IAsrTask* p_task, AsrGuid guid)
 
 AsrResult TaskManager::Register(IAsrSwigTask* p_swig_task, AsrGuid guid)
 {
-    auto exptected_p_tast = MakeInterop<IAsrTask>(p_swig_task);
-    if (!exptected_p_tast)
+    auto expected_p_task = MakeInterop<IAsrTask>(p_swig_task);
+    if (!expected_p_task)
     {
-        return exptected_p_tast.error();
+        return expected_p_task.error();
     }
-    const AsrPtr<IAsrTask> p_task = std::move(exptected_p_tast.value());
+    const AsrPtr<IAsrTask> p_task = std::move(expected_p_task.value());
 
     const auto error_code =
         Details::AddTask(map_, std::make_pair(guid, p_task.Get()));
@@ -54,6 +54,21 @@ AsrResult TaskManager::Register(IAsrSwigTask* p_swig_task, AsrGuid guid)
             guid);
     }
     return error_code;
+}
+
+AsrResult TaskManager::FindInterface(
+    const AsrGuid& guid,
+    IAsrTask**     pp_out_task)
+{
+    ASR_UTILS_CHECK_POINTER(pp_out_task)
+    if (const auto it = map_.find(guid); it != map_.end())
+    {
+        const auto& p_task = it->second;
+        *pp_out_task = p_task.Get();
+        p_task->AddRef();
+        return ASR_S_OK;
+    }
+    return ASR_E_NO_INTERFACE;
 }
 
 ASR_CORE_FOREIGNINTERFACEHOST_NS_END

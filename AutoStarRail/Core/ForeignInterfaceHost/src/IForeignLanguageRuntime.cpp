@@ -1,7 +1,7 @@
-#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
-#include "PythonHost.h"
-#include "JavaHost.h"
 #include "CppHost.h"
+#include "JavaHost.h"
+#include <AutoStarRail/Core/ForeignInterfaceHost/IForeignLanguageRuntime.h>
+#include <AutoStarRail/Core/ForeignInterfaceHost/PythonHost.h>
 #include <AutoStarRail/Utils/UnexpectedEnumException.h>
 #include <tl/expected.hpp>
 

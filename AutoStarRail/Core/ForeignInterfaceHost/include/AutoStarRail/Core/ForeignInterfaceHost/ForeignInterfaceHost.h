@@ -69,7 +69,6 @@ void from_json(const ::nlohmann::json& input, PluginSettingDesc& output);
 
 struct PluginDesc
 {
-    int32_t                        plugin_metadata_version;
     ForeignInterfaceLanguage       language;
     std::string                    name;
     std::string                    description;

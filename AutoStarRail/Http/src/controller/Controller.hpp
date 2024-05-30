@@ -1,13 +1,17 @@
-#ifndef Controller_hpp
-#define Controller_hpp
+#ifndef DAS_HTTP_CONTROLLER_CONTROLLER_HPP
+#define DAS_HTTP_CONTROLLER_CONTROLLER_HPP
 
 #include "AutoStarRail/ExportInterface/AsrLogger.h"
+#include "AutoStarRail/ExportInterface/IAsrPluginManager.h"
 #include "AutoStarRail/IAsrBase.h"
+#include "AutoStarRail/PluginInterface/IAsrTask.h"
+#include "AutoStarRail/Utils/fmt.h"
 #include "oatpp/core/base/Environment.hpp"
 #include "oatpp/core/macro/codegen.hpp"
 #include "oatpp/core/macro/component.hpp"
 #include "oatpp/parser/json/mapping/ObjectMapper.hpp"
 #include "oatpp/web/server/api/ApiController.hpp"
+
 
 #include "dto/Global.hpp"
 #include "dto/Log.hpp"
@@ -22,22 +26,41 @@
 class Controller : public oatpp::web::server::api::ApiController
 {
 private:
-    std::shared_ptr<std::string> sp_one_message{
-        std::make_shared<std::string>()};
-
-    ASR::AsrPtr<AsrHttpLogReader> p_reader{
-        new AsrHttpLogReader{sp_one_message}};
-
+    ASR::AsrPtr<AsrHttpLogReader> p_reader{ASR::MakeAsrPtr<AsrHttpLogReader>()};
     ASR::AsrPtr<IAsrLogRequester> p_requester{};
+
+    ASR::AsrPtr<IAsrPluginManager> p_plugin_manager{};
 
     std::shared_ptr<ObjectMapper> jsonObjectMapper{
         oatpp::parser::json::mapping::ObjectMapper::createShared()};
 
+    static auto CreatePluginManager() -> ASR::AsrPtr<IAsrPluginManager>
+    {
+        ASR::AsrPtr<IAsrPluginManager> result{};
+        ASR::AsrPtr<IAsrGuidVector>    p_empty_guids{};
+        ::CreateIAsrGuidVector(nullptr, 0, p_empty_guids.Put());
+        ASR::AsrPtr<IAsrReadOnlyGuidVector> p_const_empty_guids{};
+        p_empty_guids->ToConst(p_const_empty_guids.Put());
+        const auto error_code = ::CreateIAsrPluginManagerAndGetResult(
+            p_const_empty_guids.Get(),
+            result.Put());
+
+        const auto create_message = ASR_FMT_NS::format(
+            "CreateIAsrPluginManagerAndGetResult return {}.",
+            error_code);
+        ASR_LOG_INFO(create_message.c_str());
+
+        return result;
+    }
+
 public:
     Controller(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper))
-        : oatpp::web::server::api::ApiController(objectMapper)
+        : oatpp::web::server::api::ApiController{objectMapper}
     {
         ::CreateIAsrLogRequester(32, p_requester.Put());
+        // TODO:
+        // 自此开始获取日志，未来要必须将日志单独一个Controller并最早初始化
+        p_plugin_manager = CreatePluginManager();
     }
 
     /**
@@ -79,7 +102,8 @@ public:
             {
                 OATPP_LOGD("日志接口", "1");
                 // OATPP_LOGD("日志接口", sp_one_message->data());
-                response->result->logs->push_back(sp_one_message->data());
+                response->result->logs->push_back(
+                    p_reader->GetMessage().data());
             }
             // else if (
             //     !response->result->logs->empty()
@@ -235,6 +259,24 @@ public:
         // std::string a = "启动配置文件" + std::to_string(profile_id);
         std::string a = "启动配置文件" + profile_id->profile_id;
         ASR_LOG_INFO(a.c_str());
+
+        AsrGuid    touch_iid;
+        const auto create_result =
+            AsrMakeAsrGuid("6C78DCAD-9173-4EE3-84CC-546973658460", &touch_iid);
+        ASR::AsrPtr<IAsrTask> p_task{};
+        p_plugin_manager->FindInterface(touch_iid, p_task.PutVoid());
+        ASR::AsrPtr<IAsrReadOnlyString> p_profile{};
+        ::CreateIAsrReadOnlyStringFromUtf8(
+            R"(
+{
+    "input": {
+        "x": 100,
+        "y": 200
+    }
+}
+        )",
+            p_profile.Put());
+        p_task->Do(p_profile.Get());
 
         auto response =
             ApiResponse<oatpp::Object<ProfileRunning>>::createShared();
@@ -444,4 +486,4 @@ public:
 
 #include OATPP_CODEGEN_END(ApiController)
 
-#endif
+#endif // DAS_HTTP_CONTROLLER_CONTROLLER_HPP

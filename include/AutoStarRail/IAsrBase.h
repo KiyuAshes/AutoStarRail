@@ -62,9 +62,9 @@ void _asr_internal_DelayAddRef(T* pointer)
                                                                                \
     public:                                                                    \
         AsrResult GetErrorCode() noexcept { return error_code; }               \
-        void      SetErrorCode(AsrResult error_code) noexcept                  \
+        void      SetErrorCode(AsrResult in_error_code) noexcept               \
         {                                                                      \
-            this->error_code = error_code;                                     \
+            this->error_code = in_error_code;                                  \
         }                                                                      \
         type GetValue() { return value; }                                      \
         void SetValue(const type& input_value) { value = input_value; }        \
@@ -83,9 +83,9 @@ void _asr_internal_DelayAddRef(T* pointer)
                                                                                \
     public:                                                                    \
         AsrResult GetErrorCode() noexcept { return error_code; }               \
-        void      SetErrorCode(AsrResult error_code) noexcept                  \
+        void      SetErrorCode(AsrResult in_error_code) noexcept               \
         {                                                                      \
-            this->error_code = error_code;                                     \
+            this->error_code = in_error_code;                                  \
         }                                                                      \
         pointer_type* GetValue() noexcept                                      \
         {                                                                      \
@@ -136,7 +136,8 @@ void _asr_internal_DelayAddRef(T* pointer)
 #define ASR_E_OPENCV_ERROR ASR_E_RESERVED - 25
 #define ASR_E_ONNX_RUNTIME_ERROR ASR_E_RESERVED - 26
 #define ASR_E_TIMEOUT ASR_E_RESERVED - 27
-#define ASR_E_PERMISSION_DENNIED ASR_E_RESERVED - 29
+#define ASR_E_PERMISSION_DENIED ASR_E_RESERVED - 29
+#define ASR_E_SYMBOL_NOT_FOUND ASR_E_RESERVED - 30
 
 #ifdef ASR_WINDOWS
 // MSVC
@@ -175,11 +176,7 @@ private:
     uint8_t  data4[8];
 } AsrGuid;
 
-typedef struct _asr_RetGuid
-{
-    AsrResult error_code;
-    AsrGuid   value;
-} AsrRetGuid;
+ASR_DEFINE_RET_TYPE(AsrRetGuid, AsrGuid);
 
 typedef char AsrBool;
 
@@ -190,14 +187,24 @@ typedef char AsrBool;
  * @brief input format should be "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
  *
  * @param p_guid_string
- * @return ASR_C_API
+ * @return ASR_S_OK if success.
  */
-ASR_C_API AsrRetGuid AsrMakeAsrGuid(const char* p_guid_string);
+ASR_API AsrRetGuid AsrMakeAsrGuid(const char* p_guid_string);
+
+/**
+ * @brief input format should be "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+ *
+ * @param p_guid_string
+ * @return ASR_S_OK if success.
+ */
+SWIG_IGNORE(AsrMakeAsrGuid)
+ASR_C_API AsrResult
+AsrMakeAsrGuid(const char* p_guid_string, AsrGuid* p_out_guid);
 
 #ifndef SWIG
 
 #ifdef __cplusplus
-inline bool operator==(const AsrGuid& lhs, const AsrGuid& rhs)
+inline bool operator==(const AsrGuid& lhs, const AsrGuid& rhs) noexcept
 {
     const auto result = ::memcmp(&lhs, &rhs, sizeof(lhs));
     return result == 0;
@@ -238,13 +245,23 @@ CreateIAsrReadOnlyStringVector(AsrGuid** p_in_guid_array, const size_t size);
 
 #endif // SWIG
 
+ASR_API inline bool IsAsrGuidEqual(
+    const AsrGuid& lhs,
+    const AsrGuid& rhs) noexcept
+{
+    return lhs == rhs;
+}
+
 /**
- * @brief 注意：此类获取指针后不增加引用计数，因此提供指针时应该是已经执行过AddRef的指针
+ * @brief
+ * 注意：此类获取指针后不增加引用计数，因此提供指针时应该是已经执行过AddRef的指针
  *  这一特性使得它可以被QueryInterface参数中返回的指针正确初始化
  */
 class ASR_EXPORT AsrSwigBaseWrapper
 {
     void* p_object_{nullptr};
+
+    void InternalAddRef();
 
 public:
     AsrSwigBaseWrapper();
@@ -254,14 +271,14 @@ public:
     AsrSwigBaseWrapper& operator=(const AsrSwigBaseWrapper& other);
     AsrSwigBaseWrapper& operator=(AsrSwigBaseWrapper&& other) noexcept;
 #endif // SWIG
-        ~AsrSwigBaseWrapper();
+    ~AsrSwigBaseWrapper();
 #ifndef SWIG
     explicit AsrSwigBaseWrapper(void* p_object) noexcept;
 #endif // SWIG
     explicit AsrSwigBaseWrapper(ASR_INTERFACE IAsrSwigBase* p_base) noexcept;
     ASR_INTERFACE IAsrSwigBase* Get() const noexcept;
 #ifndef SWIG
-    void* GetVoid() const noexcept;
+    void* GetVoidNoAddRef() const noexcept;
     operator void*() const noexcept;
 #endif // SWIG
 };
@@ -283,7 +300,8 @@ ASR_DEFINE_GUID(
     0x3,
     0x50,
     0xa2)
-ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigBase) ASR_INTERFACE IAsrSwigBase
+ASR_SWIG_DIRECTOR_ATTRIBUTE(IAsrSwigBase)
+ASR_INTERFACE IAsrSwigBase
 {
     virtual int64_t AddRef() = 0;
     virtual int64_t Release() = 0;

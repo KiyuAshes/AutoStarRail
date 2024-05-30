@@ -59,6 +59,9 @@ private:
     PyObjectPtr p_plugin_module;
 
 public:
+    PythonRuntime();
+    ~PythonRuntime();
+
     int64_t   AddRef() override { return 1; };
     int64_t   Release() override { return 1; };
     AsrResult QueryInterface(const AsrGuid&, void**) override
@@ -75,6 +78,8 @@ public:
         -> ASR::Utils::Expected<std::u8string>;
     auto GetPluginInitializer(_object& py_module) -> PyObjectPtr;
 };
+
+ASR_API void RaisePythonInterpreterException();
 
 ASR_NS_PYTHONHOST_END
 

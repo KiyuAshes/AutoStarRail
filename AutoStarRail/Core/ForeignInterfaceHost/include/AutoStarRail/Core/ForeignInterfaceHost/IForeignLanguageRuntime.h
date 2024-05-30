@@ -8,8 +8,6 @@
 #include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/Utils/Expected.h>
 
-#define ASR_CORE_FOREIGNINTERFACEHOST_ASRCOCREATEPLUGIN_NAME "AsrCoCreatePlugin"
-
 ASR_CORE_FOREIGNINTERFACEHOST_NS_BEGIN
 
 using CommonPluginPtr =

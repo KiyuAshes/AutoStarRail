@@ -343,9 +343,7 @@ public:
     ASR_USING_BASE_CTOR(SwigToCppTypeInfo);
 
     AsrResult OnRequestExit() override;
-    AsrResult Do(
-        IAsrContext*        p_connection_json,
-        IAsrReadOnlyString* p_task_settings_json) override;
+    AsrResult Do(IAsrReadOnlyString* p_task_settings_json) override;
     AsrResult GetNextExecutionTime(AsrDate* p_out_date) override;
     AsrResult GetName(IAsrReadOnlyString** pp_out_name) override;
     AsrResult GetDescription(IAsrReadOnlyString** pp_out_settings) override;
@@ -713,7 +711,7 @@ auto MakeInterop(FromSwig* p_from) -> Utils::Expected<AsrPtr<ToCpp>>
     if (const auto qi_result = p_from->QueryInterface(AsrIidOf<ToCpp>());
         IsOk(qi_result.error_code))
     {
-        return AsrPtr{static_cast<ToCpp*>(qi_result.value.GetVoid())};
+        return AsrPtr{static_cast<ToCpp*>(qi_result.value.GetVoidNoAddRef())};
     }
 
     try

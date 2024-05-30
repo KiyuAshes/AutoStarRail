@@ -3,8 +3,6 @@
 
 #include <AutoStarRail/PluginInterface/IAsrPlugin.h>
 #include <AutoStarRail/Utils/CommonUtils.hpp>
-#include <AutoStarRail/Utils/QueryInterface.hpp>
-#include <array>
 #include <cstdint>
 #include <unordered_map>
 

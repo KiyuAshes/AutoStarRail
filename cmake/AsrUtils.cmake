@@ -28,6 +28,14 @@ function(asr_add_plugin_library SUB_DIRECTORY_NAME PRIVATE_EX_LIBS)
     )
     target_link_libraries(${SUB_DIRECTORY_NAME} PUBLIC ${PRIVATE_EX_LIBS})
     target_link_libraries(${SUB_DIRECTORY_NAME} PRIVATE AsrCore)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/${SUB_DIRECTORY_NAME}/${SUB_DIRECTORY_NAME}.json
+        ${CMAKE_BINARY_DIR}/DAS/tmp/${SUB_DIRECTORY_NAME}.json
+        @ONLY)
+    add_custom_command(
+        TARGET AsrAutoCopyPluginMetadataFile
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/DAS/tmp/${SUB_DIRECTORY_NAME}.json $<TARGET_FILE_DIR:${SUB_DIRECTORY_NAME}>)
 endfunction()
 
 function(asr_add_core_component SUB_DIRECTORY_NAME)
@@ -50,6 +58,7 @@ function(asr_add_additional_test ADDITIONAL_TEST_DIRECTORY_NAME)
     aux_source_directory(${ADDITIONAL_TEST_DIRECTORY_NAME} SOURCES)
     add_executable(AdditionalTest ${SOURCES})
     target_link_libraries(AdditionalTest PRIVATE GTest::gtest_main GTest::gtest)
+    add_dependencies(AdditionalTest AsrAutoCopyDll)
 
     # force cmake output test executable to ${CMAKE_BINARY_DIR}/Test
     set_target_properties(AdditionalTest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Test)

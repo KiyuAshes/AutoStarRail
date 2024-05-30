@@ -14,6 +14,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/bin/MinSizeRel
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/lib/MinSizeRel/plugins)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/bin/MinSizeRel/plugins)
 
+add_custom_target(AsrAutoCopyPluginMetadataFile ALL)
+
 asr_add_plugin_library(AsrAdbCapture ASR_EX_PRIVATE_LIBS)
 asr_add_plugin_library(AsrAdbTouch ASR_EX_PRIVATE_LIBS)
 

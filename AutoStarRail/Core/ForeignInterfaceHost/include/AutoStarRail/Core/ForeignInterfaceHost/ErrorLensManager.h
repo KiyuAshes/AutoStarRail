@@ -24,6 +24,8 @@ public:
         IAsrSwigReadOnlyGuidVector* p_guid_vector,
         IAsrSwigErrorLens*          p_error_lens);
 
+    AsrResult FindInterface(const AsrGuid& iid, IAsrErrorLens** pp_out_lens);
+
     auto GetErrorMessage(
         const AsrGuid&      iid,
         IAsrReadOnlyString* locale_name,

@@ -1,5 +1,5 @@
-#ifndef Global_DTOs_hpp
-#define Global_DTOs_hpp
+#ifndef DAS_HTTP_DTO_GLOBAL_HPP
+#define DAS_HTTP_DTO_GLOBAL_HPP
 
 #include "oatpp/core/Types.hpp"
 #include "oatpp/core/macro/codegen.hpp"
@@ -27,4 +27,4 @@ class ApiResponse : public oatpp::DTO
 
 #include OATPP_CODEGEN_END(DTO)
 
-#endif
+#endif // DAS_HTTP_DTO_GLOBAL_HPP

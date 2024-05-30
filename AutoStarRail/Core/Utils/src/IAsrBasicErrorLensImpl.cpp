@@ -185,7 +185,10 @@ AsrResult AsrBasicErrorLensImpl::RegisterErrorMessage(
 
 AsrRetReadOnlyGuidVector AsrBasicErrorLensImpl::GetSupportedIids()
 {
-    return {ASR_S_OK, {suppored_guid_vector_}};
+    return {
+        ASR_S_OK,
+        ASR::AsrPtr{
+            static_cast<IAsrSwigReadOnlyGuidVector*>(suppored_guid_vector_)}};
 }
 
 AsrResult AsrBasicErrorLensImpl::GetWritableSupportedIids(
@@ -200,7 +203,9 @@ AsrResult AsrBasicErrorLensImpl::GetWritableSupportedIids(
 
 AsrRetGuidVector AsrBasicErrorLensImpl::GetWritableSupportedIids()
 {
-    return {ASR_S_OK, {suppored_guid_vector_}};
+    return {
+        ASR_S_OK,
+        {static_cast<IAsrSwigGuidVector*>(suppored_guid_vector_)}};
 }
 
 ASR_CORE_UTILS_NS_END
@@ -230,7 +235,7 @@ AsrRetBasicErrorLens CreateIAsrSwigBasicErrorLens()
         const auto p_result =
             Asr::MakeAsrPtr<ASR::Core::Utils::AsrBasicErrorLensImpl>();
 
-        return {ASR_S_OK, {*p_result}};
+        return {ASR_S_OK, {static_cast<IAsrSwigBasicErrorLens*>(*p_result)}};
     }
     catch (const std::bad_alloc&)
     {

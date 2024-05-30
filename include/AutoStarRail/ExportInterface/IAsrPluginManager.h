@@ -14,8 +14,8 @@
 
 #include <AutoStarRail/AsrExport.h>
 #include <AutoStarRail/AsrString.hpp>
-#include <AutoStarRail/IAsrBase.h>
 #include <AutoStarRail/ExportInterface/IAsrGuidVector.h>
+#include <AutoStarRail/IAsrBase.h>
 #include <cstddef>
 
 // {8179F162-5E1A-4248-AC67-758D2AFF18A7}
@@ -95,7 +95,6 @@ ASR_INTERFACE IAsrSwigPluginInfo : public IAsrSwigBase
 
 ASR_DEFINE_RET_POINTER(AsrRetPluginInfo, IAsrSwigPluginInfo);
 
-
 // {30CCAE61-3884-43F4-AE78-976410156370}
 ASR_DEFINE_GUID(
     ASR_IID_SWIG_PLUGIN_INFO_VECTOR,
@@ -138,6 +137,7 @@ ASR_INTERFACE IAsrPluginManager : public IAsrBase
 {
     ASR_METHOD GetAllPluginInfo(
         IAsrPluginInfoVector * *pp_out_plugin_info_vector) = 0;
+    ASR_METHOD FindInterface(const AsrGuid& iid, void** pp_object) = 0;
 };
 
 /**
@@ -146,9 +146,9 @@ ASR_INTERFACE IAsrPluginManager : public IAsrBase
  * @param pp_out_result
  * @return AsrResult
  */
-SWIG_IGNORE(LoadPluginAndGetResult)
-ASR_C_API AsrResult LoadPluginAndGetResult(
-    IAsrGuidVector*     p_ignore_plugins_guid,
-    IAsrPluginManager** pp_out_result);
+SWIG_IGNORE(CreateIAsrPluginManagerAndGetResult)
+ASR_C_API AsrResult CreateIAsrPluginManagerAndGetResult(
+    IAsrReadOnlyGuidVector* p_ignore_plugins_guid,
+    IAsrPluginManager**     pp_out_result);
 
 #endif // ASR_PLUGINMANAGER_H

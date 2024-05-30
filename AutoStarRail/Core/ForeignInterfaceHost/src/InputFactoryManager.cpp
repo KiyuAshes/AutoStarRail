@@ -61,6 +61,36 @@ AsrResult InputFactoryManager::Register(IAsrSwigInputFactory* p_factory)
         return ASR_E_OUT_OF_MEMORY;
     }
 }
+AsrResult InputFactoryManager::FindInterface(
+    const AsrGuid&     iid,
+    IAsrInputFactory** pp_out_factory)
+{
+    ASR_UTILS_CHECK_POINTER(pp_out_factory)
+    if (const auto factory_it = std::find_if(
+            ASR_FULL_RANGE_OF(common_input_factory_vector_),
+            [&iid](const Type& cpp_swig_object)
+            {
+                try
+                {
+                    const auto factory_iid =
+                        Utils::GetGuidFrom(cpp_swig_object.first.Get());
+                    return factory_iid == iid;
+                }
+                catch (const AsrException& ex)
+                {
+                    ASR_CORE_LOG_EXCEPTION(ex);
+                    return false;
+                }
+            });
+        factory_it != common_input_factory_vector_.end())
+    {
+        const auto p_result = factory_it->first.Get();
+        *pp_out_factory = p_result;
+        p_result->AddRef();
+        return ASR_S_OK;
+    }
+    return ASR_E_NO_INTERFACE;
+}
 
 void InputFactoryManager::At(
     size_t                    index,

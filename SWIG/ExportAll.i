@@ -34,6 +34,45 @@
 #include <AutoStarRail/ExportInterface/IAsrPluginManager.h>
 #include <AutoStarRail/ExportInterface/IAsrSettings.h>
 #include <AutoStarRail/ExportInterface/IAsrTaskManager.h>
+
+#ifdef SWIGPYTHON
+
+#include <AutoStarRail/Core/ForeignInterfaceHost/PythonHost.h>
+
+#ifdef DEBUG
+
+#ifdef __cplusplus
+extern "C"
+#endif
+SWIGEXPORT
+#if PY_VERSION_HEX >= 0x03000000
+PyObject*
+#else
+void
+#endif
+SWIG_init(void);
+
+#ifdef __cplusplus
+extern "C"
+#endif
+SWIGEXPORT
+#if PY_VERSION_HEX >= 0x03000000
+PyObject*
+#else
+void
+#endif
+PyInit__AsrCorePythonExport(void) {
+#if PY_VERSION_HEX >= 0x03000000
+    return ::SWIG_init();
+#else
+    ::SWIG_init();
+#endif
+}
+
+#endif // DEBUG
+
+#endif // SWIGPYTHON
+
 %}
 
 #ifdef SWIGJAVA
@@ -95,6 +134,17 @@
 %}
 
 #endif
+
+#ifdef SWIGPYTHON
+
+%feature("director:except") {
+    if ($error != NULL) {
+        ASR_LOG_ERROR("SWIG Python exception found!");
+        ASR::Core::ForeignInterfaceHost::PythonHost::RaisePythonInterpreterException();
+    }
+}
+
+#endif // SWIGPYTHON
 
 %include <AutoStarRail/AsrExport.h>
 %include <AutoStarRail/IAsrBase.h>

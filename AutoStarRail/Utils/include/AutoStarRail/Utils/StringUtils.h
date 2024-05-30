@@ -82,6 +82,8 @@ bool Compare(const T& lhs, std::tuple<const char*, const wchar_t*> rhs)
 
 void ToLowerInPlace(std::string& in_out_str);
 
+auto ToUpper(const std::string_view in_string) -> std::string;
+
 void ToLowerInPlace(std::vector<std::string>& in_out_str_vector);
 
 struct AsrReadOnlyStringHash

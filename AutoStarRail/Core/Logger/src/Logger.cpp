@@ -62,7 +62,7 @@ namespace Core
             std::end(sinks));
         spdlog::register_logger(result);
         spdlog::set_pattern(
-            "[%Y-%m-%d %H:%M:%S.%e][thr %t][%l][%s:%!():%#][%i] %v");
+            "[%Y-%m-%d %H:%M:%S.%e][%t][%l][%s:%!():%#][%i] %v");
 
         spdlog::set_level(spdlog::level::trace);
 
@@ -84,7 +84,7 @@ namespace Core
         g_logger->log(
             spdlog::source_loc{file_, line_, func_},
             spdlog::level::trace,
-            "Scope in.");
+            "In.");
     }
 
     TraceScope::~TraceScope()
@@ -92,7 +92,7 @@ namespace Core
         g_logger->log(
             spdlog::source_loc{file_, line_, func_},
             spdlog::level::trace,
-            "Scope out.");
+            "Out.");
     }
 }
 

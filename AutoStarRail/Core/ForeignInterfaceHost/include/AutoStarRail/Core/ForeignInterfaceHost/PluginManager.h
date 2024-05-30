@@ -108,6 +108,7 @@ public:
     // IAsrPluginManager
     AsrResult GetAllPluginInfo(
         IAsrPluginInfoVector** pp_out_plugin_info_vector) override;
+    AsrResult FindInterface(const AsrGuid& iid, void** pp_object) override;
 };
 
 class PluginManager
@@ -168,7 +169,7 @@ public:
      *         ASR_E_INTERNAL_FATAL_ERROR when any plugin have
      * ASR_E_SWIG_INTERNAL_ERROR or even worse.
      */
-    AsrResult Refresh(IAsrGuidVector* p_ignored_guid_vector);
+    AsrResult Refresh(IAsrReadOnlyGuidVector* p_ignored_guid_vector);
 
     /**
      * @brief Get the Error Explanation from AsrResult.
@@ -195,6 +196,8 @@ public:
 
     auto GetAllCaptureFactory() const noexcept
         -> const std::vector<AsrPtr<IAsrCaptureFactory>>&;
+
+    AsrResult FindInterface(const AsrGuid& iid, void** pp_out_object);
 
     operator IAsrPluginManagerImpl*() noexcept;
 };
